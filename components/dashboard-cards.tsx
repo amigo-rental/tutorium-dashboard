@@ -74,17 +74,19 @@ export function CourseCard({
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
   const getGradientByProgress = (progress: number) => {
-    if (progress >= 80) return "from-emerald-500 to-teal-600";
-    if (progress >= 60) return "from-blue-500 to-indigo-600";
-    if (progress >= 40) return "from-purple-500 to-pink-600";
+    const flooredProgress = Math.floor(progress);
+    if (flooredProgress >= 80) return "from-emerald-500 to-teal-600";
+    if (flooredProgress >= 60) return "from-blue-500 to-indigo-600";
+    if (flooredProgress >= 40) return "from-purple-500 to-pink-600";
 
     return "from-orange-500 to-red-600";
   };
 
   const getBgByProgress = (progress: number) => {
-    if (progress >= 80) return "from-emerald-50 to-teal-50";
-    if (progress >= 60) return "from-blue-50 to-indigo-50";
-    if (progress >= 40) return "from-purple-50 to-pink-50";
+    const flooredProgress = Math.floor(progress);
+    if (flooredProgress >= 80) return "from-emerald-50 to-teal-50";
+    if (flooredProgress >= 60) return "from-blue-50 to-indigo-50";
+    if (flooredProgress >= 40) return "from-purple-50 to-pink-50";
 
     return "from-orange-50 to-red-50";
   };
@@ -115,7 +117,7 @@ export function CourseCard({
         break;
       case "certificate":
         // View/download certificate if completed
-        if (progressPercent >= 100) {
+        if (Math.floor(progressPercent) >= 100) {
           console.log("Downloading certificate for:", title);
         } else {
           console.log("Course not completed yet");
@@ -127,12 +129,12 @@ export function CourseCard({
 
   return (
     <div
-      className={`relative bg-gradient-to-br ${getBgByProgress(progressPercent)} border border-slate-200/50 rounded-3xl p-6 group hover:shadow-2xl hover:shadow-slate-300/25 transition-all duration-500 overflow-hidden`}
+      className={`relative bg-gradient-to-br ${getBgByProgress(Math.floor(progressPercent))} border border-slate-200/50 rounded-3xl p-6 group hover:shadow-2xl hover:shadow-slate-300/25 transition-all duration-500 overflow-hidden`}
     >
       {/* Background decoration */}
       <div className="absolute top-0 right-0 w-32 h-32 opacity-5">
         <div
-          className={`w-full h-full bg-gradient-to-br ${getGradientByProgress(progressPercent)} rounded-full translate-x-8 -translate-y-8`}
+          className={`w-full h-full bg-gradient-to-br ${getGradientByProgress(Math.floor(progressPercent))} rounded-full translate-x-8 -translate-y-8`}
         />
       </div>
 
@@ -151,7 +153,7 @@ export function CourseCard({
                 </div>
               ) : (
                 <div
-                  className={`w-12 h-12 bg-gradient-to-br ${getGradientByProgress(progressPercent)} rounded-2xl flex items-center justify-center text-white font-semibold text-lg`}
+                  className={`w-12 h-12 bg-gradient-to-br ${getGradientByProgress(Math.floor(progressPercent))} rounded-2xl flex items-center justify-center text-white font-semibold text-lg`}
                 >
                   {title.charAt(0)}
                 </div>
@@ -179,14 +181,14 @@ export function CourseCard({
               Course Progress
             </span>
             <span className="font-semibold text-lg text-slate-900">
-              {progressPercent}%
+              {Math.floor(progressPercent)}%
             </span>
           </div>
           <div className="relative">
             <div className="w-full bg-slate-200/50 rounded-full h-3">
               <div
-                className={`h-3 bg-gradient-to-r ${getGradientByProgress(progressPercent)} rounded-full transition-all duration-700`}
-                style={{ width: `${progressPercent}%` }}
+                className={`h-3 bg-gradient-to-r ${getGradientByProgress(Math.floor(progressPercent))} rounded-full transition-all duration-700`}
+                style={{ width: `${Math.floor(progressPercent)}%` }}
               />
             </div>
           </div>
@@ -215,11 +217,11 @@ export function CourseCard({
             size="lg"
             style={{
               backgroundColor:
-                progressPercent >= 80
+                Math.floor(progressPercent) >= 80
                   ? "#10b981"
-                  : progressPercent >= 60
+                  : Math.floor(progressPercent) >= 60
                     ? "#3b82f6"
-                    : progressPercent >= 40
+                    : Math.floor(progressPercent) >= 40
                       ? "#8b5cf6"
                       : "#f59e0b",
             }}
@@ -351,7 +353,7 @@ export function CourseCard({
                 </div>
               </DropdownItem>
 
-              {progressPercent >= 100 ? (
+              {Math.floor(progressPercent) >= 100 ? (
                 <DropdownItem key="certificate" className="py-3">
                   <div className="flex items-center gap-3">
                     <div className="w-8 h-8 bg-[#007EFB]/10 rounded-lg flex items-center justify-center">

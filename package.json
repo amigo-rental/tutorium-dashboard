@@ -6,7 +6,10 @@
     "dev": "next dev --turbopack",
     "build": "next build",
     "start": "next start",
-    "lint": "eslint --fix"
+    "lint": "eslint --fix",
+    "seed": "tsx prisma/seed.ts",
+    "db:push": "prisma db push",
+    "db:generate": "prisma generate"
   },
   "dependencies": {
     "@heroui/avatar": "^2.2.20",
@@ -34,13 +37,21 @@
     "@heroui/table": "^2.2.24",
     "@heroui/tabs": "^2.2.21",
     "@heroui/theme": "2.4.20",
+    "@prisma/client": "^6.14.0",
     "@react-aria/ssr": "3.9.10",
     "@react-aria/visually-hidden": "3.8.26",
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
+    "@types/multer": "^2.0.0",
+    "bcryptjs": "^3.0.2",
     "clsx": "2.1.1",
     "framer-motion": "11.18.2",
     "intl-messageformat": "10.7.16",
+    "jsonwebtoken": "^9.0.2",
+    "multer": "^2.0.2",
     "next": "15.3.1",
     "next-themes": "0.4.6",
+    "prisma": "^6.14.0",
     "react": "18.3.1",
     "react-dom": "18.3.1"
   },
@@ -69,6 +80,7 @@
     "prettier": "3.5.3",
     "tailwind-variants": "2.0.1",
     "tailwindcss": "4.1.11",
+    "tsx": "^4.20.4",
     "typescript": "5.6.3"
   }
 }

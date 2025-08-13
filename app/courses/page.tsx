@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { ProtectedRoute } from "@/components/protected-route";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
 import { Avatar } from "@heroui/avatar";
@@ -9,7 +10,6 @@ import {
   DropdownTrigger,
   DropdownMenu,
   DropdownItem,
-  DropdownSection,
 } from "@heroui/dropdown";
 import { useDisclosure } from "@heroui/use-disclosure";
 
@@ -21,10 +21,10 @@ const SearchIcon = ({ className }: { className?: string }) => (
     viewBox="0 0 24 24"
   >
     <path
+      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeWidth={2}
-      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
     />
   </svg>
 );
@@ -37,10 +37,10 @@ const ClockIcon = ({ className }: { className?: string }) => (
     viewBox="0 0 24 24"
   >
     <path
+      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeWidth={2}
-      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
     />
   </svg>
 );
@@ -53,10 +53,10 @@ const UsersIcon = ({ className }: { className?: string }) => (
     viewBox="0 0 24 24"
   >
     <path
+      d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeWidth={2}
-      d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
     />
   </svg>
 );
@@ -69,10 +69,10 @@ const CalendarIcon = ({ className }: { className?: string }) => (
     viewBox="0 0 24 24"
   >
     <path
+      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeWidth={2}
-      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
     />
   </svg>
 );
@@ -328,7 +328,8 @@ export default function GroupsPage() {
   });
 
   return (
-    <div className="min-h-screen bg-white lg:ml-4 xl:ml-0">
+    <ProtectedRoute>
+      <div className="min-h-screen bg-white lg:ml-4 xl:ml-0">
       {/* Hero Section */}
       <div className="pt-12 mb-8">
         <h1 className="text-5xl font-bold text-black tracking-tight">
@@ -380,7 +381,6 @@ export default function GroupsPage() {
             <Dropdown isOpen={isTimeOpen} onOpenChange={onTimeOpenChange}>
               <DropdownTrigger>
                 <Button
-                  variant="bordered"
                   className="border-slate-200 text-black font-medium"
                   endContent={
                     <svg
@@ -390,13 +390,14 @@ export default function GroupsPage() {
                       viewBox="0 0 24 24"
                     >
                       <path
+                        d="M19 9l-7 7-7-7"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
                       />
                     </svg>
                   }
+                  variant="bordered"
                 >
                   {selectedTimeFilters.length === 0
                     ? "Все время"
@@ -407,7 +408,9 @@ export default function GroupsPage() {
                 aria-label="Time filters"
                 selectedKeys={selectedTimeFilters}
                 selectionMode="multiple"
-                onSelectionChange={(keys) => setSelectedTimeFilters(Array.from(keys) as string[])}
+                onSelectionChange={(keys) =>
+                  setSelectedTimeFilters(Array.from(keys) as string[])
+                }
               >
                 <DropdownItem key="morning" className="text-black">
                   <div className="flex items-center gap-2">
@@ -434,7 +437,6 @@ export default function GroupsPage() {
             <Dropdown isOpen={isTypeOpen} onOpenChange={onTypeOpenChange}>
               <DropdownTrigger>
                 <Button
-                  variant="bordered"
                   className="border-slate-200 text-black font-medium"
                   endContent={
                     <svg
@@ -444,13 +446,14 @@ export default function GroupsPage() {
                       viewBox="0 0 24 24"
                     >
                       <path
+                        d="M19 9l-7 7-7-7"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
                       />
                     </svg>
                   }
+                  variant="bordered"
                 >
                   {selectedTypeFilters.length === 0
                     ? "Все типы"
@@ -459,8 +462,8 @@ export default function GroupsPage() {
               </DropdownTrigger>
               <DropdownMenu
                 aria-label="Type filters"
-                selectionMode="multiple"
                 selectedKeys={selectedTypeFilters}
+                selectionMode="multiple"
                 onSelectionChange={(keys) =>
                   setSelectedTypeFilters(Array.from(keys) as string[])
                 }
@@ -490,7 +493,6 @@ export default function GroupsPage() {
             <Dropdown isOpen={isBlockOpen} onOpenChange={onBlockOpenChange}>
               <DropdownTrigger>
                 <Button
-                  variant="bordered"
                   className="border-slate-200 text-black font-medium"
                   endContent={
                     <svg
@@ -500,13 +502,14 @@ export default function GroupsPage() {
                       viewBox="0 0 24 24"
                     >
                       <path
+                        d="M19 9l-7 7-7-7"
                         strokeLinecap="round"
                         strokeLinejoin="round"
                         strokeWidth={2}
-                        d="M19 9l-7 7-7-7"
                       />
                     </svg>
                   }
+                  variant="bordered"
                 >
                   {selectedBlockFilters.length === 0
                     ? "Все блоки"
@@ -515,8 +518,8 @@ export default function GroupsPage() {
               </DropdownTrigger>
               <DropdownMenu
                 aria-label="Block filters"
-                selectionMode="multiple"
                 selectedKeys={selectedBlockFilters.map(String)}
+                selectionMode="multiple"
                 onSelectionChange={(keys) =>
                   setSelectedBlockFilters(Array.from(keys).map(Number))
                 }
@@ -535,12 +538,12 @@ export default function GroupsPage() {
               selectedBlockFilters.length > 0) && (
               <Button
                 className="text-[#007EFB] font-medium"
-                  variant="light"
-                  onClick={() => {
-                    setSelectedTimeFilters([]);
-                    setSelectedTypeFilters([]);
-                    setSelectedBlockFilters([]);
-                  }}
+                variant="light"
+                onClick={() => {
+                  setSelectedTimeFilters([]);
+                  setSelectedTypeFilters([]);
+                  setSelectedBlockFilters([]);
+                }}
               >
                 Очистить фильтры
               </Button>
@@ -551,7 +554,6 @@ export default function GroupsPage() {
           <Dropdown>
             <DropdownTrigger>
               <Button
-                variant="bordered"
                 className="border-slate-200 text-black font-medium"
                 endContent={
                   <svg
@@ -561,13 +563,14 @@ export default function GroupsPage() {
                     viewBox="0 0 24 24"
                   >
                     <path
+                      d="M19 9l-7 7-7-7"
                       strokeLinecap="round"
                       strokeLinejoin="round"
                       strokeWidth={2}
-                      d="M19 9l-7 7-7-7"
                     />
                   </svg>
                 }
+                variant="bordered"
               >
                 {sortBy === "time" && "По времени"}
                 {sortBy === "progress" && "По прогрессу"}
@@ -607,36 +610,39 @@ export default function GroupsPage() {
             <GroupCard key={group.id} group={group} isMyGroup={false} />
           ))}
       </div>
-    </div>
+      </div>
+    </ProtectedRoute>
   );
 }
 
 function GroupCard({ group, isMyGroup }: { group: Group; isMyGroup: boolean }) {
   const getBgByProgress = (progress: number) => {
-    if (progress >= 80) return "from-emerald-50 to-emerald-100";
-    if (progress >= 60) return "from-blue-50 to-blue-100";
-    if (progress >= 40) return "from-purple-50 to-purple-100";
+    const flooredProgress = Math.floor(progress);
+    if (flooredProgress >= 80) return "from-emerald-50 to-emerald-100";
+    if (flooredProgress >= 60) return "from-blue-50 to-blue-100";
+    if (flooredProgress >= 40) return "from-purple-50 to-purple-100";
 
     return "from-amber-50 to-amber-100";
   };
 
   const getGradientByProgress = (progress: number) => {
-    if (progress >= 80) return "from-emerald-400 to-emerald-600";
-    if (progress >= 60) return "from-blue-400 to-blue-600";
-    if (progress >= 40) return "from-purple-400 to-purple-600";
+    const flooredProgress = Math.floor(progress);
+    if (flooredProgress >= 80) return "from-emerald-400 to-emerald-600";
+    if (flooredProgress >= 60) return "from-blue-400 to-blue-600";
+    if (flooredProgress >= 40) return "from-purple-400 to-purple-600";
 
     return "from-amber-400 to-amber-600";
   };
 
   return (
     <div
-      className={`relative bg-gradient-to-br ${getBgByProgress(group.progress)} border border-slate-200/50 rounded-3xl p-6 group hover:shadow-2xl hover:shadow-slate-300/25 transition-all duration-500 overflow-hidden`}
+      className={`relative bg-gradient-to-br ${getBgByProgress(Math.floor(group.progress))} border border-slate-200/50 rounded-3xl p-6 group hover:shadow-2xl hover:shadow-slate-300/25 transition-all duration-500 overflow-hidden`}
     >
       {/* Background decoration */}
       <div className="absolute top-0 right-0 w-32 h-32 opacity-5">
         <div
-          className={`w-full h-full bg-gradient-to-br ${getGradientByProgress(group.progress)} rounded-full translate-x-8 -translate-y-8`}
-        ></div>
+          className={`w-full h-full bg-gradient-to-br ${getGradientByProgress(Math.floor(group.progress))} rounded-full translate-x-8 -translate-y-8`}
+        />
       </div>
 
       <div className="relative z-10">
@@ -645,7 +651,7 @@ function GroupCard({ group, isMyGroup }: { group: Group; isMyGroup: boolean }) {
           <div className="flex-1">
             <div className="flex items-center gap-3 mb-3">
               <div
-                className={`w-12 h-12 bg-gradient-to-br ${getGradientByProgress(group.progress)} rounded-2xl flex items-center justify-center text-white font-semibold text-lg`}
+                className={`w-12 h-12 bg-gradient-to-br ${getGradientByProgress(Math.floor(group.progress))} rounded-2xl flex items-center justify-center text-white font-semibold text-lg`}
               >
                 {group.name.charAt(0)}
               </div>
@@ -655,8 +661,8 @@ function GroupCard({ group, isMyGroup }: { group: Group; isMyGroup: boolean }) {
                 </h3>
                 <div className="flex items-center gap-2 mt-1">
                   <Chip
-                    className="font-bold text-xs bg-white/80 text-slate-700" 
-                    size="sm" 
+                    className="font-bold text-xs bg-white/80 text-slate-700"
+                    size="sm"
                     variant="flat"
                   >
                     {group.level}
@@ -674,9 +680,9 @@ function GroupCard({ group, isMyGroup }: { group: Group; isMyGroup: boolean }) {
         <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 mb-6 border border-white/50">
           <div className="flex items-center gap-3">
             <Avatar
-              className="text-white bg-[#007EFB] text-sm font-bold" 
-              name={group.teacherAvatar} 
-              size="sm" 
+              className="text-white bg-[#007EFB] text-sm font-bold"
+              name={group.teacherAvatar}
+              size="sm"
             />
             <div className="flex-1">
               <p className="text-slate-800 font-bold text-sm">
@@ -707,15 +713,15 @@ function GroupCard({ group, isMyGroup }: { group: Group; isMyGroup: boolean }) {
               Прогресс группы
             </span>
             <span className="font-semibold text-lg text-slate-900">
-              {group.progress}%
+              {Math.floor(group.progress)}%
             </span>
           </div>
           <div className="relative">
             <div className="w-full bg-slate-200/50 rounded-full h-3">
               <div
-                className={`h-3 bg-gradient-to-r ${getGradientByProgress(group.progress)} rounded-full transition-all duration-700`}
-                style={{ width: `${group.progress}%` }}
-               />
+                className={`h-3 bg-gradient-to-r ${getGradientByProgress(Math.floor(group.progress))} rounded-full transition-all duration-700`}
+                style={{ width: `${Math.floor(group.progress)}%` }}
+              />
             </div>
           </div>
           <p className="text-slate-600 font-semibold text-xs mt-2">
@@ -743,7 +749,7 @@ function GroupCard({ group, isMyGroup }: { group: Group; isMyGroup: boolean }) {
         {/* Actions */}
         <div className="flex gap-3">
           <Button
-            className={`flex-1 font-semibold text-black bg-white border border-slate-200 hover:bg-slate-50 transition-all duration-300`} 
+            className={`flex-1 font-semibold text-black bg-white border border-slate-200 hover:bg-slate-50 transition-all duration-300`}
             disabled={!isMyGroup && group.students >= group.maxStudents}
             size="lg"
           >

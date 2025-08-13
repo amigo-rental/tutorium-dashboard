@@ -7,6 +7,8 @@ import NextLink from "next/link";
 import { usePathname } from "next/navigation";
 import clsx from "clsx";
 
+import { useAuth } from "@/lib/auth/context";
+
 // Icons - simple SVG components
 const DashboardIcon = ({ className }: { className?: string }) => (
   <svg
@@ -111,7 +113,7 @@ const MenuIcon = ({ className }: { className?: string }) => (
 );
 
 const navigation = [
-  { name: "Главная", href: "/", icon: DashboardIcon },
+  { name: "Главная", href: "/dashboard", icon: DashboardIcon },
   { name: "Группы", href: "/courses", icon: BookIcon },
   { name: "Учитель", href: "/teacher", icon: TeacherIcon },
   { name: "Настройки", href: "/settings", icon: SettingsIcon },
@@ -124,6 +126,7 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const pathname = usePathname();
+  const { user } = useAuth();
 
   return (
     <>
@@ -140,17 +143,17 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
       {/* Mobile overlay */}
       {isOpen && (
         <div
+          aria-label="Закрыть меню"
           className="lg:hidden fixed inset-0 z-40 bg-black/20 backdrop-blur-sm"
+          role="button"
+          tabIndex={0}
           onClick={onToggle}
           onKeyDown={(e) => {
-            if (e.key === 'Enter' || e.key === ' ') {
+            if (e.key === "Enter" || e.key === " ") {
               e.preventDefault();
               onToggle();
             }
           }}
-          role="button"
-          tabIndex={0}
-          aria-label="Закрыть меню"
         />
       )}
 
@@ -204,24 +207,30 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
               </ul>
             </nav>
 
-            {/* Student Profile Section - Moved to Bottom */}
+            {/* User Profile Section - Dynamic */}
             <div className="mt-auto pt-6 border-t border-slate-200/50">
               <div className="bg-gradient-to-br from-slate-50 to-slate-100 rounded-2xl p-4">
                 <div className="flex items-center gap-3 mb-4">
                   <div className="relative">
                     <Avatar
                       className="text-white bg-[#007EFB] border-2 border-white"
-                      name="Елена Гарсия"
+                      name={user?.name || "User"}
                       size="md"
                     />
                     <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
                   </div>
                   <div className="flex-1 min-w-0">
                     <h3 className="font-bold text-black text-base truncate">
-                      Елена Гарсия
+                      {user?.name || "User"}
                     </h3>
                     <p className="text-black/70 font-medium text-sm truncate">
-                      Ученик
+                      {user?.role === "TEACHER"
+                        ? "Преподаватель"
+                        : user?.role === "STUDENT"
+                          ? "Ученик"
+                          : user?.role === "ADMIN"
+                            ? "Администратор"
+                            : "Пользователь"}
                     </p>
                   </div>
                 </div>

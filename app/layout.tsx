@@ -4,7 +4,8 @@ import clsx from "clsx";
 
 import { Providers } from "./providers";
 
-import { DashboardLayout } from "@/components/dashboard-layout";
+import { AuthProvider } from "@/lib/auth/context";
+import { ConditionalLayout } from "@/components/conditional-layout";
 import { siteConfig } from "@/config/site";
 import { fontSans } from "@/config/fonts";
 
@@ -41,7 +42,9 @@ export default function RootLayout({
         )}
       >
         <Providers themeProps={{ attribute: "class", defaultTheme: "light" }}>
-          <DashboardLayout>{children}</DashboardLayout>
+          <AuthProvider>
+            <ConditionalLayout>{children}</ConditionalLayout>
+          </AuthProvider>
         </Providers>
       </body>
     </html>

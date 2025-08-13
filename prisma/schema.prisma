@@ -1,0 +1,108 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id                String      @id @default(cuid())
+  email             String      @unique
+  name              String
+  password          String
+  role              UserRole    @default(TEACHER)
+  avatar            String?
+  createdAt         DateTime    @default(now())
+  updatedAt         DateTime    @updatedAt
+  groupId           String?
+  isActive          Boolean     @default(true)
+  level             String?
+  groups            Group[]     @relation("TeacherGroups")
+  recordings        Recording[]
+  group             Group?      @relation("StudentGroup", fields: [groupId], references: [id])
+  studentRecordings Recording[] @relation("StudentRecordings")
+  feedbacks         LessonFeedback[] @relation("StudentFeedback")
+
+  @@map("users")
+}
+
+model Group {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  level       String
+  maxStudents Int         @default(20)
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  teacherId   String
+  teacher     User        @relation("TeacherGroups", fields: [teacherId], references: [id], onDelete: Cascade)
+  recordings  Recording[]
+  students    User[]      @relation("StudentGroup")
+
+  @@unique([name, teacherId])
+  @@map("groups")
+}
+
+model Recording {
+  id          String       @id @default(cuid())
+  lessonType  LessonType
+  date        DateTime
+  youtubeLink String
+  message     String?
+  isPublished Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+  teacherId   String
+  groupId     String?
+  attachments Attachment[]
+  feedbacks   LessonFeedback[]
+  group       Group?       @relation(fields: [groupId], references: [id])
+  teacher     User         @relation(fields: [teacherId], references: [id], onDelete: Cascade)
+  students    User[]       @relation("StudentRecordings")
+
+  @@map("recordings")
+}
+
+model Attachment {
+  id           String    @id @default(cuid())
+  filename     String
+  originalName String
+  mimeType     String
+  size         Int
+  path         String
+  createdAt    DateTime  @default(now())
+  recordingId  String
+  recording    Recording @relation(fields: [recordingId], references: [id], onDelete: Cascade)
+
+  @@map("attachments")
+}
+
+model LessonFeedback {
+  id          String    @id @default(cuid())
+  rating      Int       // 1-5 star rating
+  comment     String?
+  isAnonymous Boolean   @default(false)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  studentId   String
+  recordingId String
+  student     User      @relation("StudentFeedback", fields: [studentId], references: [id], onDelete: Cascade)
+  recording   Recording @relation(fields: [recordingId], references: [id], onDelete: Cascade)
+
+  @@unique([studentId, recordingId])
+  @@map("lesson_feedbacks")
+}
+
+enum UserRole {
+  ADMIN
+  TEACHER
+  STUDENT
+}
+
+enum LessonType {
+  GROUP
+  INDIVIDUAL
+}
