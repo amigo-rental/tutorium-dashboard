@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { useRouter } from "next/navigation";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 
@@ -17,7 +16,6 @@ export default function LoginPage() {
   const [role, setRole] = useState("TEACHER");
 
   const { login, register, user, token } = useAuth();
-  const router = useRouter();
   const [redirectTo, setRedirectTo] = useState("/dashboard");
 
   // Get redirect parameter from URL

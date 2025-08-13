@@ -218,7 +218,7 @@ export default function DashboardPage() {
         achievements,
       });
     } catch (error) {
-      console.error("Error loading dashboard data:", error);
+      // Error loading dashboard data
     } finally {
       setIsLoading(false);
     }

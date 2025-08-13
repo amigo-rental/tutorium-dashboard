@@ -58,7 +58,7 @@ export function middleware(request: NextRequest) {
       }
 
       try {
-        verifyToken(token);
+        verifyToken(token!); // We already checked token exists above
         return NextResponse.next();
       } catch (error) {
         return NextResponse.json(
@@ -79,11 +79,9 @@ export function middleware(request: NextRequest) {
   }
 
   try {
-    verifyToken(token);
-    console.log("Token verified successfully for:", pathname);
+    verifyToken(token!); // We already checked token exists above
     return NextResponse.next();
   } catch (error) {
-    console.log("Token verification failed:", error);
     const loginUrl = new URL("/login", request.url);
     loginUrl.searchParams.set("redirect", pathname);
     return NextResponse.redirect(loginUrl);
