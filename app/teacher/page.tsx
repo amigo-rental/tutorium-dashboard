@@ -1,15 +1,20 @@
 "use client";
 
 import { useState } from "react";
-import { Card, CardBody, CardHeader } from "@heroui/card";
+import { Card, CardBody } from "@heroui/card";
 import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
-import { DatePicker } from "@heroui/date-picker";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter, useDisclosure } from "@heroui/modal";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+  useDisclosure,
+} from "@heroui/modal";
 import { Chip } from "@heroui/chip";
 import { Avatar } from "@heroui/avatar";
-import { Divider } from "@heroui/divider";
 
 interface Recording {
   id: string;
@@ -24,59 +29,61 @@ interface Recording {
 
 export default function TeacherPage() {
   const { isOpen, onOpen, onClose } = useDisclosure();
-  const [editingRecording, setEditingRecording] = useState<Recording | null>(null);
+  const [editingRecording, setEditingRecording] = useState<Recording | null>(
+    null,
+  );
   const [formData, setFormData] = useState({
     lessonType: "",
     groupOrStudent: "" as string | string[],
     date: "",
     youtubeLink: "",
     attachments: [] as File[],
-    message: ""
+    message: "",
   });
 
   // Mock data - in real app this would come from API
   const groups = [
     { id: "1", name: "Группа A1 - Утренняя", students: 6 },
     { id: "2", name: "Группа A2 - Вечерняя", students: 5 },
-    { id: "3", name: "Группа B1 - Интенсив", students: 4 }
+    { id: "3", name: "Группа B1 - Интенсив", students: 4 },
   ];
 
   const students = [
-    { 
-      id: "1", 
-      name: "Елена Гарсия", 
+    {
+      id: "1",
+      name: "Елена Гарсия",
       level: "A2",
       avatar: "ЕГ",
-      email: "elena.garcia@example.com"
+      email: "elena.garcia@example.com",
     },
-    { 
-      id: "2", 
-      name: "Михаил Петров", 
+    {
+      id: "2",
+      name: "Михаил Петров",
       level: "B1",
       avatar: "МП",
-      email: "mikhail.petrov@example.com"
+      email: "mikhail.petrov@example.com",
     },
-    { 
-      id: "3", 
-      name: "Анна Сидорова", 
+    {
+      id: "3",
+      name: "Анна Сидорова",
       level: "A1",
       avatar: "АС",
-      email: "anna.sidorova@example.com"
+      email: "anna.sidorova@example.com",
     },
-    { 
-      id: "4", 
-      name: "Дмитрий Козлов", 
+    {
+      id: "4",
+      name: "Дмитрий Козлов",
       level: "B2",
       avatar: "ДК",
-      email: "dmitry.kozlov@example.com"
+      email: "dmitry.kozlov@example.com",
     },
-    { 
-      id: "5", 
-      name: "Мария Иванова", 
+    {
+      id: "5",
+      name: "Мария Иванова",
       level: "A2",
       avatar: "МИ",
-      email: "maria.ivanova@example.com"
-    }
+      email: "maria.ivanova@example.com",
+    },
   ];
 
   const [recordings, setRecordings] = useState<Recording[]>([
@@ -87,8 +94,9 @@ export default function TeacherPage() {
       date: "2024-01-15",
       youtubeLink: "https://youtube.com/watch?v=abc123",
       attachments: ["grammar_notes.pdf", "vocabulary.pdf"],
-      message: "Отличный урок! Сегодня мы изучили прошедшее время. Домашнее задание: упражнения 1-5 в рабочей тетради.",
-      createdAt: "2024-01-15T10:00:00Z"
+      message:
+        "Отличный урок! Сегодня мы изучили прошедшее время. Домашнее задание: упражнения 1-5 в рабочей тетради.",
+      createdAt: "2024-01-15T10:00:00Z",
     },
     {
       id: "2",
@@ -97,49 +105,54 @@ export default function TeacherPage() {
       date: "2024-01-14",
       youtubeLink: "https://youtube.com/watch?v=def456",
       attachments: ["conversation_practice.pdf"],
-      message: "Индивидуальный урок по разговорной практике. Фокус на произношении и беглости речи.",
-      createdAt: "2024-01-14T14:00:00Z"
-    }
+      message:
+        "Индивидуальный урок по разговорной практике. Фокус на произношении и беглости речи.",
+      createdAt: "2024-01-14T14:00:00Z",
+    },
   ]);
 
-  const handleInputChange = (field: string, value: string | string[] | File[]) => {
-    setFormData(prev => ({
+  const handleInputChange = (
+    field: string,
+    value: string | string[] | File[],
+  ) => {
+    setFormData((prev) => ({
       ...prev,
-      [field]: value
+      [field]: value,
     }));
   };
 
   const handleFileUpload = (e: React.ChangeEvent<HTMLInputElement>) => {
     const files = Array.from(e.target.files || []);
-    setFormData(prev => ({
+
+    setFormData((prev) => ({
       ...prev,
-      attachments: [...prev.attachments, ...files]
+      attachments: [...prev.attachments, ...files],
     }));
   };
 
   const removeAttachment = (index: number) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
-      attachments: prev.attachments.filter((_, i) => i !== index)
+      attachments: prev.attachments.filter((_, i) => i !== index),
     }));
   };
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    
+
     const newRecording: Recording = {
       id: Date.now().toString(),
       lessonType: formData.lessonType as "group" | "individual",
       groupOrStudent: formData.groupOrStudent,
       date: formData.date,
       youtubeLink: formData.youtubeLink,
-      attachments: formData.attachments.map(f => f.name),
+      attachments: formData.attachments.map((f) => f.name),
       message: formData.message,
-      createdAt: new Date().toISOString()
+      createdAt: new Date().toISOString(),
     };
 
-    setRecordings(prev => [newRecording, ...prev]);
-    
+    setRecordings((prev) => [newRecording, ...prev]);
+
     // Reset form
     setFormData({
       lessonType: "",
@@ -147,7 +160,7 @@ export default function TeacherPage() {
       date: "",
       youtubeLink: "",
       attachments: [],
-      message: ""
+      message: "",
     });
   };
 
@@ -159,7 +172,7 @@ export default function TeacherPage() {
       date: recording.date,
       youtubeLink: recording.youtubeLink,
       attachments: [],
-      message: recording.message
+      message: recording.message,
     });
     onOpen();
   };
@@ -167,10 +180,15 @@ export default function TeacherPage() {
   const handleUpdate = () => {
     if (!editingRecording) return;
 
-    const updatedRecordings = recordings.map(r => 
-      r.id === editingRecording.id 
-        ? { ...editingRecording, ...formData, attachments: formData.attachments.map(f => f.name) }
-        : r
+    const updatedRecordings = recordings.map((r) =>
+      r.id === editingRecording.id
+        ? {
+            ...editingRecording,
+            ...formData,
+            lessonType: formData.lessonType as "group" | "individual",
+            attachments: formData.attachments.map((f) => f.name),
+          }
+        : r,
     );
 
     setRecordings(updatedRecordings);
@@ -182,33 +200,47 @@ export default function TeacherPage() {
       date: "",
       youtubeLink: "",
       attachments: [],
-      message: ""
+      message: "",
     });
   };
 
   const formatDate = (dateString: string) => {
-    return new Date(dateString).toLocaleDateString('ru-RU', {
-      day: '2-digit',
-      month: '2-digit',
-      year: 'numeric'
+    return new Date(dateString).toLocaleDateString("ru-RU", {
+      day: "2-digit",
+      month: "2-digit",
+      year: "numeric",
     });
   };
 
   const getSelectedKeys = () => {
-    if (formData.lessonType === "individual" && Array.isArray(formData.groupOrStudent)) {
+    if (
+      formData.lessonType === "individual" &&
+      Array.isArray(formData.groupOrStudent)
+    ) {
       return formData.groupOrStudent;
-    } else if (typeof formData.groupOrStudent === "string" && formData.groupOrStudent) {
+    } else if (
+      typeof formData.groupOrStudent === "string" &&
+      formData.groupOrStudent
+    ) {
       return [formData.groupOrStudent];
     }
+
     return [];
   };
 
   const getDisplayValue = () => {
-    if (formData.lessonType === "individual" && Array.isArray(formData.groupOrStudent)) {
+    if (
+      formData.lessonType === "individual" &&
+      Array.isArray(formData.groupOrStudent)
+    ) {
       return formData.groupOrStudent;
-    } else if (typeof formData.groupOrStudent === "string" && formData.groupOrStudent) {
+    } else if (
+      typeof formData.groupOrStudent === "string" &&
+      formData.groupOrStudent
+    ) {
       return [formData.groupOrStudent];
     }
+
     return [];
   };
 
@@ -216,67 +248,100 @@ export default function TeacherPage() {
     <div className="min-h-screen bg-white lg:ml-4 xl:ml-0">
       {/* Hero Section */}
       <div className="pt-12 mb-8">
-        <h1 className="text-5xl font-bold text-black tracking-tight">Загрузка записей уроков 📚</h1>
-        <p className="text-black/70 text-xl font-medium mt-2">Добавляйте записи уроков для групп и индивидуальных студентов</p>
+        <h1 className="text-5xl font-bold text-black tracking-tight">
+          Загрузка записей уроков 📚
+        </h1>
+        <p className="text-black/70 text-xl font-medium mt-2">
+          Добавляйте записи уроков для групп и индивидуальных студентов
+        </p>
       </div>
 
       {/* Upload Form */}
       <div className="bg-gradient-to-br from-[#007EFB]/5 via-[#EE7A3F]/5 to-[#FDD130]/5 border border-[#007EFB]/20 rounded-3xl p-8 mb-8 relative overflow-hidden">
-        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#007EFB]/10 to-[#EE7A3F]/10 rounded-full -translate-y-8 translate-x-8"></div>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#007EFB]/10 to-[#EE7A3F]/10 rounded-full -translate-y-8 translate-x-8" />
         <div className="relative z-10">
           <div className="flex items-center gap-3 mb-8">
             <div className="p-3 bg-[#007EFB]/10 rounded-2xl">
-              <svg className="w-7 h-7 text-[#007EFB]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+              <svg
+                className="w-7 h-7 text-[#007EFB]"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                />
               </svg>
             </div>
             <div>
-              <h2 className="font-bold text-3xl text-black">Новая запись урока</h2>
-              <p className="text-black/70 font-medium text-base">Заполните форму для загрузки записи</p>
+              <h2 className="font-bold text-3xl text-black">
+                Новая запись урока
+              </h2>
+              <p className="text-black/70 font-medium text-base">
+                Заполните форму для загрузки записи
+              </p>
             </div>
           </div>
 
-          <form onSubmit={handleSubmit} className="space-y-6">
+          <form className="space-y-6" onSubmit={handleSubmit}>
             {/* Lesson Type and Group/Student Selection */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <div>
                 <Select
+                  classNames={{
+                    label: "font-bold text-black",
+                    trigger:
+                      "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                    value: "font-medium text-black",
+                  }}
                   label="Тип урока"
                   placeholder="Выберите тип урока"
-                  selectedKeys={formData.lessonType ? [formData.lessonType] : []}
+                  selectedKeys={
+                    formData.lessonType ? [formData.lessonType] : []
+                  }
                   onSelectionChange={(keys) => {
                     const selected = Array.from(keys)[0] as string;
+
                     handleInputChange("lessonType", selected);
                     handleInputChange("groupOrStudent", "");
                   }}
-                  classNames={{
-                    label: "font-bold text-black",
-                    trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
-                    value: "font-medium text-black"
-                  }}
                 >
-                  <SelectItem key="group" textValue="Групповой урок">Групповой урок</SelectItem>
-                  <SelectItem key="individual" textValue="Индивидуальный урок">Индивидуальный урок</SelectItem>
+                  <SelectItem key="group" textValue="Групповой урок">
+                    Групповой урок
+                  </SelectItem>
+                  <SelectItem key="individual" textValue="Индивидуальный урок">
+                    Индивидуальный урок
+                  </SelectItem>
                 </Select>
               </div>
 
               <div>
                 {formData.lessonType === "group" ? (
                   <Select
-                    label="Группа"
-                    placeholder="Выберите группу"
-                    selectedKeys={typeof formData.groupOrStudent === "string" && formData.groupOrStudent ? [formData.groupOrStudent] : []}
-                    onSelectionChange={(keys) => {
-                      const selected = Array.from(keys)[0] as string;
-                      handleInputChange("groupOrStudent", selected);
-                    }}
                     classNames={{
                       label: "font-bold text-black",
-                      trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
-                      value: "font-medium text-black"
+                      trigger:
+                        "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                      value: "font-medium text-black",
+                    }}
+                    label="Группа"
+                    placeholder="Выберите группу"
+                    selectedKeys={
+                      typeof formData.groupOrStudent === "string" &&
+                      formData.groupOrStudent
+                        ? [formData.groupOrStudent]
+                        : []
+                    }
+                    onSelectionChange={(keys) => {
+                      const selected = Array.from(keys)[0] as string;
+
+                      handleInputChange("groupOrStudent", selected);
                     }}
                   >
-                    {groups.map(group => (
+                    {groups.map((group) => (
                       <SelectItem key={group.name} textValue={group.name}>
                         {group.name} ({group.students} студентов)
                       </SelectItem>
@@ -284,48 +349,54 @@ export default function TeacherPage() {
                   </Select>
                 ) : formData.lessonType === "individual" ? (
                   <Select
-                    label="Студенты"
-                    placeholder="Выберите студентов"
-                    isMultiline={true}
-                    items={students}
-                    selectedKeys={getSelectedKeys()}
-                    onSelectionChange={(keys) => {
-                      const selected = Array.from(keys) as string[];
-                      handleInputChange("groupOrStudent", selected);
-                    }}
-                                          renderValue={(items) => {
-                        return (
-                          <div className="flex flex-wrap gap-2">
-                            {items.map((item) => (
-                              <Chip key={item.key} variant="flat" color="primary">
-                                {item.data?.name || item.key}
-                              </Chip>
-                            ))}
-                          </div>
-                        );
-                      }}
-                    selectionMode="multiple"
                     classNames={{
                       label: "font-bold text-black",
-                      trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none min-h-12 py-2",
-                      value: "font-medium text-black"
+                      trigger:
+                        "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none min-h-12 py-2",
+                      value: "font-medium text-black",
+                    }}
+                    isMultiline={true}
+                    items={students}
+                    label="Студенты"
+                    placeholder="Выберите студентов"
+                    renderValue={(items) => {
+                      return (
+                        <div className="flex flex-wrap gap-2">
+                          {items.map((item) => (
+                            <Chip key={item.key} color="primary" variant="flat">
+                              {item.data?.name || item.key}
+                            </Chip>
+                          ))}
+                        </div>
+                      );
+                    }}
+                    selectedKeys={getSelectedKeys()}
+                    selectionMode="multiple"
+                    onSelectionChange={(keys) => {
+                      const selected = Array.from(keys) as string[];
+
+                      handleInputChange("groupOrStudent", selected);
                     }}
                   >
                     {(student) => (
                       <SelectItem key={student.name} textValue={student.name}>
                         <div className="flex gap-2 items-center">
-                          <Avatar 
-                            alt={student.name} 
-                            className="shrink-0" 
-                            size="sm" 
-                            name={student.avatar}
+                          <Avatar
+                            alt={student.name}
+                            className="shrink-0"
                             classNames={{
-                              base: "bg-[#007EFB] text-white"
+                              base: "bg-[#007EFB] text-white",
                             }}
+                            name={student.avatar}
+                            size="sm"
                           />
                           <div className="flex flex-col">
-                            <span className="text-small font-medium">{student.name}</span>
-                            <span className="text-tiny text-default-400">{student.email}</span>
+                            <span className="text-small font-medium">
+                              {student.name}
+                            </span>
+                            <span className="text-tiny text-default-400">
+                              {student.email}
+                            </span>
                           </div>
                         </div>
                       </SelectItem>
@@ -338,53 +409,73 @@ export default function TeacherPage() {
             {/* Date and YouTube Link */}
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               <Input
-                type="date"
-                label="Дата урока"
-                placeholder="Выберите дату"
-                value={formData.date}
-                onChange={(e) => handleInputChange("date", e.target.value)}
-                variant="bordered"
                 classNames={{
                   label: "font-bold text-black",
                   input: "font-medium text-black",
-                  inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none"
+                  inputWrapper:
+                    "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
                 }}
+                label="Дата урока"
+                placeholder="Выберите дату"
+                type="date"
+                value={formData.date}
+                variant="bordered"
+                onChange={(e) => handleInputChange("date", e.target.value)}
               />
 
               <Input
-                type="url"
-                label="Ссылка на YouTube"
-                placeholder="https://youtube.com/watch?v=..."
-                value={formData.youtubeLink}
-                onChange={(e) => handleInputChange("youtubeLink", e.target.value)}
-                variant="bordered"
                 classNames={{
                   label: "font-bold text-black",
                   input: "font-medium text-black",
-                  inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none"
+                  inputWrapper:
+                    "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
                 }}
+                label="Ссылка на YouTube"
+                placeholder="https://youtube.com/watch?v=..."
+                type="url"
+                value={formData.youtubeLink}
+                variant="bordered"
+                onChange={(e) =>
+                  handleInputChange("youtubeLink", e.target.value)
+                }
               />
             </div>
 
             {/* File Upload */}
             <div>
-              <label className="block text-black font-bold text-sm mb-2">Прикрепленные файлы</label>
+              <label htmlFor="file-upload" className="block text-black font-bold text-sm mb-2">
+                Прикрепленные файлы
+              </label>
               <div className="border-2 border-dashed border-slate-300 rounded-2xl p-6 text-center bg-white">
                 <input
-                  type="file"
                   multiple
-                  onChange={handleFileUpload}
                   className="hidden"
                   id="file-upload"
+                  type="file"
+                  onChange={handleFileUpload}
                 />
-                <label htmlFor="file-upload" className="cursor-pointer">
+                <label className="cursor-pointer" htmlFor="file-upload">
                   <div className="text-slate-500 mb-2">
-                    <svg className="w-8 h-8 mx-auto mb-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12" />
+                    <svg
+                      className="w-8 h-8 mx-auto mb-2"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                      />
                     </svg>
                   </div>
-                  <p className="text-black font-medium">Нажмите для загрузки файлов</p>
-                  <p className="text-black/60 text-sm">или перетащите файлы сюда</p>
+                  <p className="text-black font-medium">
+                    Нажмите для загрузки файлов
+                  </p>
+                  <p className="text-black/60 text-sm">
+                    или перетащите файлы сюда
+                  </p>
                 </label>
               </div>
 
@@ -392,17 +483,32 @@ export default function TeacherPage() {
               {formData.attachments.length > 0 && (
                 <div className="mt-4 space-y-2">
                   {formData.attachments.map((file, index) => (
-                    <div key={index} className="flex items-center justify-between bg-white rounded-xl p-3 border border-slate-200/60">
+                    <div
+                      key={index}
+                      className="flex items-center justify-between bg-white rounded-xl p-3 border border-slate-200/60"
+                    >
                       <div className="flex items-center gap-3">
-                        <svg className="w-5 h-5 text-slate-600" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+                        <svg
+                          className="w-5 h-5 text-slate-600"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                          />
                         </svg>
-                        <span className="text-black font-medium text-sm">{file.name}</span>
+                        <span className="text-black font-medium text-sm">
+                          {file.name}
+                        </span>
                       </div>
                       <Button
+                        className="text-red-600 hover:bg-red-50"
                         size="sm"
                         variant="light"
-                        className="text-red-600 hover:bg-red-50"
                         onClick={() => removeAttachment(index)}
                       >
                         Удалить
@@ -415,26 +521,39 @@ export default function TeacherPage() {
 
             {/* Message */}
             <div>
-              <label className="block text-black font-bold text-sm mb-2">Сообщение к уроку</label>
+              <label htmlFor="message-textarea" className="block text-black font-bold text-sm mb-2">
+                Сообщение к уроку
+              </label>
               <textarea
-                placeholder="Опишите, что было изучено на уроке, домашнее задание и другие важные моменты..."
-                value={formData.message}
-                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleInputChange("message", e.target.value)}
+                id="message-textarea"
                 className="w-full p-3 border border-slate-200/60 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-[#007EFB] focus:border-transparent bg-white font-medium text-black"
+                placeholder="Опишите, что было изучено на уроке, домашнее задание и другие важные моменты..."
                 rows={4}
+                value={formData.message}
+                onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                  handleInputChange("message", e.target.value)
+                }
               />
-              <p className="text-black/60 text-sm mt-2">Поддерживаются абзацы и форматирование</p>
+              <p className="text-black/60 text-sm mt-2">
+                Поддерживаются абзацы и форматирование
+              </p>
             </div>
 
             {/* Submit Button */}
             <div className="flex justify-end">
               <Button
-                type="submit"
                 className="bg-[#007EFB] text-white hover:bg-[#007EFB]/90 font-bold px-8 py-3"
-                disabled={!formData.lessonType || 
-                  (formData.lessonType === "group" && !formData.groupOrStudent) ||
-                  (formData.lessonType === "individual" && (!Array.isArray(formData.groupOrStudent) || formData.groupOrStudent.length === 0)) ||
-                  !formData.date || !formData.youtubeLink}
+                disabled={
+                  !formData.lessonType ||
+                  (formData.lessonType === "group" &&
+                    !formData.groupOrStudent) ||
+                  (formData.lessonType === "individual" &&
+                    (!Array.isArray(formData.groupOrStudent) ||
+                      formData.groupOrStudent.length === 0)) ||
+                  !formData.date ||
+                  !formData.youtubeLink
+                }
+                type="submit"
               >
                 Загрузить запись
               </Button>
@@ -445,45 +564,75 @@ export default function TeacherPage() {
 
       {/* Recent Recordings */}
       <div>
-        <h2 className="text-3xl font-bold text-black mb-6">Недавно загруженные записи</h2>
+        <h2 className="text-3xl font-bold text-black mb-6">
+          Недавно загруженные записи
+        </h2>
         <div className="space-y-4">
           {recordings.map((recording) => (
-            <Card key={recording.id} className="border border-slate-200/60 rounded-2xl shadow-sm hover:shadow-md transition-shadow">
+            <Card
+              key={recording.id}
+              className="border border-slate-200/60 rounded-2xl shadow-sm hover:shadow-md transition-shadow"
+            >
               <CardBody className="p-6">
                 <div className="flex items-start justify-between">
                   <div className="flex-1">
                     <div className="flex items-center gap-3 mb-3">
-                      <Chip 
-                        size="sm" 
-                        variant="flat" 
-                        color={recording.lessonType === "group" ? "primary" : "secondary"}
+                      <Chip
                         className="font-semibold"
+                        color={
+                          recording.lessonType === "group"
+                            ? "primary"
+                            : "secondary"
+                        }
+                        size="sm"
+                        variant="flat"
                       >
-                        {recording.lessonType === "group" ? "Группа" : "Индивидуально"}
+                        {recording.lessonType === "group"
+                          ? "Группа"
+                          : "Индивидуально"}
                       </Chip>
                       <div className="flex items-center gap-2">
                         {Array.isArray(recording.groupOrStudent) ? (
                           recording.groupOrStudent.map((student, index) => (
-                            <Chip key={index} size="sm" variant="flat" color="primary">
+                            <Chip
+                              key={index}
+                              color="primary"
+                              size="sm"
+                              variant="flat"
+                            >
                               {student}
                             </Chip>
                           ))
                         ) : (
-                          <span className="text-black font-semibold">{recording.groupOrStudent}</span>
+                          <span className="text-black font-semibold">
+                            {recording.groupOrStudent}
+                          </span>
                         )}
                       </div>
-                      <span className="text-black/60 font-medium">{formatDate(recording.date)}</span>
+                      <span className="text-black/60 font-medium">
+                        {formatDate(recording.date)}
+                      </span>
                     </div>
-                    
+
                     <div className="mb-3">
-                      <a 
-                        href={recording.youtubeLink} 
-                        target="_blank" 
-                        rel="noopener noreferrer"
+                      <a
                         className="text-[#007EFB] hover:text-[#007EFB]/80 font-medium inline-flex items-center gap-2"
+                        href={recording.youtubeLink}
+                        rel="noopener noreferrer"
+                        target="_blank"
                       >
-                        <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                          />
                         </svg>
                         Смотреть запись на YouTube
                       </a>
@@ -491,10 +640,17 @@ export default function TeacherPage() {
 
                     {recording.attachments.length > 0 && (
                       <div className="mb-3">
-                        <p className="text-black/70 font-medium text-sm mb-2">Прикрепленные файлы:</p>
+                        <p className="text-black/70 font-medium text-sm mb-2">
+                          Прикрепленные файлы:
+                        </p>
                         <div className="flex flex-wrap gap-2">
                           {recording.attachments.map((file, index) => (
-                            <Chip key={index} size="sm" variant="flat" className="bg-slate-100 text-slate-700 font-medium">
+                            <Chip
+                              key={index}
+                              className="bg-slate-100 text-slate-700 font-medium"
+                              size="sm"
+                              variant="flat"
+                            >
                               {file}
                             </Chip>
                           ))}
@@ -504,14 +660,16 @@ export default function TeacherPage() {
 
                     {recording.message && (
                       <div className="bg-slate-50 rounded-xl p-4 border border-slate-200/50">
-                        <p className="text-black font-medium whitespace-pre-wrap">{recording.message}</p>
+                        <p className="text-black font-medium whitespace-pre-wrap">
+                          {recording.message}
+                        </p>
                       </div>
                     )}
                   </div>
 
                   <Button
-                    variant="light"
                     className="text-[#007EFB] hover:bg-[#007EFB]/10 font-medium"
+                    variant="light"
                     onClick={() => handleEdit(recording)}
                   >
                     Редактировать
@@ -524,7 +682,7 @@ export default function TeacherPage() {
       </div>
 
       {/* Edit Modal */}
-      <Modal isOpen={isOpen} onClose={onClose} size="4xl">
+      <Modal isOpen={isOpen} size="4xl" onClose={onClose}>
         <ModalContent className="bg-white border border-slate-200/60 rounded-3xl">
           <ModalHeader className="text-black font-bold text-2xl pb-2">
             Редактировать запись урока
@@ -535,42 +693,60 @@ export default function TeacherPage() {
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <div>
                   <Select
+                    classNames={{
+                      label: "font-bold text-black",
+                      trigger:
+                        "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                      value: "font-medium text-black",
+                    }}
                     label="Тип урока"
                     placeholder="Выберите тип урока"
-                    selectedKeys={formData.lessonType ? [formData.lessonType] : []}
+                    selectedKeys={
+                      formData.lessonType ? [formData.lessonType] : []
+                    }
                     onSelectionChange={(keys) => {
                       const selected = Array.from(keys)[0] as string;
+
                       handleInputChange("lessonType", selected);
                       handleInputChange("groupOrStudent", "");
                     }}
-                    classNames={{
-                      label: "font-bold text-black",
-                      trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
-                      value: "font-medium text-black"
-                    }}
                   >
-                    <SelectItem key="group" textValue="Групповой урок">Групповой урок</SelectItem>
-                    <SelectItem key="individual" textValue="Индивидуальный урок">Индивидуальный урок</SelectItem>
+                    <SelectItem key="group" textValue="Групповой урок">
+                      Групповой урок
+                    </SelectItem>
+                    <SelectItem
+                      key="individual"
+                      textValue="Индивидуальный урок"
+                    >
+                      Индивидуальный урок
+                    </SelectItem>
                   </Select>
                 </div>
 
                 <div>
                   {formData.lessonType === "group" ? (
                     <Select
-                      label="Группа"
-                      placeholder="Выберите группу"
-                      selectedKeys={typeof formData.groupOrStudent === "string" && formData.groupOrStudent ? [formData.groupOrStudent] : []}
-                      onSelectionChange={(keys) => {
-                        const selected = Array.from(keys)[0] as string;
-                        handleInputChange("groupOrStudent", selected);
-                      }}
                       classNames={{
                         label: "font-bold text-black",
-                        trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
-                        value: "font-medium text-black"
+                        trigger:
+                          "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                        value: "font-medium text-black",
+                      }}
+                      label="Группа"
+                      placeholder="Выберите группу"
+                      selectedKeys={
+                        typeof formData.groupOrStudent === "string" &&
+                        formData.groupOrStudent
+                          ? [formData.groupOrStudent]
+                          : []
+                      }
+                      onSelectionChange={(keys) => {
+                        const selected = Array.from(keys)[0] as string;
+
+                        handleInputChange("groupOrStudent", selected);
                       }}
                     >
-                      {groups.map(group => (
+                      {groups.map((group) => (
                         <SelectItem key={group.name} textValue={group.name}>
                           {group.name} ({group.students} студентов)
                         </SelectItem>
@@ -578,48 +754,58 @@ export default function TeacherPage() {
                     </Select>
                   ) : formData.lessonType === "individual" ? (
                     <Select
-                      label="Студенты"
-                      placeholder="Выберите студентов"
+                      classNames={{
+                        label: "font-bold text-black",
+                        trigger:
+                          "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none min-h-12 py-2",
+                        value: "font-medium text-black",
+                      }}
                       isMultiline={true}
                       items={students}
-                      selectedKeys={getSelectedKeys()}
-                      onSelectionChange={(keys) => {
-                        const selected = Array.from(keys) as string[];
-                        handleInputChange("groupOrStudent", selected);
-                      }}
+                      label="Студенты"
+                      placeholder="Выберите студентов"
                       renderValue={(items) => {
                         return (
                           <div className="flex flex-wrap gap-2">
                             {items.map((item) => (
-                              <Chip key={item.key} variant="flat" color="primary">
+                              <Chip
+                                key={item.key}
+                                color="primary"
+                                variant="flat"
+                              >
                                 {item.data?.name || item.key}
                               </Chip>
                             ))}
                           </div>
                         );
                       }}
+                      selectedKeys={getSelectedKeys()}
                       selectionMode="multiple"
-                      classNames={{
-                        label: "font-bold text-black",
-                        trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none min-h-12 py-2",
-                        value: "font-medium text-black"
+                      onSelectionChange={(keys) => {
+                        const selected = Array.from(keys) as string[];
+
+                        handleInputChange("groupOrStudent", selected);
                       }}
                     >
                       {(student) => (
                         <SelectItem key={student.name} textValue={student.name}>
                           <div className="flex gap-2 items-center">
-                            <Avatar 
-                              alt={student.name} 
-                              className="shrink-0" 
-                              size="sm" 
-                              name={student.avatar}
+                            <Avatar
+                              alt={student.name}
+                              className="shrink-0"
                               classNames={{
-                                base: "bg-[#007EFB] text-white"
+                                base: "bg-[#007EFB] text-white",
                               }}
+                              name={student.avatar}
+                              size="sm"
                             />
                             <div className="flex flex-col">
-                              <span className="text-small font-medium">{student.name}</span>
-                              <span className="text-tiny text-default-400">{student.email}</span>
+                              <span className="text-small font-medium">
+                                {student.name}
+                              </span>
+                              <span className="text-tiny text-default-400">
+                                {student.email}
+                              </span>
                             </div>
                           </div>
                         </SelectItem>
@@ -632,43 +818,52 @@ export default function TeacherPage() {
               {/* Date and YouTube Link */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Input
-                  type="date"
-                  label="Дата урока"
-                  placeholder="Выберите дату"
-                  value={formData.date}
-                  onChange={(e) => handleInputChange("date", e.target.value)}
-                  variant="bordered"
                   classNames={{
                     label: "font-bold text-black",
                     input: "font-medium text-black",
-                    inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none"
+                    inputWrapper:
+                      "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
                   }}
+                  label="Дата урока"
+                  placeholder="Выберите дату"
+                  type="date"
+                  value={formData.date}
+                  variant="bordered"
+                  onChange={(e) => handleInputChange("date", e.target.value)}
                 />
 
                 <Input
-                  type="url"
-                  label="Ссылка на YouTube"
-                  placeholder="https://youtube.com/watch?v=..."
-                  value={formData.youtubeLink}
-                  onChange={(e) => handleInputChange("youtubeLink", e.target.value)}
-                  variant="bordered"
                   classNames={{
                     label: "font-bold text-black",
                     input: "font-medium text-black",
-                    inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none"
+                    inputWrapper:
+                      "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
                   }}
+                  label="Ссылка на YouTube"
+                  placeholder="https://youtube.com/watch?v=..."
+                  type="url"
+                  value={formData.youtubeLink}
+                  variant="bordered"
+                  onChange={(e) =>
+                    handleInputChange("youtubeLink", e.target.value)
+                  }
                 />
               </div>
 
               {/* Message */}
               <div>
-                <label className="block text-black font-bold text-sm mb-2">Сообщение к уроку</label>
+                <label htmlFor="edit-message-textarea" className="block text-black font-bold text-sm mb-2">
+                  Сообщение к уроку
+                </label>
                 <textarea
-                  placeholder="Опишите, что было изучено на уроке, домашнее задание и другие важные моменты..."
-                  value={formData.message}
-                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) => handleInputChange("message", e.target.value)}
+                  id="edit-message-textarea"
                   className="w-full p-3 border border-slate-200/60 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-[#007EFB] focus:border-transparent bg-white font-medium text-black"
+                  placeholder="Опишите, что было изучено на уроке, домашнее задание и другие важные моменты..."
                   rows={4}
+                  value={formData.message}
+                  onChange={(e: React.ChangeEvent<HTMLTextAreaElement>) =>
+                    handleInputChange("message", e.target.value)
+                  }
                 />
               </div>
             </form>
@@ -677,7 +872,7 @@ export default function TeacherPage() {
             <Button variant="light" onClick={onClose}>
               Отмена
             </Button>
-            <Button 
+            <Button
               className="bg-[#007EFB] text-white hover:bg-[#007EFB]/90 font-bold"
               onClick={handleUpdate}
             >
