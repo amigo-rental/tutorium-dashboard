@@ -228,3 +228,4 @@ For support and questions:
 ---
 
 **Built with ❤️ for Tutorium - Empowering the next generation of Spanish learners**
+# Build fixes applied - Wed Aug 13 22:38:38 CEST 2025
