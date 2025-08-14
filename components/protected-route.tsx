@@ -8,17 +8,18 @@ import { useAuth } from "@/lib/auth/context";
 interface ProtectedRouteProps {
   children: React.ReactNode;
   fallback?: React.ReactNode;
+  requiredRole?: string;
 }
 
-export function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
-  const { user, token, isLoading } = useAuth();
+export function ProtectedRoute({ children, fallback, requiredRole }: ProtectedRouteProps) {
+  const { user, isLoading } = useAuth();
   const router = useRouter();
 
   useEffect(() => {
-    if (!isLoading && !token) {
+    if (!isLoading && !user) {
       router.push("/login");
     }
-  }, [token, isLoading, router]);
+  }, [user, isLoading, router]);
 
   if (isLoading) {
     return (
@@ -33,8 +34,21 @@ export function ProtectedRoute({ children, fallback }: ProtectedRouteProps) {
     );
   }
 
-  if (!token || !user) {
+  if (!user) {
     return null; // Will redirect to login
+  }
+
+  // Check role-based access if required
+  if (requiredRole && user.role !== requiredRole) {
+    // Redirect to appropriate page based on user role
+    if (user.role === "ADMIN") {
+      router.push("/admin");
+    } else if (user.role === "TEACHER") {
+      router.push("/tutor");
+    } else {
+      router.push("/dashboard");
+    }
+    return null;
   }
 
   return <>{children}</>;

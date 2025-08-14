@@ -7,61 +7,20 @@ interface ApiResponse<T> {
 }
 
 class ApiClient {
-  private token: string | null = null;
-
-  setToken(token: string) {
-    this.token = token;
-    if (typeof window !== "undefined") {
-      localStorage.setItem("auth_token", token);
-      // Also set as cookie for middleware access
-      document.cookie = `token=${token}; path=/; max-age=${60 * 60 * 24 * 7}; SameSite=Lax; Secure=${window.location.protocol === 'https:'}`;
-    }
-  }
-
-  getToken(): string | null {
-    if (!this.token && typeof window !== "undefined") {
-      // Try localStorage first
-      this.token = localStorage.getItem("auth_token");
-      if (!this.token) {
-        // Fallback to cookie
-        const cookies = document.cookie.split(';');
-        const tokenCookie = cookies.find(cookie => cookie.trim().startsWith('token='));
-        if (tokenCookie) {
-          this.token = tokenCookie.split('=')[1];
-        }
-      }
-    }
-
-    return this.token;
-  }
-
-  clearToken() {
-    this.token = null;
-    if (typeof window !== "undefined") {
-      localStorage.removeItem("auth_token");
-      // Clear cookie
-      document.cookie = "token=; path=/; expires=Thu, 01 Jan 1970 00:00:00 GMT";
-    }
-  }
-
   private async request<T>(
     endpoint: string,
     options: RequestInit = {},
   ): Promise<ApiResponse<T>> {
-    const token = this.getToken();
     const headers: Record<string, string> = {
       "Content-Type": "application/json",
       ...(options.headers as Record<string, string>),
     };
 
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-
     try {
       const response = await fetch(`${API_BASE}${endpoint}`, {
         ...options,
         headers,
+        credentials: "include", // Include cookies in requests
       });
 
       // Check if response is ok before trying to parse JSON
@@ -71,7 +30,6 @@ class ApiClient {
 
         try {
           const errorData = await response.json();
-
           errorMessage = errorData.error || errorMessage;
         } catch {
           // If JSON parsing fails, try to get text
@@ -99,7 +57,6 @@ class ApiClient {
       return { data, message: data.message };
     } catch (error) {
       console.error("API request failed:", error);
-
       return { error: "Network error occurred" };
     }
   }
@@ -109,6 +66,12 @@ class ApiClient {
     return this.request("/auth/login", {
       method: "POST",
       body: JSON.stringify({ email, password }),
+    });
+  }
+
+  async logout() {
+    return this.request("/auth/logout", {
+      method: "POST",
     });
   }
 
@@ -127,6 +90,10 @@ class ApiClient {
   // Groups
   async getGroups() {
     return this.request("/groups");
+  }
+
+  async getAllGroups() {
+    return this.request("/groups/all");
   }
 
   async createGroup(groupData: {
@@ -188,17 +155,10 @@ class ApiClient {
       formData.append("files", file);
     });
 
-    const token = this.getToken();
-    const headers: Record<string, string> = {};
-
-    if (token) {
-      headers.Authorization = `Bearer ${token}`;
-    }
-
     try {
       const response = await fetch(`${API_BASE}/uploads`, {
         method: "POST",
-        headers,
+        credentials: "include", // Include cookies in requests
         body: formData,
       });
 
@@ -211,7 +171,6 @@ class ApiClient {
       return { data, message: data.message };
     } catch (error) {
       console.error("File upload failed:", error);
-
       return { error: "Upload failed" };
     }
   }
@@ -230,13 +189,27 @@ class ApiClient {
   }
 
   // User Profile
+  async getUser() {
+    return this.request("/users/profile");
+  }
+
   async updateUser(userData: {
     firstName: string;
     lastName: string;
     email: string;
     level?: string;
+    id?: string;
+    role?: string;
+    groupId?: string;
+    isActive?: boolean;
+    courseIds?: string[];
   }) {
-    return this.request("/users/update", {
+    // If ID is provided, use admin endpoint, otherwise use user profile endpoint
+    const endpoint = userData.id
+      ? `/admin/users/${userData.id}`
+      : "/users/update";
+
+    return this.request(endpoint, {
       method: "PUT",
       body: JSON.stringify(userData),
     });
@@ -261,6 +234,99 @@ class ApiClient {
 
   async deleteFeedback(feedbackId: string) {
     return this.request(`/feedback?id=${feedbackId}`, {
+      method: "DELETE",
+    });
+  }
+
+  // Attendance methods
+  async createAttendance(data: {
+    lessonId: string;
+    attendance: {
+      studentId: string;
+      status: "PRESENT" | "ABSENT" | "LATE" | "EXCUSED";
+      notes?: string;
+    }[];
+  }) {
+    return this.request("/attendance", {
+      method: "POST",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async updateAttendance(
+    attendanceId: string,
+    data: {
+      status: "PRESENT" | "ABSENT" | "LATE" | "EXCUSED";
+      notes?: string;
+    },
+  ) {
+    return this.request(`/attendance/${attendanceId}`, {
+      method: "PUT",
+      body: JSON.stringify(data),
+    });
+  }
+
+  async getLessonAttendance(lessonId: string) {
+    return this.request(`/attendance/lesson/${lessonId}`);
+  }
+
+  async getStudentAttendance(
+    studentId: string,
+    startDate?: string,
+    endDate?: string,
+  ) {
+    const params = new URLSearchParams();
+
+    if (startDate) params.append("startDate", startDate);
+    if (endDate) params.append("endDate", endDate);
+
+    return this.request(
+      `/attendance/student/${studentId}?${params.toString()}`,
+    );
+  }
+
+  // Admin methods
+  async getAllUsers() {
+    return this.request("/admin/users");
+  }
+
+  async createUser(userData: {
+    name: string;
+    email: string;
+    role: "ADMIN" | "TEACHER" | "STUDENT";
+    groupId?: string;
+    isActive: boolean;
+    level?: string;
+  }) {
+    return this.request("/admin/users", {
+      method: "POST",
+      body: JSON.stringify(userData),
+    });
+  }
+
+  async deleteUser(userId: string) {
+    return this.request(`/admin/users/${userId}`, {
+      method: "DELETE",
+    });
+  }
+
+  async getAdminStats() {
+    return this.request("/admin/stats");
+  }
+
+  async getCourses() {
+    return this.request("/courses");
+  }
+
+  async assignCourseToUser(userId: string, courseId: string) {
+    return this.request(`/admin/users/${userId}/courses`, {
+      method: "POST",
+      body: JSON.stringify({ courseId }),
+    });
+  }
+
+  async removeCourseFromUser(userId: string, courseId: string) {
+    return this.request(`/admin/users/${userId}/courses/${courseId}`, {
       method: "DELETE",
     });
   }

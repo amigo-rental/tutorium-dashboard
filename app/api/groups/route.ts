@@ -3,28 +3,50 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { requireRole } from "@/lib/auth/middleware";
 
-// GET /api/groups - Get all groups for a teacher
+// GET /api/groups - Get groups (all for admin, own for teacher, all for students for enrollment)
 export async function GET(request: NextRequest) {
   try {
-    const authCheck = await requireRole(["ADMIN", "TEACHER"])(request);
+    const authCheck = await requireRole(["ADMIN", "TEACHER", "STUDENT"])(
+      request,
+    );
 
     if (authCheck instanceof NextResponse) return authCheck;
 
     const authenticatedRequest = authCheck as any;
-    const teacherId = authenticatedRequest.user.userId;
+    const userId = authenticatedRequest.user.userId;
+    const userRole = authenticatedRequest.user.role;
+
+    // For students and teachers, show all groups so they can browse and potentially enroll
+    // Admins see all groups, Teachers see all groups (for potential student placement), Students see all groups (for enrollment)
+    const whereClause = { isActive: true };
 
     const groups = await prisma.group.findMany({
-      where: {
-        teacherId,
-        isActive: true,
-      },
+      where: whereClause,
       include: {
+        teacher: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+          },
+        },
+        course: {
+          select: {
+            id: true,
+            name: true,
+            level: true,
+            description: true,
+          },
+        },
         students: {
           select: {
             id: true,
             name: true,
             email: true,
             level: true,
+            avatar: true,
+            isActive: true,
+            createdAt: true,
           },
         },
         _count: {
@@ -37,6 +59,15 @@ export async function GET(request: NextRequest) {
         createdAt: "desc",
       },
     });
+
+    console.log(
+      "Groups API: Returning",
+      groups.length,
+      "groups (all active groups) for",
+      userRole,
+      "user:",
+      userId,
+    );
 
     return NextResponse.json(groups);
   } catch (error) {
@@ -59,14 +90,29 @@ export async function POST(request: NextRequest) {
     const authenticatedRequest = authCheck as any;
     const teacherId = authenticatedRequest.user.userId;
 
-    const { name, description, level, maxStudents = 20 } = await request.json();
+    const {
+      name,
+      description,
+      level,
+      maxStudents = 20,
+      courseId,
+    } = await request.json();
 
     // Validation
-    if (!name || !level) {
+    if (!name || !level || !courseId) {
       return NextResponse.json(
-        { error: "Name and level are required" },
+        { error: "Name, level, and courseId are required" },
         { status: 400 },
       );
+    }
+
+    // Check if course exists
+    const course = await prisma.course.findUnique({
+      where: { id: courseId },
+    });
+
+    if (!course) {
+      return NextResponse.json({ error: "Course not found" }, { status: 404 });
     }
 
     // Check if group name already exists for this teacher
@@ -92,8 +138,17 @@ export async function POST(request: NextRequest) {
         level,
         maxStudents,
         teacherId,
+        courseId,
       },
       include: {
+        course: {
+          select: {
+            id: true,
+            name: true,
+            level: true,
+            description: true,
+          },
+        },
         students: {
           select: {
             id: true,

@@ -3,8 +3,9 @@
 import { usePathname } from "next/navigation";
 import { useEffect, useState } from "react";
 
-import { useAuth } from "@/lib/auth/context";
 import { DashboardLayout } from "./dashboard-layout";
+
+import { useAuth } from "@/lib/auth/context";
 
 interface ConditionalLayoutProps {
   children: React.ReactNode;
@@ -12,7 +13,7 @@ interface ConditionalLayoutProps {
 
 export function ConditionalLayout({ children }: ConditionalLayoutProps) {
   const pathname = usePathname();
-  const { token, user, isLoading } = useAuth();
+  const { user, isLoading } = useAuth();
   const [mounted, setMounted] = useState(false);
 
   // Routes that should not have the dashboard layout
@@ -20,7 +21,7 @@ export function ConditionalLayout({ children }: ConditionalLayoutProps) {
 
   // Check if current route is public
   const isPublicRoute = publicRoutes.includes(pathname);
-  const isAuthenticated = token && user;
+  const isAuthenticated = !!user;
 
   // Ensure component is mounted to prevent hydration mismatch
   useEffect(() => {

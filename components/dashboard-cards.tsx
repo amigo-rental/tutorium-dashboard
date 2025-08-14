@@ -75,6 +75,7 @@ export function CourseCard({
 
   const getGradientByProgress = (progress: number) => {
     const flooredProgress = Math.floor(progress);
+
     if (flooredProgress >= 80) return "from-emerald-500 to-teal-600";
     if (flooredProgress >= 60) return "from-blue-500 to-indigo-600";
     if (flooredProgress >= 40) return "from-purple-500 to-pink-600";
@@ -84,6 +85,7 @@ export function CourseCard({
 
   const getBgByProgress = (progress: number) => {
     const flooredProgress = Math.floor(progress);
+
     if (flooredProgress >= 80) return "from-emerald-50 to-teal-50";
     if (flooredProgress >= 60) return "from-blue-50 to-indigo-50";
     if (flooredProgress >= 40) return "from-purple-50 to-pink-50";
@@ -178,7 +180,7 @@ export function CourseCard({
         <div className="mb-6">
           <div className="flex justify-between items-center mb-3">
             <span className="text-slate-800 font-bold text-sm">
-              Course Progress
+              Прогресс курса
             </span>
             <span className="font-semibold text-lg text-slate-900">
               {Math.floor(progressPercent)}%

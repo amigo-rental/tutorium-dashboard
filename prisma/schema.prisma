@@ -19,13 +19,86 @@ model User {
   groupId           String?
   isActive          Boolean     @default(true)
   level             String?
+  
+  // Relations
   groups            Group[]     @relation("TeacherGroups")
-  recordings        Recording[]
   group             Group?      @relation("StudentGroup", fields: [groupId], references: [id])
+  recordings        Recording[]
   studentRecordings Recording[] @relation("StudentRecordings")
   feedbacks         LessonFeedback[] @relation("StudentFeedback")
+  attendance        LessonAttendance[] @relation("StudentAttendance")
+  enrolledCourses   Course[]    @relation("UserEnrollments")
+  createdAssignments Assignment[] @relation("TeacherAssignments")
+  submissions       AssignmentSubmission[]
+  notifications     Notification[]
+  
+  // Profile and preferences
+  bio               String?
+  phone             String?
+  timezone          String?
+  preferences       Json?       // Store user preferences as JSON
+  
+  // Learning progress tracking
+  totalLessons      Int         @default(0)
+  completedLessons  Int         @default(0)
+  averageRating     Float?
+  lastActive        DateTime    @default(now())
 
   @@map("users")
+}
+
+model Course {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  level       String      // A1, A2, B1, B2, C1, C2
+  duration    Int         // Duration in weeks
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  // Additional course metadata
+  thumbnail   String?     // Course thumbnail image URL
+  difficulty  String      // BEGINNER, INTERMEDIATE, ADVANCED
+  category    String?     // Language, Business, Academic, etc.
+  tags        String[]    // Array of tags for searchability
+  
+  // Relations
+  groups      Group[]
+  topics      Topic[]
+  enrollments User[]      @relation("UserEnrollments")
+  
+  // Course statistics
+  totalStudents    Int     @default(0)
+  totalGroups      Int     @default(0)
+  averageRating    Float?
+  completionRate   Float?
+
+  @@map("courses")
+}
+
+model Topic {
+  id          String      @id @default(cuid())
+  name        String
+  description String?
+  order       Int         // Order within the course
+  isActive    Boolean     @default(true)
+  createdAt   DateTime    @default(now())
+  updatedAt   DateTime    @updatedAt
+  
+  // Additional topic metadata
+  estimatedDuration Int?  // Estimated duration in minutes
+  materials         String[] // Array of material URLs
+  objectives        String[] // Learning objectives
+  
+  // Relations
+  courseId    String
+  course      Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
+  
+  // Topic statistics
+  completionRate Float?
+
+  @@map("topics")
 }
 
 model Group {
@@ -37,11 +110,27 @@ model Group {
   isActive    Boolean     @default(true)
   createdAt   DateTime    @default(now())
   updatedAt   DateTime    @updatedAt
+  
+  // Group metadata
+  startDate   DateTime?
+  endDate     DateTime?
+  schedule    Json?       // Store schedule as JSON
+  meetingLink String?     // Video meeting link
+  
+  // Relations
   teacherId   String
+  courseId    String
   teacher     User        @relation("TeacherGroups", fields: [teacherId], references: [id], onDelete: Cascade)
+  course      Course      @relation(fields: [courseId], references: [id], onDelete: Cascade)
   recordings  Recording[]
   students    User[]      @relation("StudentGroup")
-
+  assignments Assignment[]
+  
+  // Group statistics
+  currentStudents Int      @default(0)
+  totalLessons    Int      @default(0)
+  averageRating   Float?
+  
   @@unique([name, teacherId])
   @@map("groups")
 }
@@ -55,13 +144,28 @@ model Recording {
   isPublished Boolean      @default(false)
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
+  
+  // Additional recording metadata
+  title       String?
+  duration    Int?         // Duration in minutes
+  thumbnail   String?      // Thumbnail image URL
+  transcript  String?      // Speech-to-text transcript
+  notes       String?      // Teacher's notes
+  
+  // Relations
   teacherId   String
   groupId     String?
   attachments Attachment[]
   feedbacks   LessonFeedback[]
+  attendance  LessonAttendance[]
   group       Group?       @relation(fields: [groupId], references: [id])
   teacher     User         @relation(fields: [teacherId], references: [id], onDelete: Cascade)
   students    User[]       @relation("StudentRecordings")
+  
+  // Recording statistics
+  viewCount      Int       @default(0)
+  averageRating  Float?
+  totalFeedback  Int       @default(0)
 
   @@map("recordings")
 }
@@ -74,6 +178,12 @@ model Attachment {
   size         Int
   path         String
   createdAt    DateTime  @default(now())
+  
+  // Additional attachment metadata
+  description String?
+  category    String?    // Document, Image, Video, etc.
+  
+  // Relations
   recordingId  String
   recording    Recording @relation(fields: [recordingId], references: [id], onDelete: Cascade)
 
@@ -87,6 +197,12 @@ model LessonFeedback {
   isAnonymous Boolean   @default(false)
   createdAt   DateTime  @default(now())
   updatedAt   DateTime  @updatedAt
+  
+  // Additional feedback metadata
+  helpful     Boolean?  // Was this feedback helpful?
+  category    String?   // Content, Delivery, Technical, etc.
+  
+  // Relations
   studentId   String
   recordingId String
   student     User      @relation("StudentFeedback", fields: [studentId], references: [id], onDelete: Cascade)
@@ -96,6 +212,88 @@ model LessonFeedback {
   @@map("lesson_feedbacks")
 }
 
+model LessonAttendance {
+  id        String           @id @default(cuid())
+  lessonId  String
+  studentId String
+  status    AttendanceStatus
+  notes     String?
+  createdAt DateTime         @default(now())
+  updatedAt DateTime         @updatedAt
+  
+  // Additional attendance metadata
+  joinTime     DateTime?     // When student joined
+  leaveTime    DateTime?     // When student left
+  participation Float?       // Participation score 0-100
+  
+  // Relations
+  lesson    Recording        @relation(fields: [lessonId], references: [id], onDelete: Cascade)
+  student   User             @relation("StudentAttendance", fields: [studentId], references: [id], onDelete: Cascade)
+  
+  @@unique([lessonId, studentId])
+  @@map("lesson_attendance")
+}
+
+// New models for enhanced functionality
+
+model Assignment {
+  id          String    @id @default(cuid())
+  title       String
+  description String?
+  dueDate     DateTime
+  isActive    Boolean   @default(true)
+  createdAt   DateTime  @default(now())
+  updatedAt   DateTime  @updatedAt
+  
+  // Assignment metadata
+  maxScore    Int?
+  weight      Float?    // Weight in final grade
+  type        String    // Homework, Quiz, Project, etc.
+  
+  // Relations
+  teacherId   String
+  groupId     String
+  teacher     User      @relation("TeacherAssignments", fields: [teacherId], references: [id], onDelete: Cascade)
+  group       Group     @relation(fields: [groupId], references: [id], onDelete: Cascade)
+  submissions AssignmentSubmission[]
+  
+  @@map("assignments")
+}
+
+model AssignmentSubmission {
+  id           String    @id @default(cuid())
+  content      String?   // Text submission
+  fileUrl      String?   // File submission URL
+  submittedAt  DateTime  @default(now())
+  score        Float?
+  feedback     String?
+  
+  // Relations
+  assignmentId String
+  studentId    String
+  assignment   Assignment @relation(fields: [assignmentId], references: [id], onDelete: Cascade)
+  student      User       @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  
+  @@unique([assignmentId, studentId])
+  @@map("assignment_submissions")
+}
+
+model Notification {
+  id        String    @id @default(cuid())
+  title     String
+  message   String
+  type      String    // Info, Warning, Success, Error
+  isRead    Boolean   @default(false)
+  createdAt DateTime  @default(now())
+  
+  // Relations
+  userId    String
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  
+  @@map("notifications")
+}
+
+// Enums
 enum UserRole {
   ADMIN
   TEACHER
@@ -105,4 +303,14 @@ enum UserRole {
 enum LessonType {
   GROUP
   INDIVIDUAL
+  ASSIGNMENT
+  QUIZ
+}
+
+enum AttendanceStatus {
+  PRESENT
+  ABSENT
+  LATE
+  EXCUSED
+  PARTIAL
 }

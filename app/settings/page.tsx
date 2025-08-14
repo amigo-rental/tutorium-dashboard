@@ -5,18 +5,24 @@ import { Input } from "@heroui/input";
 import { Button } from "@heroui/button";
 import { Select, SelectItem } from "@heroui/select";
 import { useTheme } from "next-themes";
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 
 import { useAuth } from "@/lib/auth/context";
 import { ProtectedRoute } from "@/components/protected-route";
 import { apiClient } from "@/lib/utils/api";
+import { LEVEL_OPTIONS } from "@/lib/constants/levels";
 
 export default function SettingsPage() {
   const { theme, setTheme } = useTheme();
-  const { user, token } = useAuth();
+  const { user, updateUser, refreshUser } = useAuth();
   const [mounted, setMounted] = useState(false);
   const [isLoading, setIsLoading] = useState(false);
-  const [message, setMessage] = useState<{ type: "success" | "error"; text: string } | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const [message, setMessage] = useState<{
+    type: "success" | "error";
+    text: string;
+  } | null>(null);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   // Form state
   const [formData, setFormData] = useState({
@@ -35,6 +41,7 @@ export default function SettingsPage() {
   useEffect(() => {
     if (user) {
       const nameParts = user.name.split(" ");
+
       setFormData({
         firstName: nameParts[0] || "",
         lastName: nameParts.slice(1).join(" ") || "",
@@ -53,41 +60,136 @@ export default function SettingsPage() {
   };
 
   const handleInputChange = (field: string, value: string) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       [field]: value,
     }));
   };
 
+  const handlePhotoUpload = async (
+    event: React.ChangeEvent<HTMLInputElement>,
+  ) => {
+    const file = event.target.files?.[0];
+
+    if (!file || !user) return;
+
+    // Validate file type and size
+    if (!file.type.startsWith("image/")) {
+      setMessage({ type: "error", text: "Пожалуйста, выберите изображение" });
+
+      return;
+    }
+
+    if (file.size > 5 * 1024 * 1024) {
+      // 5MB limit
+      setMessage({
+        type: "error",
+        text: "Размер файла должен быть меньше 5MB",
+      });
+
+      return;
+    }
+
+    setIsUploading(true);
+    setMessage(null);
+
+    try {
+      // Convert file to base64 for demo purposes
+      // In production, you'd upload to a server/CDN
+      const reader = new FileReader();
+
+      reader.onload = async (e) => {
+        const base64 = e.target?.result as string;
+
+        // Simulate API call delay
+        await new Promise((resolve) => setTimeout(resolve, 1000));
+
+        // Update user with new avatar
+        const updatedUser = {
+          ...user,
+          avatar: base64,
+        };
+
+        // Update local storage
+        localStorage.setItem("user_data", JSON.stringify(updatedUser));
+
+        // Update context
+        updateUser({ avatar: base64 });
+
+        // Refresh user data from server to ensure consistency
+        await refreshUser();
+
+        setMessage({
+          type: "success",
+          text: "Фото профиля успешно обновлено!",
+        });
+      };
+      reader.readAsDataURL(file);
+    } catch (error) {
+      setMessage({ type: "error", text: "Ошибка при загрузке фото" });
+    } finally {
+      setIsUploading(false);
+      // Reset file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    }
+  };
+
+  const triggerFileInput = () => {
+    fileInputRef.current?.click();
+  };
+
   const handleSubmit = async () => {
-    if (!token) return;
+    if (!user) return;
 
     setIsLoading(true);
     setMessage(null);
 
     try {
-      const response = await apiClient.updateUser(formData);
+      // Prepare the data for API
+      const updateData = {
+        firstName: formData.firstName,
+        lastName: formData.lastName,
+        email: formData.email,
+        level: formData.level,
+      };
+
+      const response = await apiClient.updateUser(updateData);
 
       if (response.error) {
         setMessage({ type: "error", text: response.error });
       } else {
+        // Update user context with new data
+        const updatedUser = {
+          ...user,
+          name: `${formData.firstName} ${formData.lastName}`.trim(),
+          email: formData.email,
+          level: formData.level,
+        };
+
+        // Update local storage
+        localStorage.setItem("user_data", JSON.stringify(updatedUser));
+
+        // Update context
+        updateUser(updatedUser);
+
+        // Refresh user data from server to ensure consistency
+        await refreshUser();
+
         setMessage({ type: "success", text: "Профиль успешно обновлен!" });
-        // Update the user context with new data
-        // Note: In a real app, you'd want to refresh the user data from the context
       }
     } catch (error) {
-      setMessage({ type: "error", text: "Произошла ошибка при обновлении профиля" });
+      setMessage({
+        type: "error",
+        text: "Произошла ошибка при обновлении профиля",
+      });
     } finally {
       setIsLoading(false);
     }
   };
 
-  const levelOptions = [
-    { value: "beginner", label: "С нуля" },
-    { value: "elementary", label: "Начинающий" },
-    { value: "intermediate", label: "Продолжающий" },
-    { value: "advanced", label: "Продвинутый" },
-  ];
+  // Use standardized level options
 
   const getRoleLabel = (role: string) => {
     switch (role) {
@@ -153,24 +255,41 @@ export default function SettingsPage() {
                   className="text-white bg-[#007EFB] border-2 border-white"
                   name={user?.name || "User"}
                   size="lg"
+                  src={user?.avatar}
                 />
                 <div className="absolute -bottom-1 -right-1 w-4 h-4 bg-green-500 border-2 border-white rounded-full" />
               </div>
-              <Button
-                className="font-bold text-[#007EFB] hover:text-[#007EFB]/80 hover:bg-[#007EFB]/10"
-                variant="light"
-              >
-                Изменить фото
-              </Button>
+              <div className="flex flex-col gap-2">
+                <Button
+                  className="font-bold text-black bg-white border border-slate-300 hover:bg-slate-50 hover:border-slate-400"
+                  disabled={isUploading}
+                  variant="flat"
+                  onClick={triggerFileInput}
+                >
+                  {isUploading ? "Загрузка..." : "Изменить фото"}
+                </Button>
+                <input
+                  ref={fileInputRef}
+                  accept="image/*"
+                  className="hidden"
+                  type="file"
+                  onChange={handlePhotoUpload}
+                />
+                <p className="text-xs text-black/50 dark:text-white/50">
+                  JPG, PNG до 5MB
+                </p>
+              </div>
             </div>
 
             {/* Message Display */}
             {message && (
-              <div className={`mb-6 p-4 rounded-xl ${
-                message.type === "success" 
-                  ? "bg-green-50 border border-green-200 text-green-700" 
-                  : "bg-red-50 border border-red-200 text-red-700"
-              }`}>
+              <div
+                className={`mb-6 p-4 rounded-xl ${
+                  message.type === "success"
+                    ? "bg-green-50 border border-green-200 text-green-700"
+                    : "bg-red-50 border border-red-200 text-red-700"
+                }`}
+              >
                 {message.text}
               </div>
             )}
@@ -186,8 +305,8 @@ export default function SettingsPage() {
                 label="Имя"
                 placeholder="Введите имя"
                 value={formData.firstName}
-                onChange={(e) => handleInputChange("firstName", e.target.value)}
                 variant="bordered"
+                onChange={(e) => handleInputChange("firstName", e.target.value)}
               />
               <Input
                 classNames={{
@@ -199,8 +318,8 @@ export default function SettingsPage() {
                 label="Фамилия"
                 placeholder="Введите фамилию"
                 value={formData.lastName}
-                onChange={(e) => handleInputChange("lastName", e.target.value)}
                 variant="bordered"
+                onChange={(e) => handleInputChange("lastName", e.target.value)}
               />
               <Input
                 classNames={{
@@ -213,8 +332,8 @@ export default function SettingsPage() {
                 placeholder="you@tutorium.io"
                 type="email"
                 value={formData.email}
-                onChange={(e) => handleInputChange("email", e.target.value)}
                 variant="bordered"
+                onChange={(e) => handleInputChange("email", e.target.value)}
               />
               <Input
                 isReadOnly
@@ -231,18 +350,25 @@ export default function SettingsPage() {
               />
               <div className="md:col-span-2">
                 <Select
+                  classNames={{
+                    label: "font-bold text-black dark:text-white",
+                    trigger:
+                      "bg-white dark:bg-slate-800 border-slate-200/60 dark:border-slate-600/60 focus-within:border-[#007EFB] shadow-none",
+                  }}
                   label="Уровень"
                   placeholder="Выберите ваш уровень"
                   selectedKeys={formData.level ? [formData.level] : []}
-                  onChange={(e) => handleInputChange("level", e.target.value)}
-                  classNames={{
-                    label: "font-bold text-black dark:text-white",
-                    trigger: "bg-white dark:bg-slate-800 border-slate-200/60 dark:border-slate-600/60 focus-within:border-[#007EFB] shadow-none",
-                  }}
                   variant="bordered"
+                  onSelectionChange={(keys) => {
+                    const selectedKey = Array.from(keys)[0] as string;
+
+                    if (selectedKey) {
+                      handleInputChange("level", selectedKey);
+                    }
+                  }}
                 >
-                  {levelOptions.map((option) => (
-                    <SelectItem key={option.value}>
+                  {LEVEL_OPTIONS.map((option) => (
+                    <SelectItem key={option.value} textValue={option.label}>
                       {option.label}
                     </SelectItem>
                   ))}
@@ -253,9 +379,9 @@ export default function SettingsPage() {
             <div className="flex justify-end mt-8">
               <Button
                 className="font-bold text-white bg-[#007EFB] hover:bg-[#007EFB]/90 px-8"
+                disabled={isLoading}
                 size="lg"
                 onClick={handleSubmit}
-                disabled={isLoading}
               >
                 {isLoading ? "Сохранение..." : "Сохранить изменения"}
               </Button>

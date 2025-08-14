@@ -25,6 +25,23 @@ import {
   CoursesSectionSkeleton,
   RecentLessonsSkeleton,
 } from "@/components/dashboard-skeletons";
+import { Group } from "@/types";
+
+// Helper function to get level label
+const getLevelLabel = (level: string) => {
+  switch (level) {
+    case "beginner":
+      return "С нуля";
+    case "elementary":
+      return "Начинающий";
+    case "intermediate":
+      return "Продолжающий";
+    case "advanced":
+      return "Продвинутый";
+    default:
+      return level;
+  }
+};
 
 // Icons
 const BookIcon = () => (
@@ -141,12 +158,13 @@ const getLessonGradient = (index: number) => {
 };
 
 export default function DashboardPage() {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const [upcomingLesson, setUpcomingLesson] = useState<UpcomingLesson | null>(
     null,
   );
   const [courses, setCourses] = useState<UserCourse[]>([]);
   const [recentLessons, setRecentLessons] = useState<RecentLesson[]>([]);
+  const [groups, setGroups] = useState<Group[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
     totalLessons: 0,
@@ -158,7 +176,9 @@ export default function DashboardPage() {
   // Modal states
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [meetingLink, setMeetingLink] = useState("");
-  const [selectedLesson, setSelectedLesson] = useState<RecentLesson | null>(null);
+  const [selectedLesson, setSelectedLesson] = useState<RecentLesson | null>(
+    null,
+  );
   const {
     isOpen: isLessonModalOpen,
     onOpen: onLessonModalOpen,
@@ -166,28 +186,37 @@ export default function DashboardPage() {
   } = useDisclosure();
 
   // Rating system state
-  const [lessonRatings, setLessonRatings] = useState<Record<string, string>>({});
+  const [lessonRatings, setLessonRatings] = useState<Record<string, string>>(
+    {},
+  );
   const [ratingModalOpen, setRatingModalOpen] = useState(false);
-  const [currentRatingLesson, setCurrentRatingLesson] = useState<string | null>(null);
+  const [currentRatingLesson, setCurrentRatingLesson] = useState<string | null>(
+    null,
+  );
   const [tempRating, setTempRating] = useState<string>("");
 
   // Load dashboard data
   useEffect(() => {
-    if (token) {
+    if (user) {
       loadDashboardData();
     }
-  }, [token]);
+  }, [user]);
 
   const loadDashboardData = async () => {
     try {
       setIsLoading(true);
 
-      const [upcomingResponse, coursesResponse, recentResponse] =
-        await Promise.all([
-          apiClient.getUpcomingLessons(),
-          apiClient.getUserCourses(),
-          apiClient.getRecentLessons(),
-        ]);
+      const [
+        upcomingResponse,
+        coursesResponse,
+        recentResponse,
+        groupsResponse,
+      ] = await Promise.all([
+        apiClient.getUpcomingLessons(),
+        apiClient.getUserCourses(),
+        apiClient.getRecentLessons(),
+        apiClient.getGroups(),
+      ]);
 
       if (
         upcomingResponse.data &&
@@ -199,10 +228,18 @@ export default function DashboardPage() {
 
       if (coursesResponse.data && Array.isArray(coursesResponse.data)) {
         setCourses(coursesResponse.data);
+      } else {
+        setCourses([]);
       }
 
       if (recentResponse.data && Array.isArray(recentResponse.data)) {
         setRecentLessons(recentResponse.data);
+      }
+
+      if (groupsResponse.data && Array.isArray(groupsResponse.data)) {
+        setGroups(groupsResponse.data);
+      } else {
+        setGroups([]);
       }
 
       // Calculate stats
@@ -240,26 +277,29 @@ export default function DashboardPage() {
     setRatingModalOpen(true);
   };
 
-  const handleRatingSubmit = (rating: string) => {
-    if (currentRatingLesson) {
-      setLessonRatings((prev) => ({
-        ...prev,
-        [currentRatingLesson]: rating,
-      }));
-      setTempRating(rating);
+  const handleRatingSubmit = async (rating: string, numericRating: number) => {
+    if (currentRatingLesson && selectedLesson) {
+      try {
+        // Submit feedback to API
+        await apiClient.createFeedback({
+          rating: numericRating,
+          recordingId: selectedLesson.id,
+          isAnonymous: false,
+        });
+
+        // Update local state
+        setLessonRatings((prev) => ({
+          ...prev,
+          [currentRatingLesson]: rating,
+        }));
+        setTempRating(rating);
+        setRatingModalOpen(false);
+      } catch (error) {
+        console.error("Error submitting feedback:", error);
+        // Could add error handling UI here
+      }
     }
   };
-
-  if (!token) {
-    return (
-      <div className="min-h-screen flex items-center justify-center">
-        <div className="text-center">
-          <h1 className="text-2xl font-bold mb-4">Authentication Required</h1>
-          <p>Please log in to access the dashboard.</p>
-        </div>
-      </div>
-    );
-  }
 
   return (
     <ProtectedRoute>
@@ -277,6 +317,11 @@ export default function DashboardPage() {
               </h1>
               <p className="text-black/70 text-xl font-medium mt-2">
                 Добро пожаловать в ваш личный кабинет
+                {user?.role === "STUDENT" && user?.level && (
+                  <span className="block mt-1 text-lg">
+                    Уровень: {getLevelLabel(user.level)}
+                  </span>
+                )}
               </p>
             </div>
           )}
@@ -467,6 +512,129 @@ export default function DashboardPage() {
 
           {/* Main Content */}
           <div className="space-y-8">
+            {/* Groups Section */}
+            {groups.length > 0 && (
+              <section className="relative">
+                <div className="flex items-center justify-between mb-8">
+                  <div>
+                    <h2 className="text-4xl font-bold text-black">
+                      Твои группы
+                    </h2>
+                    <p className="text-black/70 font-medium text-lg mt-1">
+                      Группы, в которых ты состоишь
+                    </p>
+                  </div>
+                  <Button
+                    as={Link}
+                    className="font-bold text-[#007EFB] hover:text-[#007EFB]/80 flex items-center gap-2 group bg-transparent p-0 h-auto min-w-0"
+                    href="/groups"
+                    size="lg"
+                    variant="light"
+                  >
+                    Посмотреть все
+                    <svg
+                      className="w-4 h-4 transition-transform group-hover:translate-x-1"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        d="M9 5l7 7-7 7"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                      />
+                    </svg>
+                  </Button>
+                </div>
+
+                {/* Groups Grid - Single line for desktop with overflow indicator */}
+                <div className="relative">
+                  <div className="grid grid-cols-1 gap-4 sm:flex sm:gap-4 sm:overflow-x-auto sm:pb-4 scrollbar-hide">
+                    {groups.slice(0, 2).map((group) => (
+                      <div
+                        key={group.id}
+                        className="w-full sm:flex-shrink-0 sm:w-80 bg-white border border-slate-200/60 rounded-2xl p-4 sm:p-6 hover:border-slate-300/60 transition-all duration-300 hover:shadow-lg flex flex-col"
+                      >
+                        <div className="flex items-center gap-4 mb-4">
+                          <div className="w-12 h-12 bg-gradient-to-br from-[#007EFB] to-[#00B67A] rounded-2xl flex items-center justify-center text-white font-bold text-lg">
+                            {group.name.charAt(0)}
+                          </div>
+                          <div className="flex-1 min-w-0">
+                            <h3 className="font-bold text-black text-lg leading-tight truncate">
+                              {group.name}
+                            </h3>
+                            <p className="text-black/70 font-medium text-sm">
+                              {group.level} • {group._count?.students || 0}{" "}
+                              студентов
+                            </p>
+                          </div>
+                        </div>
+
+                        <div className="space-y-3 flex-1">
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-black/70 font-medium">
+                              Прогресс
+                            </span>
+                            <span className="text-black font-bold">75%</span>
+                          </div>
+                          <div className="w-full bg-slate-200/50 rounded-full h-2">
+                            <div
+                              className="h-2 bg-gradient-to-r from-[#007EFB] to-[#00B67A] rounded-full"
+                              style={{ width: "75%" }}
+                            />
+                          </div>
+                        </div>
+
+                        <Button
+                          className="w-full mt-4 font-semibold text-white bg-[#007EFB] hover:bg-[#007EFB]/90"
+                          size="lg"
+                        >
+                          Открыть в Telegram
+                        </Button>
+                      </div>
+                    ))}
+
+                    {/* +N Groups indicator when more than 2 */}
+                    {groups.length > 2 && (
+                      <div className="w-full sm:flex-shrink-0 sm:w-80 bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-dashed border-slate-300 rounded-2xl p-4 sm:p-6 flex flex-col items-center justify-center hover:border-slate-400 transition-all duration-300">
+                        <div className="w-16 h-16 bg-slate-200 rounded-2xl flex items-center justify-center mb-4">
+                          <svg
+                            className="w-8 h-8 text-slate-500"
+                            fill="none"
+                            stroke="currentColor"
+                            viewBox="0 0 24 24"
+                          >
+                            <path
+                              d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                              strokeWidth={2}
+                            />
+                          </svg>
+                        </div>
+                        <h3 className="font-bold text-slate-700 text-lg mb-2">
+                          +{groups.length - 2} групп
+                        </h3>
+                        <p className="text-slate-600 font-medium text-sm text-center">
+                          У тебя еще {groups.length - 2} активных групп
+                        </p>
+                        <Button
+                          as={Link}
+                          className="mt-4 font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50"
+                          href="/groups"
+                          size="lg"
+                          variant="flat"
+                        >
+                          Посмотреть все
+                        </Button>
+                      </div>
+                    )}
+                  </div>
+                </div>
+              </section>
+            )}
+
             {/* Active Courses Section */}
             <section className="relative">
               <div className="flex items-center justify-between mb-8">
@@ -476,9 +644,12 @@ export default function DashboardPage() {
                     Продолжай свой прогресс в обучении
                   </p>
                 </div>
-                <Link
-                  className="font-bold text-[#007EFB] hover:text-[#007EFB]/80 flex items-center gap-2 group"
-                  href="#"
+                <Button
+                  as={Link}
+                  className="font-bold text-[#007EFB] hover:text-[#007EFB]/80 flex items-center gap-2 group bg-transparent p-0 h-auto min-w-0"
+                  href="/groups"
+                  size="lg"
+                  variant="light"
                 >
                   Посмотреть все
                   <svg
@@ -494,17 +665,46 @@ export default function DashboardPage() {
                       strokeWidth={2}
                     />
                   </svg>
-                </Link>
+                </Button>
               </div>
-              <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+              <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
                 {isLoading ? (
                   <CoursesSectionSkeleton />
                 ) : courses.length > 0 ? (
-                  courses.map((course) => (
-                    <CourseCard key={course.id} {...course} />
-                  ))
+                  <>
+                    {/* Show only first 2 courses */}
+                    {courses.slice(0, 2).map((course) => (
+                      <div key={course.id} className="xl:col-span-1.5">
+                        <CourseCard {...course} />
+                      </div>
+                    ))}
+
+                    {/* Show +N courses indicator when more than 2 */}
+                    {courses.length > 2 && (
+                      <div className="xl:col-span-1 bg-gradient-to-br from-slate-50 to-slate-100 border-2 border-dashed border-slate-300 rounded-3xl p-6 xl:p-4 flex flex-col items-center justify-center hover:border-slate-400 transition-all duration-300">
+                        <div className="w-16 h-16 xl:w-12 xl:h-12 bg-slate-200 rounded-2xl flex items-center justify-center mb-4 xl:mb-3">
+                          <div className="text-3xl xl:text-2xl">📚</div>
+                        </div>
+                        <h3 className="font-bold text-slate-700 text-lg xl:text-base mb-2 xl:mb-1 text-center">
+                          +{courses.length - 2} курсов
+                        </h3>
+                        <p className="text-slate-600 font-medium text-sm xl:text-xs text-center mb-4 xl:mb-3">
+                          У тебя еще {courses.length - 2} активных курса
+                        </p>
+                        <Button
+                          as={Link}
+                          className="font-semibold text-slate-700 bg-white border border-slate-300 hover:bg-slate-50 px-6 xl:px-4 text-sm xl:text-xs"
+                          href="/groups"
+                          size="md"
+                          variant="flat"
+                        >
+                          Посмотреть все
+                        </Button>
+                      </div>
+                    )}
+                  </>
                 ) : (
-                  <div className="col-span-2 text-center py-12">
+                  <div className="col-span-1 xl:col-span-3 text-center py-12">
                     <div className="w-20 h-20 bg-slate-100 rounded-3xl flex items-center justify-center mx-auto mb-4">
                       <div className="text-4xl">📚</div>
                     </div>
@@ -530,9 +730,12 @@ export default function DashboardPage() {
                     Просмотри свои последние занятия
                   </p>
                 </div>
-                <Link
-                  className="font-bold text-[#007EFB] hover:text-[#007EFB]/80 flex items-center gap-2 group"
+                <Button
+                  as={Link}
+                  className="font-bold text-[#007EFB] hover:text-[#007EFB]/80 flex items-center gap-2 group bg-transparent p-0 h-auto min-w-0"
                   href="#"
+                  size="lg"
+                  variant="light"
                 >
                   Посмотреть все
                   <svg
@@ -548,7 +751,7 @@ export default function DashboardPage() {
                       strokeWidth={2}
                     />
                   </svg>
-                </Link>
+                </Button>
               </div>
 
               {/* Lessons list */}
@@ -559,114 +762,317 @@ export default function DashboardPage() {
                   recentLessons.map((lesson, index) => (
                     <div
                       key={lesson.id}
+                      aria-label={`Открыть детали урока: ${lesson.title}`}
                       className="group cursor-pointer bg-white border border-slate-200/60 rounded-2xl p-4 relative overflow-hidden hover:border-slate-300/60 transition-all duration-300"
+                      role="button"
+                      tabIndex={0}
                       onClick={() => handleLessonClick(lesson)}
                       onKeyDown={(e) => {
-                        if (e.key === 'Enter' || e.key === ' ') {
+                        if (e.key === "Enter" || e.key === " ") {
                           e.preventDefault();
                           handleLessonClick(lesson);
                         }
                       }}
-                      role="button"
-                      tabIndex={0}
-                      aria-label={`Открыть детали урока: ${lesson.title}`}
                     >
                       <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
-                      <div className="relative z-10 flex items-center gap-4">
-                        {/* Lesson Avatar with Dynamic Gradient */}
-                        <div
-                          className={`w-12 h-12 bg-gradient-to-br ${getLessonGradient(index)} rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}
-                        >
-                          {index + 1}
-                        </div>
-
-                        {/* Lesson Info */}
-                        <div className="flex-1 min-w-0">
-                          <h4 className="font-bold text-black text-base leading-tight truncate">
-                            {lesson.title}
-                          </h4>
-                          <p className="text-black/70 font-medium text-sm">
-                            {lesson.date} • {lesson.teacher}
-                          </p>
-                        </div>
-
-                        {/* Tools & Info Section */}
-                        <div className="flex items-center gap-3 flex-shrink-0">
-                          {/* Files Count */}
-                          <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-xl">
-                            <svg
-                              className="w-4 h-4 text-slate-600"
-                              fill="none"
-                              stroke="currentColor"
-                              viewBox="0 0 24 24"
-                            >
-                              <path
-                                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
-                                strokeWidth={2}
-                              />
-                            </svg>
-                            <span className="text-slate-700 font-medium text-xs">
-                              {lesson.filesCount}
-                            </span>
+                      <div className="relative z-10">
+                        {/* Desktop Layout - Full horizontal layout */}
+                        <div className="hidden xl:flex items-center gap-4">
+                          {/* Lesson Avatar with Dynamic Gradient */}
+                          <div
+                            className={`w-12 h-12 bg-gradient-to-br ${getLessonGradient(index)} rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}
+                          >
+                            {index + 1}
                           </div>
 
-                          {/* Recording Status */}
-                          {lesson.hasRecording && (
-                            <div className="flex items-center gap-2 px-3 py-1.5 bg-green-100 rounded-xl">
+                          {/* Lesson Info */}
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-bold text-black text-base leading-tight truncate">
+                              {lesson.title}
+                            </h4>
+                            <p className="text-black/70 font-medium text-sm">
+                              {lesson.date} • {lesson.teacher}
+                            </p>
+                          </div>
+
+                          {/* Tools & Info Section */}
+                          <div className="flex items-center gap-3 flex-shrink-0">
+                            {/* Files Count */}
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-xl">
                               <svg
-                                className="w-4 h-4 text-green-600"
+                                className="w-4 h-4 text-slate-600"
                                 fill="none"
                                 stroke="currentColor"
                                 viewBox="0 0 24 24"
                               >
                                 <path
-                                  d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
                                   strokeWidth={2}
                                 />
                               </svg>
-                              <span className="text-green-700 font-medium text-xs">
-                                Запись
+                              <span className="text-slate-700 font-medium text-xs">
+                                {lesson.filesCount}
                               </span>
                             </div>
-                          )}
 
-                          {/* Rating Button */}
-                          <Button
-                            className="px-3 py-1.5 bg-amber-100 text-amber-700 hover:bg-amber-200 font-medium"
-                            size="sm"
-                            variant="light"
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              handleRateLesson(lesson.id);
-                            }}
-                          >
-                            {lessonRatings[lesson.id] ? (
-                              <span className="text-lg">
-                                {lessonRatings[lesson.id]}
-                              </span>
-                            ) : (
-                              <>
+                            {/* Recording Status */}
+                            {lesson.hasRecording && (
+                              <div className="flex items-center gap-2 px-3 py-1.5 bg-green-100 rounded-xl">
                                 <svg
-                                  className="w-4 h-4 mr-1"
+                                  className="w-4 h-4 text-green-600"
                                   fill="none"
                                   stroke="currentColor"
                                   viewBox="0 0 24 24"
                                 >
                                   <path
-                                    d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
                                     strokeLinecap="round"
                                     strokeLinejoin="round"
                                     strokeWidth={2}
                                   />
                                 </svg>
-                                Оценить
-                              </>
+                                <span className="text-green-700 font-medium text-xs">
+                                  Запись
+                                </span>
+                              </div>
                             )}
-                          </Button>
+
+                            {/* Rating Button */}
+                            <Button
+                              className="px-3 py-1.5 bg-amber-100 text-amber-700 hover:bg-amber-200 font-medium"
+                              size="sm"
+                              variant="light"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRateLesson(lesson.id);
+                              }}
+                            >
+                              {lessonRatings[lesson.id] ? (
+                                <span className="text-lg">
+                                  {lessonRatings[lesson.id]}
+                                </span>
+                              ) : (
+                                <>
+                                  <svg
+                                    className="w-4 h-4 mr-1"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                    />
+                                  </svg>
+                                  Оценить
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Medium Screen Layout - Compact horizontal layout */}
+                        <div className="hidden lg:flex xl:hidden items-center gap-4">
+                          {/* Lesson Avatar with Dynamic Gradient */}
+                          <div
+                            className={`w-10 h-10 bg-gradient-to-br ${getLessonGradient(index)} rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}
+                          >
+                            {index + 1}
+                          </div>
+
+                          {/* Lesson Info */}
+                          <div className="flex-1 min-w-0">
+                            <h4 className="font-bold text-black text-sm leading-tight truncate">
+                              {lesson.title}
+                            </h4>
+                            <p className="text-black/70 font-medium text-xs">
+                              {lesson.date} • {lesson.teacher}
+                            </p>
+                          </div>
+
+                          {/* Compact Tools Section */}
+                          <div className="flex items-center gap-2 flex-shrink-0">
+                            {/* Files Count - Compact */}
+                            <div className="flex items-center gap-1 px-2 py-1 bg-slate-100 rounded-lg">
+                              <svg
+                                className="w-3 h-3 text-slate-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                />
+                              </svg>
+                              <span className="text-slate-700 font-medium text-xs">
+                                {lesson.filesCount}
+                              </span>
+                            </div>
+
+                            {/* Recording Status - Compact */}
+                            {lesson.hasRecording && (
+                              <div className="flex items-center gap-1 px-2 py-1 bg-green-100 rounded-lg">
+                                <svg
+                                  className="w-3 h-3 text-green-600"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                  />
+                                </svg>
+                                <span className="text-green-700 font-medium text-xs">
+                                  Запись
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Rating Button - Compact */}
+                            <Button
+                              className="px-2 py-1 bg-amber-100 text-amber-700 hover:bg-amber-200 font-medium text-xs"
+                              size="sm"
+                              variant="light"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRateLesson(lesson.id);
+                              }}
+                            >
+                              {lessonRatings[lesson.id] ? (
+                                <span className="text-sm">
+                                  {lessonRatings[lesson.id]}
+                                </span>
+                              ) : (
+                                <>
+                                  <svg
+                                    className="w-3 h-3 mr-1"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                    />
+                                  </svg>
+                                  Оценить
+                                </>
+                              )}
+                            </Button>
+                          </div>
+                        </div>
+
+                        {/* Mobile Layout - Buttons moved to separate row */}
+                        <div className="lg:hidden">
+                          <div className="flex items-center gap-4 mb-4">
+                            {/* Lesson Avatar with Dynamic Gradient */}
+                            <div
+                              className={`w-12 h-12 bg-gradient-to-br ${getLessonGradient(index)} rounded-xl flex items-center justify-center text-white font-bold text-sm flex-shrink-0`}
+                            >
+                              {index + 1}
+                            </div>
+
+                            {/* Lesson Info */}
+                            <div className="flex-1 min-w-0">
+                              <h4 className="font-bold text-black text-base leading-tight truncate">
+                                {lesson.title}
+                              </h4>
+                              <p className="text-black/70 font-medium text-sm">
+                                {lesson.date} • {lesson.teacher}
+                              </p>
+                            </div>
+                          </div>
+
+                          {/* Mobile Buttons Row */}
+                          <div className="flex items-center gap-2 flex-wrap">
+                            {/* Files Count */}
+                            <div className="flex items-center gap-2 px-3 py-1.5 bg-slate-100 rounded-xl">
+                              <svg
+                                className="w-4 h-4 text-slate-600"
+                                fill="none"
+                                stroke="currentColor"
+                                viewBox="0 0 24 24"
+                              >
+                                <path
+                                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                  strokeLinecap="round"
+                                  strokeLinejoin="round"
+                                  strokeWidth={2}
+                                />
+                              </svg>
+                              <span className="text-slate-700 font-medium text-xs">
+                                {lesson.filesCount}
+                              </span>
+                            </div>
+
+                            {/* Recording Status */}
+                            {lesson.hasRecording && (
+                              <div className="flex items-center gap-2 px-3 py-1.5 bg-green-100 rounded-xl">
+                                <svg
+                                  className="w-4 h-4 text-green-600"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                  />
+                                </svg>
+                                <span className="text-green-700 font-medium text-xs">
+                                  Запись
+                                </span>
+                              </div>
+                            )}
+
+                            {/* Rating Button */}
+                            <Button
+                              className="px-3 py-1.5 bg-amber-100 text-amber-700 hover:bg-amber-200 font-medium"
+                              size="sm"
+                              variant="light"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                handleRateLesson(lesson.id);
+                              }}
+                            >
+                              {lessonRatings[lesson.id] ? (
+                                <span className="text-lg">
+                                  {lessonRatings[lesson.id]}
+                                </span>
+                              ) : (
+                                <>
+                                  <svg
+                                    className="w-4 h-4 mr-1"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                    />
+                                  </svg>
+                                  Оценить
+                                </>
+                              )}
+                            </Button>
+                          </div>
                         </div>
                       </div>
                     </div>
@@ -800,7 +1206,9 @@ export default function DashboardPage() {
                   <div
                     className={`w-16 h-16 bg-gradient-to-br ${getLessonGradient(recentLessons.findIndex((l) => l.id === selectedLesson.id))} rounded-2xl flex items-center justify-center text-white font-bold text-xl`}
                   >
-                    {recentLessons.findIndex((l) => l.id === selectedLesson.id) + 1}
+                    {recentLessons.findIndex(
+                      (l) => l.id === selectedLesson.id,
+                    ) + 1}
                   </div>
                   <div>
                     <h3 className="font-semibold text-slate-900 text-lg">
@@ -1005,7 +1413,10 @@ export default function DashboardPage() {
                         color="success"
                         size="md"
                         variant="flat"
-                        onClick={() => selectedLesson.recordingUrl && window.open(selectedLesson.recordingUrl, "_blank")}
+                        onClick={() =>
+                          selectedLesson.recordingUrl &&
+                          window.open(selectedLesson.recordingUrl, "_blank")
+                        }
                       >
                         Смотреть запись
                       </Button>
@@ -1092,16 +1503,38 @@ export default function DashboardPage() {
               <div className="space-y-6">
                 <div className="grid grid-cols-5 gap-4">
                   {[
-                    { emoji: "😠", color: "bg-red-100 hover:bg-red-200" },
-                    { emoji: "😴", color: "bg-yellow-100 hover:bg-yellow-200" },
-                    { emoji: "😐", color: "bg-gray-100 hover:bg-gray-200" },
-                    { emoji: "😊", color: "bg-blue-100 hover:bg-blue-200" },
-                    { emoji: "🥰", color: "bg-green-100 hover:bg-green-200" },
+                    {
+                      emoji: "😠",
+                      color: "bg-red-100 hover:bg-red-200",
+                      rating: 1,
+                    },
+                    {
+                      emoji: "😴",
+                      color: "bg-yellow-100 hover:bg-yellow-200",
+                      rating: 2,
+                    },
+                    {
+                      emoji: "😐",
+                      color: "bg-gray-100 hover:bg-gray-200",
+                      rating: 3,
+                    },
+                    {
+                      emoji: "😊",
+                      color: "bg-blue-100 hover:bg-blue-200",
+                      rating: 4,
+                    },
+                    {
+                      emoji: "🥰",
+                      color: "bg-green-100 hover:bg-green-200",
+                      rating: 5,
+                    },
                   ].map((rating) => (
                     <button
                       key={rating.emoji}
                       className={`p-4 rounded-2xl border-2 border-transparent hover:border-amber-300 transition-all duration-200 ${rating.color} flex items-center justify-center`}
-                      onClick={() => handleRatingSubmit(rating.emoji)}
+                      onClick={() =>
+                        handleRatingSubmit(rating.emoji, rating.rating)
+                      }
                     >
                       <div className="text-4xl">{rating.emoji}</div>
                     </button>

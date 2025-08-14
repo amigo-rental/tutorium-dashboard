@@ -1,7 +1,38 @@
 import { NextRequest, NextResponse } from "next/server";
+import bcrypt from "bcryptjs";
 
 import { prisma } from "@/lib/db/prisma";
 import { requireRole } from "@/lib/auth/middleware";
+
+// Generate secure random password
+function generateSecurePassword(): string {
+  const length = 12;
+  const charset =
+    "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789!@#$%^&*";
+  let password = "";
+
+  // Ensure at least one character from each required type
+  const lowercase = "abcdefghijklmnopqrstuvwxyz";
+  const uppercase = "ABCDEFGHIJKLMNOPQRSTUVWXYZ";
+  const numbers = "0123456789";
+  const special = "!@#$%^&*";
+
+  password += lowercase[Math.floor(Math.random() * lowercase.length)];
+  password += uppercase[Math.floor(Math.random() * uppercase.length)];
+  password += numbers[Math.floor(Math.random() * numbers.length)];
+  password += special[Math.floor(Math.random() * special.length)];
+
+  // Fill the rest with random characters
+  for (let i = 4; i < length; i++) {
+    password += charset[Math.floor(Math.random() * charset.length)];
+  }
+
+  // Shuffle the password
+  return password
+    .split("")
+    .sort(() => Math.random() - 0.5)
+    .join("");
+}
 
 // GET /api/students - Get all students for a teacher
 export async function GET(request: NextRequest) {
@@ -114,7 +145,7 @@ export async function POST(request: NextRequest) {
       data: {
         name,
         email,
-        password: "temporary123", // Students need a password, will be changed on first login
+        password: await bcrypt.hash(generateSecurePassword(), 12), // Generate secure temporary password
         role: "STUDENT",
         level,
         avatar,

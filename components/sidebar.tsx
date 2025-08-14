@@ -9,6 +9,22 @@ import clsx from "clsx";
 
 import { useAuth } from "@/lib/auth/context";
 
+// Helper function to get level label
+const getLevelLabel = (level: string) => {
+  switch (level) {
+    case "beginner":
+      return "С нуля";
+    case "elementary":
+      return "Начинающий";
+    case "intermediate":
+      return "Продолжающий";
+    case "advanced":
+      return "Продвинутый";
+    default:
+      return level;
+  }
+};
+
 // Icons - simple SVG components
 const DashboardIcon = ({ className }: { className?: string }) => (
   <svg
@@ -58,7 +74,7 @@ const BookIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-const TeacherIcon = ({ className }: { className?: string }) => (
+const TutorIcon = ({ className }: { className?: string }) => (
   <svg
     className={className}
     fill="none"
@@ -66,7 +82,35 @@ const TeacherIcon = ({ className }: { className?: string }) => (
     viewBox="0 0 24 24"
   >
     <path
-      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+      d="M12 14l9-5-9-5-9 5 9 5z"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+    />
+    <path
+      d="M12 14l6.16-3.422a12.083 12.083 0 01.665 6.479A11.952 11.952 0 0012 20.055a11.952 11.952 0 00-6.824-2.998 12.078 12.078 0 01.665-6.479L12 14z"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+    />
+    <path
+      d="M12 14l9-5-9-5-9 5 9 5z"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+    />
+  </svg>
+);
+
+const UploadIcon = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      d="M7 16a4 4 0 01-.88-7.903A5 5 0 1115.9 6L16 6a5 5 0 011 9.9M15 13l-3-3m0 0l-3 3m3-3v12"
       strokeLinecap="round"
       strokeLinejoin="round"
       strokeWidth={2}
@@ -112,12 +156,50 @@ const MenuIcon = ({ className }: { className?: string }) => (
   </svg>
 );
 
-const navigation = [
-  { name: "Главная", href: "/dashboard", icon: DashboardIcon },
-  { name: "Группы", href: "/courses", icon: BookIcon },
-  { name: "Учитель", href: "/teacher", icon: TeacherIcon },
-  { name: "Настройки", href: "/settings", icon: SettingsIcon },
-];
+const LogoutIcon = ({ className }: { className?: string }) => (
+  <svg
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      d="M17 16l4-4m0 0l-4-4m4 4H7m6 4v1a3 3 0 01-3 3H6a3 3 0 01-3-3V7a3 3 0 013-3h4a3 3 0 013 3v1"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+    />
+  </svg>
+);
+
+// Navigation items for different user roles
+const getNavigationItems = (userRole: string) => {
+  switch (userRole) {
+    case "STUDENT":
+      return [
+        { name: "Главная", href: "/dashboard", icon: DashboardIcon },
+        { name: "Группы", href: "/groups", icon: BookIcon },
+        { name: "Настройки", href: "/settings", icon: SettingsIcon },
+      ];
+    case "TEACHER":
+      return [
+        { name: "Тьютор", href: "/tutor", icon: TutorIcon },
+        { name: "Группы", href: "/groups", icon: BookIcon },
+        { name: "Загрузчик", href: "/teacher", icon: UploadIcon },
+        { name: "Настройки", href: "/settings", icon: SettingsIcon },
+      ];
+    case "ADMIN":
+      return [
+        { name: "Админ", href: "/admin", icon: SettingsIcon },
+        { name: "Настройки", href: "/settings", icon: SettingsIcon },
+      ];
+    default:
+      return [
+        { name: "Главная", href: "/dashboard", icon: DashboardIcon },
+        { name: "Настройки", href: "/settings", icon: SettingsIcon },
+      ];
+  }
+};
 
 interface SidebarProps {
   isOpen: boolean;
@@ -126,7 +208,7 @@ interface SidebarProps {
 
 export function Sidebar({ isOpen, onToggle }: SidebarProps) {
   const pathname = usePathname();
-  const { user } = useAuth();
+  const { user, logout } = useAuth();
 
   return (
     <>
@@ -172,7 +254,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
             {/* Navigation */}
             <nav className="flex-1">
               <ul className="space-y-2">
-                {navigation.map((item) => {
+                {getNavigationItems(user?.role || "").map((item: any) => {
                   const isActive = pathname === item.href;
                   const Icon = item.icon;
 
@@ -216,6 +298,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                       className="text-white bg-[#007EFB] border-2 border-white"
                       name={user?.name || "User"}
                       size="md"
+                      src={user?.avatar}
                     />
                     <div className="absolute -bottom-1 -right-1 w-3 h-3 bg-green-500 border-2 border-white rounded-full" />
                   </div>
@@ -227,7 +310,7 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                       {user?.role === "TEACHER"
                         ? "Преподаватель"
                         : user?.role === "STUDENT"
-                          ? "Ученик"
+                          ? `Ученик${user?.level ? ` • ${getLevelLabel(user.level)}` : ""}`
                           : user?.role === "ADMIN"
                             ? "Администратор"
                             : "Пользователь"}
@@ -235,34 +318,16 @@ export function Sidebar({ isOpen, onToggle }: SidebarProps) {
                   </div>
                 </div>
 
-                {/* Notifications Summary */}
+                {/* Logout Button */}
                 <div className="space-y-2">
-                  <div className="flex items-center justify-between">
-                    <h4 className="font-bold text-black text-sm">
-                      Уведомления
-                    </h4>
-                    <div className="w-2 h-2 bg-red-500 rounded-full animate-pulse" />
-                  </div>
-                  <div className="space-y-1">
-                    <div className="flex items-center gap-2 text-xs">
-                      <div className="w-2 h-2 bg-[#007EFB] rounded-full" />
-                      <span className="text-black/70 font-medium">
-                        Новый урок
-                      </span>
-                    </div>
-                    <div className="flex items-center gap-2 text-xs">
-                      <div className="w-2 h-2 bg-green-500 rounded-full" />
-                      <span className="text-black/70 font-medium">
-                        Задание оценено
-                      </span>
-                    </div>
-                  </div>
                   <Button
-                    className="w-full mt-2 text-[#007EFB] hover:text-[#007EFB]/80 hover:bg-[#007EFB]/10 font-medium"
+                    className="w-full text-red-600 hover:text-red-700 hover:bg-red-50 font-medium flex items-center gap-2"
                     size="sm"
                     variant="light"
+                    onClick={logout}
                   >
-                    Все уведомления
+                    <LogoutIcon className="w-4 h-4" />
+                    Выход
                   </Button>
                 </div>
               </div>

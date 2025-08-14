@@ -74,11 +74,11 @@ export const CoursesSectionSkeleton = () => (
       </div>
       <Skeleton className="h-6 w-32 rounded-lg" />
     </div>
-    <div className="grid grid-cols-1 xl:grid-cols-2 gap-6">
+    <div className="grid grid-cols-1 xl:grid-cols-3 gap-6">
       {[...Array(2)].map((_, index) => (
         <div
           key={index}
-          className="bg-white border border-slate-200/60 rounded-2xl p-6"
+          className="xl:col-span-1.5 bg-white border border-slate-200/60 rounded-2xl p-6"
         >
           <div className="flex items-start gap-4">
             <Skeleton className="w-16 h-16 rounded-xl flex-shrink-0" />

@@ -7,6 +7,7 @@ import { Input } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
 import { Chip } from "@heroui/chip";
 import { Avatar } from "@heroui/avatar";
+import { useDisclosure } from "@heroui/use-disclosure";
 
 import { useAuth } from "@/lib/auth/context";
 import { apiClient } from "@/lib/utils/api";
@@ -25,7 +26,7 @@ interface FrontendRecording {
 }
 
 export default function TeacherNewPage() {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const [groups, setGroups] = useState<Group[]>([]);
   const [students, setStudents] = useState<User[]>([]);
   const [recordings, setRecordings] = useState<FrontendRecording[]>([]);
@@ -41,10 +42,10 @@ export default function TeacherNewPage() {
 
   // Load data from API
   useEffect(() => {
-    if (token) {
+    if (user) {
       loadData();
     }
-  }, [token]);
+  }, [user]);
 
   const loadData = async () => {
     try {
@@ -190,7 +191,7 @@ export default function TeacherNewPage() {
     }
   };
 
-  if (!token) {
+  if (!user) {
     return (
       <div className="min-h-screen flex items-center justify-center">
         <div className="text-center">
@@ -215,245 +216,255 @@ export default function TeacherNewPage() {
   return (
     <ProtectedRoute>
       <div className="min-h-screen bg-white p-8">
-      {/* Header */}
-      <div className="mb-8">
-        <h1 className="text-4xl font-bold text-black mb-2">
-          Teacher Dashboard
-        </h1>
-        <p className="text-black/70">Welcome back, {user?.name}!</p>
-      </div>
+        {/* Header */}
+        <div className="mb-8">
+          <h1 className="text-4xl font-bold text-black mb-2">
+            Teacher Dashboard
+          </h1>
+          <p className="text-black/70">Welcome back, {user?.name}!</p>
+        </div>
 
-      {/* Stats */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-        <Card className="border border-slate-200 rounded-xl">
+        {/* Stats */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+          <Card className="border border-slate-200 rounded-xl">
+            <CardBody className="p-6">
+              <div className="text-center">
+                <h3 className="text-2xl font-bold text-black">
+                  {groups.length}
+                </h3>
+                <p className="text-black/70">Groups</p>
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card className="border border-slate-200 rounded-xl">
+            <CardBody className="p-6">
+              <div className="text-center">
+                <h3 className="text-2xl font-bold text-black">
+                  {students.length}
+                </h3>
+                <p className="text-black/70">Students</p>
+              </div>
+            </CardBody>
+          </Card>
+
+          <Card className="border border-slate-200 rounded-xl">
+            <CardBody className="p-6">
+              <div className="text-center">
+                <h3 className="text-2xl font-bold text-black">
+                  {recordings.length}
+                </h3>
+                <p className="text-black/70">Recordings</p>
+              </div>
+            </CardBody>
+          </Card>
+        </div>
+
+        {/* Create Recording Form */}
+        <Card className="mb-8 border border-slate-200 rounded-xl">
           <CardBody className="p-6">
-            <div className="text-center">
-              <h3 className="text-2xl font-bold text-black">{groups.length}</h3>
-              <p className="text-black/70">Groups</p>
-            </div>
-          </CardBody>
-        </Card>
+            <h2 className="text-2xl font-bold text-black mb-6">
+              Create New Recording
+            </h2>
 
-        <Card className="border border-slate-200 rounded-xl">
-          <CardBody className="p-6">
-            <div className="text-center">
-              <h3 className="text-2xl font-bold text-black">
-                {students.length}
-              </h3>
-              <p className="text-black/70">Students</p>
-            </div>
-          </CardBody>
-        </Card>
+            {error && (
+              <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
+                <p className="text-red-600 text-sm">{error}</p>
+              </div>
+            )}
 
-        <Card className="border border-slate-200 rounded-xl">
-          <CardBody className="p-6">
-            <div className="text-center">
-              <h3 className="text-2xl font-bold text-black">
-                {recordings.length}
-              </h3>
-              <p className="text-black/70">Recordings</p>
-            </div>
-          </CardBody>
-        </Card>
-      </div>
-
-      {/* Create Recording Form */}
-      <Card className="mb-8 border border-slate-200 rounded-xl">
-        <CardBody className="p-6">
-          <h2 className="text-2xl font-bold text-black mb-6">
-            Create New Recording
-          </h2>
-
-          {error && (
-            <div className="bg-red-50 border border-red-200 rounded-lg p-4 mb-6">
-              <p className="text-red-600 text-sm">{error}</p>
-            </div>
-          )}
-
-          <form className="space-y-6" onSubmit={handleSubmit}>
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Select
-                label="Lesson Type"
-                placeholder="Select lesson type"
-                selectedKeys={formData.lessonType ? [formData.lessonType] : []}
-                onSelectionChange={(keys) => {
-                  const selected = Array.from(keys)[0] as string;
-
-                  handleInputChange("lessonType", selected);
-                  handleInputChange("groupOrStudent", "");
-                }}
-              >
-                <SelectItem key="group">Group Lesson</SelectItem>
-                <SelectItem key="individual">Individual Lesson</SelectItem>
-              </Select>
-
-              {formData.lessonType === "group" ? (
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                 <Select
-                  label="Group"
-                  placeholder="Select group"
+                  label="Lesson Type"
+                  placeholder="Select lesson type"
                   selectedKeys={
-                    typeof formData.groupOrStudent === "string" &&
-                    formData.groupOrStudent
-                      ? [formData.groupOrStudent]
-                      : []
+                    formData.lessonType ? [formData.lessonType] : []
                   }
                   onSelectionChange={(keys) => {
                     const selected = Array.from(keys)[0] as string;
 
-                    handleInputChange("groupOrStudent", selected);
+                    handleInputChange("lessonType", selected);
+                    handleInputChange("groupOrStudent", "");
                   }}
                 >
-                  {groups.map((group) => (
-                    <SelectItem key={group.id} textValue={group.name}>
-                      {group.name}
-                    </SelectItem>
-                  ))}
+                  <SelectItem key="group">Group Lesson</SelectItem>
+                  <SelectItem key="individual">Individual Lesson</SelectItem>
                 </Select>
-              ) : formData.lessonType === "individual" ? (
-                <Select
-                  label="Students"
-                  placeholder="Select students"
-                  selectedKeys={
-                    Array.isArray(formData.groupOrStudent)
-                      ? formData.groupOrStudent
-                      : []
-                  }
-                  selectionMode="multiple"
-                  onSelectionChange={(keys) => {
-                    const selected = Array.from(keys) as string[];
 
-                    handleInputChange("groupOrStudent", selected);
-                  }}
-                >
-                  {students.map((student) => (
-                    <SelectItem key={student.id} textValue={student.name}>
-                      <div className="flex gap-2 items-center">
-                        <Avatar
-                          name={student.avatar || student.name}
-                          size="sm"
-                        />
-                        <span>{student.name}</span>
-                      </div>
-                    </SelectItem>
-                  ))}
-                </Select>
-              ) : null}
-            </div>
-
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <Input
-                label="Date"
-                type="date"
-                value={formData.date}
-                onChange={(e) => handleInputChange("date", e.target.value)}
-              />
-
-              <Input
-                label="YouTube Link"
-                placeholder="https://youtube.com/watch?v=..."
-                value={formData.youtubeLink}
-                onChange={(e) =>
-                  handleInputChange("youtubeLink", e.target.value)
-                }
-              />
-            </div>
-
-            <div>
-              <label 
-                htmlFor="message-textarea" 
-                className="block text-sm font-medium text-black mb-2"
-              >
-                Message
-              </label>
-              <textarea
-                id="message-textarea"
-                className="w-full p-3 border border-slate-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
-                placeholder="Lesson notes, homework, etc..."
-                rows={4}
-                value={formData.message}
-                onChange={(e) => handleInputChange("message", e.target.value)}
-              />
-            </div>
-
-            <Button
-              className="bg-blue-600 text-white hover:bg-blue-700"
-              disabled={
-                !formData.lessonType || !formData.date || !formData.youtubeLink
-              }
-              type="submit"
-            >
-              Create Recording
-            </Button>
-          </form>
-        </CardBody>
-      </Card>
-
-      {/* Recordings List */}
-      <Card className="border border-slate-200 rounded-xl">
-        <CardBody className="p-6">
-          <h2 className="text-2xl font-bold text-black mb-6">
-            Recent Recordings
-          </h2>
-
-          <div className="space-y-4">
-            {recordings.map((recording) => (
-              <div
-                key={recording.id}
-                className="border border-slate-200 rounded-xl p-4"
-              >
-                <div className="flex items-center gap-3 mb-3">
-                  <Chip
-                    color={
-                      recording.lessonType === "group" ? "primary" : "secondary"
+                {formData.lessonType === "group" ? (
+                  <Select
+                    label="Group"
+                    placeholder="Select group"
+                    selectedKeys={
+                      typeof formData.groupOrStudent === "string" &&
+                      formData.groupOrStudent
+                        ? [formData.groupOrStudent]
+                        : []
                     }
-                    size="sm"
+                    onSelectionChange={(keys) => {
+                      const selected = Array.from(keys)[0] as string;
+
+                      handleInputChange("groupOrStudent", selected);
+                    }}
                   >
-                    {recording.lessonType === "group" ? "Group" : "Individual"}
-                  </Chip>
+                    {groups.map((group) => (
+                      <SelectItem key={group.id} textValue={group.name}>
+                        {group.name}
+                      </SelectItem>
+                    ))}
+                  </Select>
+                ) : formData.lessonType === "individual" ? (
+                  <Select
+                    label="Students"
+                    placeholder="Select students"
+                    selectedKeys={
+                      Array.isArray(formData.groupOrStudent)
+                        ? formData.groupOrStudent
+                        : []
+                    }
+                    selectionMode="multiple"
+                    onSelectionChange={(keys) => {
+                      const selected = Array.from(keys) as string[];
 
-                  <span className="text-black/70">
-                    {new Date(recording.date).toLocaleDateString()}
-                  </span>
-                </div>
-
-                <div className="mb-3">
-                  <a
-                    className="text-blue-600 hover:text-blue-800 font-medium"
-                    href={recording.youtubeLink}
-                    rel="noopener noreferrer"
-                    target="_blank"
+                      handleInputChange("groupOrStudent", selected);
+                    }}
                   >
-                    📺 Watch on YouTube
-                  </a>
-                </div>
-
-                {Array.isArray(recording.groupOrStudent) ? (
-                  <div className="mb-3">
-                    <p className="text-sm text-black/70 mb-2">Students:</p>
-                    <div className="flex flex-wrap gap-2">
-                      {recording.groupOrStudent.map((student, index) => (
-                        <Chip key={index} size="sm" variant="flat">
-                          {student}
-                        </Chip>
-                      ))}
-                    </div>
-                  </div>
-                ) : (
-                  <p className="text-black font-medium mb-3">
-                    Group: {recording.groupOrStudent}
-                  </p>
-                )}
-
-                {recording.message && (
-                  <div className="bg-slate-50 rounded-lg p-3">
-                    <p className="text-black">{recording.message}</p>
-                  </div>
-                )}
+                    {students.map((student) => (
+                      <SelectItem key={student.id} textValue={student.name}>
+                        <div className="flex gap-2 items-center">
+                          <Avatar
+                            name={student.avatar || student.name}
+                            size="sm"
+                          />
+                          <span>{student.name}</span>
+                        </div>
+                      </SelectItem>
+                    ))}
+                  </Select>
+                ) : null}
               </div>
-            ))}
-          </div>
-        </CardBody>
-      </Card>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Input
+                  label="Date"
+                  type="date"
+                  value={formData.date}
+                  onChange={(e) => handleInputChange("date", e.target.value)}
+                />
+
+                <Input
+                  label="YouTube Link"
+                  placeholder="https://youtube.com/watch?v=..."
+                  value={formData.youtubeLink}
+                  onChange={(e) =>
+                    handleInputChange("youtubeLink", e.target.value)
+                  }
+                />
+              </div>
+
+              <div>
+                <label
+                  className="block text-sm font-medium text-black mb-2"
+                  htmlFor="message-textarea"
+                >
+                  Message
+                </label>
+                <textarea
+                  className="w-full p-3 border border-slate-200 rounded-xl resize-none focus:outline-none focus:ring-2 focus:ring-blue-500"
+                  id="message-textarea"
+                  placeholder="Lesson notes, homework, etc..."
+                  rows={4}
+                  value={formData.message}
+                  onChange={(e) => handleInputChange("message", e.target.value)}
+                />
+              </div>
+
+              <Button
+                className="bg-blue-600 text-white hover:bg-blue-700"
+                disabled={
+                  !formData.lessonType ||
+                  !formData.date ||
+                  !formData.youtubeLink
+                }
+                type="submit"
+              >
+                Create Recording
+              </Button>
+            </form>
+          </CardBody>
+        </Card>
+
+        {/* Recordings List */}
+        <Card className="border border-slate-200 rounded-xl">
+          <CardBody className="p-6">
+            <h2 className="text-2xl font-bold text-black mb-6">
+              Recent Recordings
+            </h2>
+
+            <div className="space-y-4">
+              {recordings.map((recording) => (
+                <div
+                  key={recording.id}
+                  className="border border-slate-200 rounded-xl p-4"
+                >
+                  <div className="flex items-center gap-3 mb-3">
+                    <Chip
+                      color={
+                        recording.lessonType === "group"
+                          ? "primary"
+                          : "secondary"
+                      }
+                      size="sm"
+                    >
+                      {recording.lessonType === "group"
+                        ? "Group"
+                        : "Individual"}
+                    </Chip>
+
+                    <span className="text-black/70">
+                      {new Date(recording.date).toLocaleDateString()}
+                    </span>
+                  </div>
+
+                  <div className="mb-3">
+                    <a
+                      className="text-blue-600 hover:text-blue-800 font-medium"
+                      href={recording.youtubeLink}
+                      rel="noopener noreferrer"
+                      target="_blank"
+                    >
+                      📺 Watch on YouTube
+                    </a>
+                  </div>
+
+                  {Array.isArray(recording.groupOrStudent) ? (
+                    <div className="mb-3">
+                      <p className="text-sm text-black/70 mb-2">Students:</p>
+                      <div className="flex flex-wrap gap-2">
+                        {recording.groupOrStudent.map((student, index) => (
+                          <Chip key={index} size="sm" variant="flat">
+                            {student}
+                          </Chip>
+                        ))}
+                      </div>
+                    </div>
+                  ) : (
+                    <p className="text-black font-medium mb-3">
+                      Group: {recording.groupOrStudent}
+                    </p>
+                  )}
+
+                  {recording.message && (
+                    <div className="bg-slate-50 rounded-lg p-3">
+                      <p className="text-black">{recording.message}</p>
+                    </div>
+                  )}
+                </div>
+              ))}
+            </div>
+          </CardBody>
+        </Card>
       </div>
     </ProtectedRoute>
   );

@@ -34,7 +34,7 @@ interface Recording {
 }
 
 export default function TeacherPage() {
-  const { user, token } = useAuth();
+  const { user } = useAuth();
   const { isOpen, onOpen, onClose } = useDisclosure();
   const [editingRecording, setEditingRecording] = useState<Recording | null>(
     null,
@@ -53,13 +53,25 @@ export default function TeacherPage() {
   const [students, setStudents] = useState<User[]>([]);
   const [recordings, setRecordings] = useState<Recording[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+
+  // Attendance state
+  const [attendanceModalOpen, setAttendanceModalOpen] = useState(false);
+  const [selectedGroupForAttendance, setSelectedGroupForAttendance] =
+    useState<Group | null>(null);
+  const [attendanceData, setAttendanceData] = useState<
+    Record<string, "PRESENT" | "ABSENT" | "LATE" | "EXCUSED">
+  >({});
+  const [attendanceNotes, setAttendanceNotes] = useState<
+    Record<string, string>
+  >({});
 
   // Load data from API
   useEffect(() => {
-    if (token) {
+    if (user) {
       loadData();
     }
-  }, [token]);
+  }, [user]);
 
   const loadData = async () => {
     try {
@@ -74,11 +86,17 @@ export default function TeacherPage() {
         ]);
 
       if (groupsResponse.data) {
+        console.log("Groups loaded:", groupsResponse.data);
         setGroups(groupsResponse.data as Group[]);
+      } else {
+        console.log("No groups from API");
+        setGroups([]);
       }
 
       if (studentsResponse.data) {
         setStudents(studentsResponse.data as User[]);
+      } else {
+        setStudents([]);
       }
 
       if (recordingsResponse.data) {
@@ -102,9 +120,15 @@ export default function TeacherPage() {
         }));
 
         setRecordings(convertedRecordings);
+      } else {
+        setRecordings([]);
       }
     } catch (error) {
       console.error("Error loading data:", error);
+      // Set empty arrays on error instead of mock data
+      setGroups([]);
+      setStudents([]);
+      setRecordings([]);
     } finally {
       setIsLoading(false);
     }
@@ -114,6 +138,7 @@ export default function TeacherPage() {
     field: string,
     value: string | string[] | File[],
   ) => {
+    console.log(`handleInputChange: ${field} =`, value);
     setFormData((prev) => ({
       ...prev,
       [field]: value,
@@ -179,6 +204,82 @@ export default function TeacherPage() {
       });
     } catch (error) {
       console.error("Error creating recording:", error);
+    }
+  };
+
+  // Attendance functions
+  const openAttendanceModal = (group: Group) => {
+    setSelectedGroupForAttendance(group);
+    // Initialize attendance data for all students in the group
+    const initialAttendance: Record<
+      string,
+      "PRESENT" | "ABSENT" | "LATE" | "EXCUSED"
+    > = {};
+    const initialNotes: Record<string, string> = {};
+
+    group.students.forEach((student) => {
+      initialAttendance[student.id] = "PRESENT"; // Default to present
+      initialNotes[student.id] = "";
+    });
+
+    setAttendanceData(initialAttendance);
+    setAttendanceNotes(initialNotes);
+    setAttendanceModalOpen(true);
+  };
+
+  const handleAttendanceChange = (
+    studentId: string,
+    status: "PRESENT" | "ABSENT" | "LATE" | "EXCUSED",
+  ) => {
+    setAttendanceData((prev) => ({
+      ...prev,
+      [studentId]: status,
+    }));
+  };
+
+  const handleAttendanceNotesChange = (studentId: string, notes: string) => {
+    setAttendanceNotes((prev) => ({
+      ...prev,
+      [studentId]: notes,
+    }));
+  };
+
+  const submitAttendance = async () => {
+    if (!selectedGroupForAttendance) return;
+
+    try {
+      // Create attendance records for the lesson
+      const attendanceRecords = Object.entries(attendanceData).map(
+        ([studentId, status]) => ({
+          studentId,
+          status,
+          notes: attendanceNotes[studentId] || "",
+        }),
+      );
+
+      // For now, we'll create a temporary lesson ID since this is called before lesson creation
+      // In a real implementation, you might want to create the lesson first, then attendance
+      const tempLessonId = `temp-${Date.now()}`;
+
+      // Call the API to save attendance
+      const response = await apiClient.createAttendance({
+        lessonId: tempLessonId,
+        attendance: attendanceRecords,
+      });
+
+      if (response.error) {
+        console.error("Error saving attendance:", response.error);
+
+        return;
+      }
+
+      console.log("Attendance submitted successfully:", response.data);
+      setAttendanceModalOpen(false);
+      setSelectedGroupForAttendance(null);
+      setAttendanceData({});
+      setAttendanceNotes({});
+    } catch (error) {
+      console.error("Error saving attendance:", error);
     }
   };
 
@@ -368,7 +469,7 @@ export default function TeacherPage() {
                       }}
                     >
                       {groups.map((group) => (
-                        <SelectItem key={group.name} textValue={group.name}>
+                        <SelectItem key={group.id} textValue={group.name}>
                           {group.name} ({group._count?.students || 0} студентов)
                         </SelectItem>
                       ))}
@@ -409,7 +510,7 @@ export default function TeacherPage() {
                       }}
                     >
                       {(student) => (
-                        <SelectItem key={student.name} textValue={student.name}>
+                        <SelectItem key={student.id} textValue={student.name}>
                           <div className="flex gap-2 items-center">
                             <Avatar
                               alt={student.name}
@@ -577,22 +678,54 @@ export default function TeacherPage() {
 
               {/* Submit Button */}
               <div className="flex justify-end">
-                <Button
-                  className="bg-[#007EFB] text-white hover:bg-[#007EFB]/90 font-bold px-8 py-3"
-                  disabled={
-                    !formData.lessonType ||
-                    (formData.lessonType === "group" &&
-                      !formData.groupOrStudent) ||
-                    (formData.lessonType === "individual" &&
-                      (!Array.isArray(formData.groupOrStudent) ||
-                        formData.groupOrStudent.length === 0)) ||
-                    !formData.date ||
-                    !formData.youtubeLink
-                  }
-                  type="submit"
-                >
-                  Загрузить запись
-                </Button>
+                {/* Show attendance button for group lessons, upload button for individual lessons */}
+                {formData.lessonType === "group" && formData.groupOrStudent ? (
+                  // Attendance Button for Group Lessons
+                  <Button
+                    className="bg-[#007EFB] text-white hover:bg-[#007EFB]/90 font-bold px-8 py-3"
+                    disabled={
+                      !formData.lessonType ||
+                      formData.lessonType !== "group" ||
+                      !formData.groupOrStudent
+                    }
+                    onClick={() => {
+                      const selectedGroup = groups.find(
+                        (g) => g.id === formData.groupOrStudent,
+                      );
+
+                      if (selectedGroup) {
+                        openAttendanceModal(selectedGroup);
+                      } else {
+                        console.error(
+                          "Group not found:",
+                          formData.groupOrStudent,
+                          "Available groups:",
+                          groups,
+                        );
+                      }
+                    }}
+                  >
+                    Заполнить посещаемость
+                  </Button>
+                ) : (
+                  // Upload Button for Individual Lessons or when no group selected
+                  <Button
+                    className="bg-[#007EFB] text-white hover:bg-[#007EFB]/90 font-bold px-8 py-3"
+                    disabled={
+                      !formData.lessonType ||
+                      (formData.lessonType === "group" &&
+                        !formData.groupOrStudent) ||
+                      (formData.lessonType === "individual" &&
+                        (!Array.isArray(formData.groupOrStudent) ||
+                          formData.groupOrStudent.length === 0)) ||
+                      !formData.date ||
+                      !formData.youtubeLink
+                    }
+                    type="submit"
+                  >
+                    Загрузить запись
+                  </Button>
+                )}
               </div>
             </form>
           </div>
@@ -920,6 +1053,202 @@ export default function TeacherPage() {
                 onClick={handleUpdate}
               >
                 Сохранить изменения
+              </Button>
+            </ModalFooter>
+          </ModalContent>
+        </Modal>
+
+        {/* Attendance Modal */}
+        <Modal
+          isOpen={attendanceModalOpen}
+          size="2xl"
+          onClose={() => setAttendanceModalOpen(false)}
+        >
+          <ModalContent>
+            <ModalHeader className="text-black font-bold text-xl">
+              <div className="flex items-center gap-3">
+                <div className="w-10 h-10 bg-green-100 rounded-xl flex items-center justify-center">
+                  <svg
+                    className="w-5 h-5 text-green-600"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M9 12l2 2 4-4m6 2a9 9 0 11-18 0 9 9 0 0118 0z"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <h3 className="text-black font-bold text-xl">
+                    Заполнить посещаемость
+                  </h3>
+                  <p className="text-black/60 font-medium text-sm">
+                    Группа: {selectedGroupForAttendance?.name}
+                  </p>
+                </div>
+              </div>
+            </ModalHeader>
+            <ModalBody>
+              {selectedGroupForAttendance && (
+                <div className="space-y-4">
+                  <div className="text-center p-4 bg-slate-50 rounded-2xl border border-slate-200/50">
+                    <p className="text-slate-700 font-medium text-sm">
+                      Отметьте посещаемость студентов для урока от{" "}
+                      {formData.date}
+                    </p>
+                  </div>
+
+                  <div className="space-y-3">
+                    {selectedGroupForAttendance.students.map((student) => (
+                      <div
+                        key={student.id}
+                        className="bg-white border border-slate-200/60 rounded-2xl p-4"
+                      >
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-3">
+                            <Avatar
+                              alt={student.name}
+                              className="shrink-0"
+                              classNames={{
+                                base: "bg-[#007EFB] text-white",
+                              }}
+                              name={student.avatar}
+                              size="sm"
+                            />
+                            <div>
+                              <h4 className="font-semibold text-slate-900 text-sm">
+                                {student.name}
+                              </h4>
+                              <p className="text-slate-600 text-xs">
+                                {student.email}
+                              </p>
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            {/* Attendance Status Buttons */}
+                            <div className="flex gap-1">
+                              <Button
+                                className="min-w-0 px-2 py-1 text-xs"
+                                color={
+                                  attendanceData[student.id] === "PRESENT"
+                                    ? "success"
+                                    : "default"
+                                }
+                                size="sm"
+                                variant={
+                                  attendanceData[student.id] === "PRESENT"
+                                    ? "solid"
+                                    : "bordered"
+                                }
+                                onClick={() =>
+                                  handleAttendanceChange(student.id, "PRESENT")
+                                }
+                              >
+                                Присутствует
+                              </Button>
+                              <Button
+                                className="min-w-0 px-2 py-1 text-xs"
+                                color={
+                                  attendanceData[student.id] === "ABSENT"
+                                    ? "danger"
+                                    : "default"
+                                }
+                                size="sm"
+                                variant={
+                                  attendanceData[student.id] === "ABSENT"
+                                    ? "solid"
+                                    : "bordered"
+                                }
+                                onClick={() =>
+                                  handleAttendanceChange(student.id, "ABSENT")
+                                }
+                              >
+                                Отсутствует
+                              </Button>
+                              <Button
+                                className="min-w-0 px-2 py-1 text-xs"
+                                color={
+                                  attendanceData[student.id] === "LATE"
+                                    ? "warning"
+                                    : "default"
+                                }
+                                size="sm"
+                                variant={
+                                  attendanceData[student.id] === "LATE"
+                                    ? "solid"
+                                    : "bordered"
+                                }
+                                onClick={() =>
+                                  handleAttendanceChange(student.id, "LATE")
+                                }
+                              >
+                                Опоздал
+                              </Button>
+                              <Button
+                                className="min-w-0 px-2 py-1 text-xs"
+                                color={
+                                  attendanceData[student.id] === "EXCUSED"
+                                    ? "secondary"
+                                    : "default"
+                                }
+                                size="sm"
+                                variant={
+                                  attendanceData[student.id] === "EXCUSED"
+                                    ? "solid"
+                                    : "bordered"
+                                }
+                                onClick={() =>
+                                  handleAttendanceChange(student.id, "EXCUSED")
+                                }
+                              >
+                                Уважительно
+                              </Button>
+                            </div>
+                          </div>
+                        </div>
+
+                        {/* Notes Field */}
+                        <div className="mt-3">
+                          <Input
+                            classNames={{
+                              input: "text-xs",
+                              inputWrapper: "bg-slate-50 border-slate-200/60",
+                            }}
+                            placeholder="Дополнительные заметки (необязательно)"
+                            size="sm"
+                            value={attendanceNotes[student.id] || ""}
+                            variant="bordered"
+                            onChange={(e) =>
+                              handleAttendanceNotesChange(
+                                student.id,
+                                e.target.value,
+                              )
+                            }
+                          />
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                </div>
+              )}
+            </ModalBody>
+            <ModalFooter>
+              <Button
+                variant="light"
+                onClick={() => setAttendanceModalOpen(false)}
+              >
+                Отмена
+              </Button>
+              <Button
+                className="bg-green-600 text-white hover:bg-green-700 font-bold"
+                onClick={submitAttendance}
+              >
+                Сохранить посещаемость
               </Button>
             </ModalFooter>
           </ModalContent>

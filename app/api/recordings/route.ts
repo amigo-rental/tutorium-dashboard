@@ -3,20 +3,55 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { requireRole } from "@/lib/auth/middleware";
 
-// GET /api/recordings - Get all recordings for a teacher
+// GET /api/recordings - Get recordings (all for admin/teacher, enrolled for students)
 export async function GET(request: NextRequest) {
   try {
-    const authCheck = await requireRole(["ADMIN", "TEACHER"])(request);
+    const authCheck = await requireRole(["ADMIN", "TEACHER", "STUDENT"])(
+      request,
+    );
 
     if (authCheck instanceof NextResponse) return authCheck;
 
     const authenticatedRequest = authCheck as any;
-    const teacherId = authenticatedRequest.user.userId;
+    const userId = authenticatedRequest.user.userId;
+    const userRole = authenticatedRequest.user.role;
+
+    let whereClause: any;
+
+    if (userRole === "ADMIN") {
+      // Admin sees all recordings
+      whereClause = {};
+    } else if (userRole === "TEACHER") {
+      // Teacher sees only their recordings
+      whereClause = { teacherId: userId };
+    } else if (userRole === "STUDENT") {
+      // Student sees only recordings from their enrolled groups or individual recordings
+      whereClause = {
+        OR: [
+          // Group recordings where student is enrolled
+          {
+            group: {
+              students: {
+                some: {
+                  id: userId,
+                },
+              },
+            },
+          },
+          // Individual recordings where student is directly assigned
+          {
+            students: {
+              some: {
+                id: userId,
+              },
+            },
+          },
+        ],
+      };
+    }
 
     const recordings = await prisma.recording.findMany({
-      where: {
-        teacherId,
-      },
+      where: whereClause,
       include: {
         group: {
           select: {

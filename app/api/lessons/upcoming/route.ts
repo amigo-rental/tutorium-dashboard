@@ -19,44 +19,69 @@ export async function GET(request: NextRequest) {
     let upcomingLessons: any[] = [];
 
     if (userRole === "STUDENT") {
-      // For students, get lessons from their group
-      const student = await prisma.user.findUnique({
-        where: { id: userId },
-        include: {
-          group: {
-            include: {
-              teacher: true,
-              recordings: {
-                where: {
-                  date: {
-                    gte: new Date(),
+      // For students, get upcoming recordings from their enrolled groups and individual recordings
+      const recordings = await prisma.recording.findMany({
+        where: {
+          OR: [
+            // Group recordings where student is enrolled
+            {
+              group: {
+                students: {
+                  some: {
+                    id: userId,
                   },
                 },
-                orderBy: {
-                  date: "asc",
-                },
-                take: 5,
               },
+            },
+            // Individual recordings where student is directly assigned
+            {
+              students: {
+                some: {
+                  id: userId,
+                },
+              },
+            },
+          ],
+          date: {
+            gte: new Date(),
+          },
+        },
+        include: {
+          group: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          teacher: {
+            select: {
+              id: true,
+              name: true,
             },
           },
         },
+        orderBy: {
+          date: "asc",
+        },
+        take: 5,
       });
 
-      if (student?.group?.recordings) {
-        upcomingLessons = student.group.recordings.map((recording: any) => ({
-          id: recording.id,
-          date: recording.date.toISOString().split("T")[0],
-          time: recording.date.toLocaleTimeString("ru-RU", {
-            hour: "2-digit",
-            minute: "2-digit",
-          }),
-          title: `${student.group?.name} - ${recording.lessonType === "GROUP" ? "Групповое занятие" : "Индивидуальное занятие"}`,
-          teacher: student.group?.teacher?.name || "Преподаватель",
-          duration: "60 минут",
-          meetingLink: recording.youtubeLink,
-          type: recording.lessonType.toLowerCase(),
-        }));
-      }
+      upcomingLessons = recordings.map((recording: any) => ({
+        id: recording.id,
+        date: recording.date.toISOString().split("T")[0],
+        time: recording.date.toLocaleTimeString("ru-RU", {
+          hour: "2-digit",
+          minute: "2-digit",
+        }),
+        title:
+          recording.lessonType === "GROUP"
+            ? `${recording.group?.name || "Группа"} - Групповое занятие`
+            : `Индивидуальное занятие`,
+        teacher: recording.teacher?.name || "Преподаватель",
+        duration: "60 минут",
+        meetingLink: recording.youtubeLink,
+        type: recording.lessonType.toLowerCase(),
+      }));
     } else if (userRole === "TEACHER") {
       // For teachers, get upcoming recordings they've created
       const teacherRecordings = await prisma.recording.findMany({
