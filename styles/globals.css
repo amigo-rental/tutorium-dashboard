@@ -6,14 +6,32 @@ html, body {
   min-height: 100vh;
 }
 
-/* Global font weight consistency - ensure no text is lighter than font-medium (500) */
+/* Global font weight consistency - ensure consistent font rendering */
 * {
-  font-weight: 500;
+  font-weight: 500; /* Default to Medium weight */
 }
 
-/* Allow specific font weights when explicitly set */
-.font-bold, .font-semibold, .font-black {
-  font-weight: inherit;
+/* Font weight utilities - only allow the weights we have */
+.font-medium {
+  font-weight: 500 !important;
+}
+
+.font-semibold {
+  font-weight: 600 !important;
+}
+
+/* Override any other font weights to use our available weights */
+.font-light, .font-normal, .font-thin, .font-extralight {
+  font-weight: 500 !important; /* Fallback to Medium */
+}
+
+.font-bold, .font-extrabold, .font-black {
+  font-weight: 600 !important; /* Fallback to Semibold */
+}
+
+/* Ensure consistent font family */
+body, html {
+  font-family: var(--font-sans), -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, sans-serif;
 }
 
 /* Custom scrollbar utilities */
