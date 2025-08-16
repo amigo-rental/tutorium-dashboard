@@ -360,24 +360,7 @@ class ApiClient {
     return this.request("/courses");
   }
 
-  async getProducts() {
-    return this.request("/products");
-  }
 
-  async createProduct(productData: {
-    name: string;
-    type: string;
-    description?: string;
-    courseId?: string;
-    maxLessons?: number | null;
-    validityDays?: number | null;
-    price?: number | null;
-  }) {
-    return this.request("/products", {
-      method: "POST",
-      body: JSON.stringify(productData),
-    });
-  }
 
   async getTopicsByCourse(courseId: string) {
     return this.request(`/topics?courseId=${courseId}`);
