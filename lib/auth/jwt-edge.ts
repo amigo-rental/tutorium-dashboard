@@ -3,25 +3,45 @@ import { JWTPayload } from "./jwt";
 
 const getJwtSecret = () => {
   const secret = process.env.JWT_SECRET;
+
   if (!secret) {
     console.error("JWT_SECRET environment variable is not available");
     throw new Error("JWT_SECRET environment variable is required");
   }
+
   return secret;
 };
 
 // Base64 URL encoding
 function base64UrlEncode(str: string): string {
-  return btoa(str)
-    .replace(/\+/g, '-')
-    .replace(/\//g, '_')
-    .replace(/=/g, '');
+  return btoa(str).replace(/\+/g, "-").replace(/\//g, "_").replace(/=/g, "");
 }
 
 // Base64 URL decoding
 function base64UrlDecode(str: string): string {
-  str += '='.repeat(4 - str.length % 4);
-  return atob(str.replace(/-/g, '+').replace(/_/g, '/'));
+  // Add padding if needed
+  str += "=".repeat(4 - (str.length % 4));
+
+  // Replace URL-safe characters
+  const base64 = str.replace(/-/g, "+").replace(/_/g, "/");
+
+  // Use a pure JavaScript base64 decoding approach
+  try {
+    // Try using atob first
+    return atob(base64);
+  } catch (error) {
+    // Fallback: manual base64 decoding using Uint8Array
+    const binaryString = decodeURIComponent(
+      Array.prototype.map
+        .call(
+          new Uint8Array(base64.split("").map((char) => char.charCodeAt(0))),
+          (char) => String.fromCharCode(char),
+        )
+        .join(""),
+    );
+
+    return binaryString;
+  }
 }
 
 // Create HMAC signature using Web Crypto API
@@ -31,71 +51,85 @@ async function createSignature(data: string, secret: string): Promise<string> {
   const messageData = encoder.encode(data);
 
   const key = await crypto.subtle.importKey(
-    'raw',
+    "raw",
     keyData,
-    { name: 'HMAC', hash: 'SHA-256' },
+    { name: "HMAC", hash: "SHA-256" },
     false,
-    ['sign']
+    ["sign"],
   );
 
-  const signature = await crypto.subtle.sign('HMAC', key, messageData);
+  const signature = await crypto.subtle.sign("HMAC", key, messageData);
   const signatureArray = new Uint8Array(signature);
-  return base64UrlEncode(String.fromCharCode.apply(null, Array.from(signatureArray)));
+
+  return base64UrlEncode(
+    String.fromCharCode.apply(null, Array.from(signatureArray)),
+  );
 }
 
 // Verify HMAC signature using Web Crypto API
-async function verifySignature(data: string, signature: string, secret: string): Promise<boolean> {
+async function verifySignature(
+  data: string,
+  signature: string,
+  secret: string,
+): Promise<boolean> {
   const encoder = new TextEncoder();
   const keyData = encoder.encode(secret);
   const messageData = encoder.encode(data);
 
   const key = await crypto.subtle.importKey(
-    'raw',
+    "raw",
     keyData,
-    { name: 'HMAC', hash: 'SHA-256' },
+    { name: "HMAC", hash: "SHA-256" },
     false,
-    ['verify']
+    ["verify"],
   );
 
   const signatureData = new Uint8Array(
-    Array.from(base64UrlDecode(signature)).map(char => char.charCodeAt(0))
+    Array.from(base64UrlDecode(signature)).map((char) => char.charCodeAt(0)),
   );
 
-  return await crypto.subtle.verify('HMAC', key, signatureData, messageData);
+  return await crypto.subtle.verify("HMAC", key, signatureData, messageData);
 }
 
 export async function generateTokenEdge(payload: JWTPayload): Promise<string> {
   const secret = getJwtSecret();
-  
+
   const header = {
-    alg: 'HS256',
-    typ: 'JWT'
+    alg: "HS256",
+    typ: "JWT",
   };
 
   const now = Math.floor(Date.now() / 1000);
   const tokenPayload = {
     ...payload,
     iat: now,
-    exp: now + (7 * 24 * 60 * 60) // 7 days
+    exp: now + 7 * 24 * 60 * 60, // 7 days
   };
 
   const encodedHeader = base64UrlEncode(JSON.stringify(header));
   const encodedPayload = base64UrlEncode(JSON.stringify(tokenPayload));
   const data = `${encodedHeader}.${encodedPayload}`;
-  
+
   const signature = await createSignature(data, secret);
-  
+
   return `${data}.${signature}`;
 }
 
 export async function verifyTokenEdge(token: string): Promise<JWTPayload> {
   try {
     const secret = getJwtSecret();
-    console.log("Verifying token (Edge):", token.substring(0, 30) + "...", "Secret length:", secret.length);
 
-    const parts = token.split('.');
+    console.log(
+      "Verifying token (Edge):",
+      token.substring(0, 30) + "...",
+      "Secret length:",
+      secret.length,
+    );
+
+    const parts = token.split(".");
+
     if (parts.length !== 3) {
-      throw new Error('Invalid token format');
+      throw new Error("Invalid token format");
     }
 
     const [encodedHeader, encodedPayload, signature] = parts;
@@ -103,8 +137,9 @@ export async function verifyTokenEdge(token: string): Promise<JWTPayload> {
 
     // Verify signature
     const isValid = await verifySignature(data, signature, secret);
+
     if (!isValid) {
-      throw new Error('Invalid signature');
+      throw new Error("Invalid signature");
     }
 
     // Decode payload
@@ -112,15 +147,20 @@ export async function verifyTokenEdge(token: string): Promise<JWTPayload> {
 
     // Check expiration
     const now = Math.floor(Date.now() / 1000);
+
     if (payload.exp && payload.exp < now) {
-      throw new Error('Token expired');
+      throw new Error("Token expired");
     }
 
-    console.log("Token verification successful (Edge) for user:", payload.userId);
+    console.log(
+      "Token verification successful (Edge) for user:",
+      payload.userId,
+    );
+
     return {
       userId: payload.userId,
       email: payload.email,
-      role: payload.role
+      role: payload.role,
     };
   } catch (error) {
     console.log("Token verification failed (Edge):", error);

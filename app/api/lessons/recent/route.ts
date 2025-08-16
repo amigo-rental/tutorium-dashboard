@@ -19,11 +19,11 @@ export async function GET(request: NextRequest) {
     let recentLessons: any[] = [];
 
     if (userRole === "STUDENT") {
-      // For students, get recent recordings from their enrolled groups and individual recordings
-      const recordings = await prisma.recording.findMany({
+      // For students, get recent completed lessons from their enrolled groups and individual lessons
+      const lessons = await prisma.lesson.findMany({
         where: {
           OR: [
-            // Group recordings where student is enrolled
+            // Group lessons where student is enrolled
             {
               group: {
                 students: {
@@ -33,7 +33,7 @@ export async function GET(request: NextRequest) {
                 },
               },
             },
-            // Individual recordings where student is directly assigned
+            // Individual lessons where student is directly assigned
             {
               students: {
                 some: {
@@ -42,8 +42,10 @@ export async function GET(request: NextRequest) {
               },
             },
           ],
-          date: {
-            lte: new Date(),
+          status: "COMPLETED",
+          isActive: true,
+          youtubeLink: {
+            not: null,
           },
         },
         include: {
@@ -59,73 +61,114 @@ export async function GET(request: NextRequest) {
               name: true,
             },
           },
-          attachments: true,
+          topic: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+            },
+          },
+          attachments: {
+            select: {
+              id: true,
+              filename: true,
+              originalName: true,
+            },
+          },
         },
         orderBy: {
           date: "desc",
         },
-        take: 10,
+        take: 5,
       });
 
-      recentLessons = recordings.map((recording: any) => ({
-        id: recording.id,
-        title:
-          recording.lessonType === "GROUP"
-            ? `${recording.group?.name || "Группа"} - Групповое занятие`
-            : `Индивидуальное занятие`,
-        date: recording.date.toLocaleDateString("ru-RU", {
-          month: "short",
+      recentLessons = lessons.map((lesson: any) => ({
+        id: lesson.id,
+        title: lesson.title,
+        description: lesson.description,
+        date: lesson.date.toLocaleDateString("ru-RU", {
+          year: "numeric",
+          month: "long",
           day: "numeric",
         }),
-        time: recording.date.toLocaleTimeString("ru-RU", {
+        time: lesson.date.toLocaleTimeString("ru-RU", {
           hour: "2-digit",
           minute: "2-digit",
         }),
-        teacher: recording.teacher?.name || "Преподаватель",
-        message: recording.message || "Занятие завершено",
-        filesCount: recording.attachments.length,
+        teacher: lesson.teacher?.name || "Преподаватель",
+        message: lesson.notes || "Занятие завершено",
+        filesCount: lesson.attachments.length,
         hasRecording: true,
-        recordingUrl: recording.youtubeLink,
+        recordingUrl: lesson.youtubeLink,
+        topic: lesson.topic?.name,
+        groupName: lesson.group?.name,
       }));
     } else if (userRole === "TEACHER") {
-      // For teachers, get recent recordings they've created
-      const teacherRecordings = await prisma.recording.findMany({
+      // For teachers, get recent completed lessons they've created
+      const teacherLessons = await prisma.lesson.findMany({
         where: {
           teacherId: userId,
-          date: {
-            lte: new Date(),
+          status: "COMPLETED",
+          isActive: true,
+          youtubeLink: {
+            not: null,
           },
         },
         include: {
-          group: true,
-          students: true,
-          attachments: true,
+          group: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          topic: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+            },
+          },
+          students: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          attachments: {
+            select: {
+              id: true,
+              filename: true,
+              originalName: true,
+            },
+          },
         },
         orderBy: {
           date: "desc",
         },
-        take: 10,
+        take: 5,
       });
 
-      recentLessons = teacherRecordings.map((recording) => ({
-        id: recording.id,
-        title:
-          recording.lessonType === "GROUP"
-            ? `${recording.group?.name || "Группа"} - Групповое занятие`
-            : `Индивидуальное занятие с ${recording.students.map((s) => s.name).join(", ")}`,
-        date: recording.date.toLocaleDateString("ru-RU", {
-          month: "short",
+      recentLessons = teacherLessons.map((lesson) => ({
+        id: lesson.id,
+        title: lesson.title,
+        description: lesson.description,
+        date: lesson.date.toLocaleDateString("ru-RU", {
+          year: "numeric",
+          month: "long",
           day: "numeric",
         }),
-        time: recording.date.toLocaleTimeString("ru-RU", {
+        time: lesson.date.toLocaleTimeString("ru-RU", {
           hour: "2-digit",
           minute: "2-digit",
         }),
         teacher: "Вы",
-        message: recording.message || "Занятие завершено",
-        filesCount: recording.attachments.length,
+        message: lesson.notes || "Занятие завершено",
+        filesCount: lesson.attachments.length,
         hasRecording: true,
-        recordingUrl: recording.youtubeLink,
+        recordingUrl: lesson.youtubeLink,
+        topic: lesson.topic?.name,
+        groupName: lesson.group?.name,
+        studentNames: lesson.students.map((s: any) => s.name).join(", "),
       }));
     }
 

@@ -6,7 +6,7 @@ import { requireRole } from "@/lib/auth/middleware";
 // PUT /api/attendance/[id] - Update attendance record (Admin/Teacher only)
 export async function PUT(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const authCheck = await requireRole(["ADMIN", "TEACHER"])(request);
@@ -27,7 +27,10 @@ export async function PUT(
     });
 
     if (!existingAttendance) {
-      return NextResponse.json({ error: "Attendance record not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Attendance record not found" },
+        { status: 404 },
+      );
     }
 
     // Update attendance record
@@ -53,7 +56,7 @@ export async function PUT(
 // DELETE /api/attendance/[id] - Delete attendance record (Admin/Teacher only)
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const authCheck = await requireRole(["ADMIN", "TEACHER"])(request);
@@ -68,7 +71,10 @@ export async function DELETE(
     });
 
     if (!existingAttendance) {
-      return NextResponse.json({ error: "Attendance record not found" }, { status: 404 });
+      return NextResponse.json(
+        { error: "Attendance record not found" },
+        { status: 404 },
+      );
     }
 
     // Delete attendance record
@@ -76,7 +82,9 @@ export async function DELETE(
       where: { id },
     });
 
-    return NextResponse.json({ message: "Attendance record deleted successfully" });
+    return NextResponse.json({
+      message: "Attendance record deleted successfully",
+    });
   } catch (error) {
     console.error("Delete attendance error:", error);
 

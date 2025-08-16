@@ -3,32 +3,23 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { requireRole } from "@/lib/auth/middleware";
 
-// GET /api/groups/[id] - Get a specific group with details
+// GET /api/groups/[id] - Get a specific group with progress calculation
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const authCheck = await requireRole(["ADMIN", "TEACHER", "STUDENT"])(request);
+    const authCheck = await requireRole(["ADMIN", "TEACHER", "STUDENT"])(
+      request,
+    );
 
     if (authCheck instanceof NextResponse) return authCheck;
-
-    const authenticatedRequest = authCheck as any;
-    const userId = authenticatedRequest.user.id;
-    const userRole = authenticatedRequest.user.role;
 
     const { id } = await context.params;
 
     const group = await prisma.group.findUnique({
       where: { id },
       include: {
-        teacher: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-          },
-        },
         course: {
           select: {
             id: true,
@@ -36,31 +27,25 @@ export async function GET(
             level: true,
           },
         },
+        teacher: {
+          select: {
+            id: true,
+            name: true,
+            email: true,
+            avatar: true,
+          },
+        },
         students: {
           select: {
             id: true,
             name: true,
             email: true,
-            level: true,
-          },
-        },
-        recordings: {
-          select: {
-            id: true,
-            lessonType: true,
-            date: true,
-            youtubeLink: true,
-            message: true,
-            isPublished: true,
-          },
-          orderBy: {
-            date: "desc",
+            avatar: true,
           },
         },
         _count: {
           select: {
             students: true,
-            recordings: true,
           },
         },
       },
@@ -70,22 +55,61 @@ export async function GET(
       return NextResponse.json({ error: "Group not found" }, { status: 404 });
     }
 
-    // Check access permissions
-    if (userRole === "TEACHER" && group.teacherId !== userId) {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 });
-    }
+    // Calculate real progress based on completed topics
+    const totalTopics = await prisma.topic.count({
+      where: {
+        courseId: group.courseId,
+        isActive: true,
+      },
+    });
 
-    if (userRole === "STUDENT") {
-      const isEnrolled = group.students.some(
-        (student) => student.id === userId,
-      );
+    let progressPercent = 0;
+    let completedTopics = 0;
+    let lastStudiedTopic = null;
 
-      if (!isEnrolled) {
-        return NextResponse.json({ error: "Access denied" }, { status: 403 });
+    if (totalTopics > 0) {
+      // Get completed lessons with topics for this group
+      const completedLessons = await prisma.lesson.findMany({
+        where: {
+          groupId: id,
+          topicId: { not: null },
+          status: "COMPLETED",
+        },
+        include: {
+          topic: {
+            select: {
+              name: true,
+            },
+          },
+        },
+        orderBy: {
+          date: "desc",
+        },
+      });
+
+      // Get unique completed topic IDs
+      const completedTopicIds = Array.from(
+        new Set(completedLessons.map((lesson) => lesson.topicId)),
+      ).filter(Boolean);
+
+      completedTopics = completedTopicIds.length;
+      progressPercent = Math.round((completedTopics / totalTopics) * 100);
+
+      // Get the last studied topic
+      if (completedLessons.length > 0) {
+        lastStudiedTopic = completedLessons[0].topic?.name || null;
       }
     }
 
-    return NextResponse.json(group);
+    return NextResponse.json({
+      ...group,
+      progress: {
+        percent: progressPercent,
+        completedTopics,
+        totalTopics,
+        lastStudiedTopic,
+      },
+    });
   } catch (error) {
     console.error("Get group error:", error);
 
@@ -241,7 +265,7 @@ export async function DELETE(
         _count: {
           select: {
             students: true,
-            recordings: true,
+            lessons: true,
           },
         },
       },
@@ -264,9 +288,9 @@ export async function DELETE(
       );
     }
 
-    if (existingGroup._count.recordings > 0) {
+    if (existingGroup._count.lessons > 0) {
       return NextResponse.json(
-        { error: "Cannot delete group with recordings" },
+        { error: "Cannot delete group with lessons" },
         { status: 400 },
       );
     }

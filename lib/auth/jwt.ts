@@ -3,10 +3,12 @@ import bcrypt from "bcryptjs";
 
 const getJwtSecret = () => {
   const secret = process.env.JWT_SECRET;
+
   if (!secret) {
     console.error("JWT_SECRET environment variable is not available");
     throw new Error("JWT_SECRET environment variable is required");
   }
+
   return secret;
 };
 
@@ -18,6 +20,7 @@ export interface JWTPayload {
 
 export const generateToken = (payload: JWTPayload): string => {
   const secret = getJwtSecret();
+
   return jwt.sign(payload, secret, { expiresIn: "7d" });
 };
 
@@ -25,6 +28,7 @@ export const verifyToken = (token: string): JWTPayload => {
   try {
     const secret = getJwtSecret();
     const result = jwt.verify(token, secret) as JWTPayload;
+
     return result;
   } catch (error) {
     throw new Error("Invalid token");

@@ -15,8 +15,10 @@ export async function GET(
 
     if (authCheck instanceof NextResponse) return authCheck;
 
+    const { id } = await context.params;
+
     const topic = await prisma.topic.findUnique({
-      where: { id: await context.params },
+      where: { id: id },
       include: {
         course: {
           select: {
@@ -56,9 +58,11 @@ export async function PUT(
     const body = await request.json();
     const { name, description, order, isActive } = body;
 
+    const { id } = await context.params;
+
     // Check if topic exists
     const existingTopic = await prisma.topic.findUnique({
-      where: { id: await context.params },
+      where: { id: id },
     });
 
     if (!existingTopic) {
@@ -67,7 +71,7 @@ export async function PUT(
 
     // Update topic
     const updatedTopic = await prisma.topic.update({
-      where: { id: await context.params },
+      where: { id: id },
       data: {
         name,
         description,
@@ -106,9 +110,11 @@ export async function DELETE(
 
     if (authCheck instanceof NextResponse) return authCheck;
 
+    const { id } = await context.params;
+
     // Check if topic exists
     const existingTopic = await prisma.topic.findUnique({
-      where: { id: await context.params },
+      where: { id: id },
     });
 
     if (!existingTopic) {
@@ -117,7 +123,7 @@ export async function DELETE(
 
     // Delete topic
     await prisma.topic.delete({
-      where: { id: await context.params },
+      where: { id: id },
     });
 
     return NextResponse.json({ message: "Topic deleted successfully" });

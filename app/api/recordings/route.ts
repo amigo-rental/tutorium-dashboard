@@ -3,7 +3,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { requireRole } from "@/lib/auth/middleware";
 
-// GET /api/recordings - Get recordings (all for admin/teacher, enrolled for students)
+// GET /api/recordings - Get all recordings (completed lessons)
 export async function GET(request: NextRequest) {
   try {
     const authCheck = await requireRole(["ADMIN", "TEACHER", "STUDENT"])(
@@ -16,72 +16,183 @@ export async function GET(request: NextRequest) {
     const userId = authenticatedRequest.user.userId;
     const userRole = authenticatedRequest.user.role;
 
-    let whereClause: any;
+    let lessons: any[] = [];
 
-    if (userRole === "ADMIN") {
-      // Admin sees all recordings
-      whereClause = {};
-    } else if (userRole === "TEACHER") {
-      // Teacher sees only their recordings
-      whereClause = { teacherId: userId };
-    } else if (userRole === "STUDENT") {
-      // Student sees only recordings from their enrolled groups or individual recordings
-      whereClause = {
-        OR: [
-          // Group recordings where student is enrolled
-          {
-            group: {
+    if (userRole === "STUDENT") {
+      // For students, get completed lessons from their enrolled groups and individual lessons
+      lessons = await prisma.lesson.findMany({
+        where: {
+          OR: [
+            // Group lessons where student is enrolled
+            {
+              group: {
+                students: {
+                  some: {
+                    id: userId,
+                  },
+                },
+              },
+            },
+            // Individual lessons where student is directly assigned
+            {
               students: {
                 some: {
                   id: userId,
                 },
               },
             },
+          ],
+          status: "COMPLETED",
+          isActive: true,
+          youtubeLink: {
+            not: null,
           },
-          // Individual recordings where student is directly assigned
-          {
-            students: {
-              some: {
-                id: userId,
-              },
+        },
+        include: {
+          group: {
+            select: {
+              id: true,
+              name: true,
             },
           },
-        ],
-      };
+          teacher: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          topic: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+            },
+          },
+          attachments: {
+            select: {
+              id: true,
+              filename: true,
+              originalName: true,
+              mimeType: true,
+              size: true,
+              description: true,
+            },
+          },
+        },
+        orderBy: {
+          date: "desc",
+        },
+      });
+    } else if (userRole === "TEACHER") {
+      // For teachers, get all their completed lessons
+      lessons = await prisma.lesson.findMany({
+        where: {
+          teacherId: userId,
+          status: "COMPLETED",
+          isActive: true,
+          youtubeLink: {
+            not: null,
+          },
+        },
+        include: {
+          group: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          topic: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+            },
+          },
+          attachments: {
+            select: {
+              id: true,
+              filename: true,
+              originalName: true,
+              mimeType: true,
+              size: true,
+              description: true,
+            },
+          },
+        },
+        orderBy: {
+          date: "desc",
+        },
+      });
+    } else {
+      // For admins, get all completed lessons
+      lessons = await prisma.lesson.findMany({
+        where: {
+          status: "COMPLETED",
+          isActive: true,
+          youtubeLink: {
+            not: null,
+          },
+        },
+        include: {
+          group: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          teacher: {
+            select: {
+              id: true,
+              name: true,
+            },
+          },
+          topic: {
+            select: {
+              id: true,
+              name: true,
+              description: true,
+            },
+          },
+          attachments: {
+            select: {
+              id: true,
+              filename: true,
+              originalName: true,
+              mimeType: true,
+              size: true,
+              description: true,
+            },
+          },
+        },
+        orderBy: {
+          date: "desc",
+        },
+      });
     }
 
-    const recordings = await prisma.recording.findMany({
-      where: whereClause,
-      include: {
-        group: {
-          select: {
-            id: true,
-            name: true,
-            level: true,
-          },
-        },
-        students: {
-          select: {
-            id: true,
-            name: true,
-            email: true,
-            level: true,
-          },
-        },
-        attachments: {
-          select: {
-            id: true,
-            filename: true,
-            originalName: true,
-            mimeType: true,
-            size: true,
-          },
-        },
-      },
-      orderBy: {
-        date: "desc",
-      },
-    });
+    // Convert lessons to the expected recording format
+    const recordings = lessons.map((lesson) => ({
+      id: lesson.id,
+      title: lesson.title,
+      description: lesson.description,
+      date: lesson.date,
+      lessonType: lesson.lessonType,
+      youtubeLink: lesson.youtubeLink,
+      message: lesson.notes,
+      isPublished: lesson.isPublished,
+      createdAt: lesson.createdAt,
+      updatedAt: lesson.updatedAt,
+      duration: lesson.duration,
+      viewCount: lesson.viewCount,
+      averageRating: lesson.averageRating,
+      totalFeedback: lesson.totalFeedback,
+      teacherId: lesson.teacherId,
+      groupId: lesson.groupId,
+      group: lesson.group,
+      teacher: lesson.teacher,
+      topic: lesson.topic,
+      attachments: lesson.attachments,
+    }));
 
     return NextResponse.json(recordings);
   } catch (error) {
@@ -94,193 +205,98 @@ export async function GET(request: NextRequest) {
   }
 }
 
-// POST /api/recordings - Create a new recording
+// POST /api/recordings - Create a new recording (complete a lesson)
 export async function POST(request: NextRequest) {
   try {
-    const authCheck = await requireRole(["ADMIN", "TEACHER"])(request);
+    const authCheck = await requireRole(["TEACHER", "ADMIN"])(request);
 
     if (authCheck instanceof NextResponse) return authCheck;
 
     const authenticatedRequest = authCheck as any;
     const teacherId = authenticatedRequest.user.userId;
 
-    const { lessonType, date, youtubeLink, message, groupId, studentIds } =
-      await request.json();
-
-    // Debug logging
-    console.log("Received recording data:", {
-      lessonType,
+    const {
+      title,
+      description,
       date,
+      lessonType,
       youtubeLink,
       message,
       groupId,
       studentIds,
+      topicId,
+      materials,
+    } = await request.json();
+
+    if (!title || !date || !lessonType || !youtubeLink) {
+      return NextResponse.json(
+        { error: "Title, date, lesson type, and YouTube link are required" },
+        { status: 400 },
+      );
+    }
+
+    // Create a new completed lesson with recording
+    const lesson = await prisma.lesson.create({
+      data: {
+        title,
+        description,
+        date: new Date(date),
+        startTime: "00:00", // Default since this is a completed lesson
+        endTime: "01:00", // Default since this is a completed lesson
+        duration: 60, // Default duration
+        status: "COMPLETED",
+        lessonType,
+        teacherId,
+        groupId,
+        topicId,
+        youtubeLink,
+        notes: message,
+        materials: materials || [],
+        isPublished: true,
+        students: studentIds
+          ? {
+              connect: studentIds.map((id: string) => ({ id })),
+            }
+          : undefined,
+      },
+      include: {
+        group: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        topic: {
+          select: {
+            id: true,
+            name: true,
+          },
+        },
+        attachments: true,
+      },
     });
 
-    // Validation
-    if (!lessonType || !date || !youtubeLink) {
-      return NextResponse.json(
-        { error: "Lesson type, date, and YouTube link are required" },
-        { status: 400 },
-      );
-    }
+    // Convert to recording format for response
+    const recording = {
+      id: lesson.id,
+      title: lesson.title,
+      description: lesson.description,
+      date: lesson.date,
+      lessonType: lesson.lessonType,
+      youtubeLink: lesson.youtubeLink,
+      message: lesson.notes,
+      isPublished: lesson.isPublished,
+      createdAt: lesson.createdAt,
+      updatedAt: lesson.updatedAt,
+      duration: lesson.duration,
+      teacherId: lesson.teacherId,
+      groupId: lesson.groupId,
+      group: lesson.group,
+      topic: lesson.topic,
+      attachments: lesson.attachments,
+    };
 
-    // Validate date format
-    const dateObj = new Date(date);
-
-    if (isNaN(dateObj.getTime())) {
-      return NextResponse.json(
-        { error: "Invalid date format" },
-        { status: 400 },
-      );
-    }
-
-    // Validate lesson type
-    if (!["GROUP", "INDIVIDUAL"].includes(lessonType)) {
-      return NextResponse.json(
-        { error: "Invalid lesson type" },
-        { status: 400 },
-      );
-    }
-
-    // If it's a group lesson, groupId is required
-    if (
-      lessonType === "GROUP" &&
-      (groupId === undefined || groupId === null || groupId === "")
-    ) {
-      return NextResponse.json(
-        { error: "Group ID is required for group lessons" },
-        { status: 400 },
-      );
-    }
-
-    // If it's an individual lesson, studentIds are required
-    if (
-      lessonType === "INDIVIDUAL" &&
-      (!studentIds || !Array.isArray(studentIds) || studentIds.length === 0)
-    ) {
-      return NextResponse.json(
-        { error: "Student IDs are required for individual lessons" },
-        { status: 400 },
-      );
-    }
-
-    // Verify group belongs to teacher (if provided)
-    if (groupId) {
-      const group = await prisma.group.findFirst({
-        where: {
-          id: groupId,
-          teacherId,
-        },
-      });
-
-      if (!group) {
-        return NextResponse.json(
-          { error: "Invalid group ID" },
-          { status: 400 },
-        );
-      }
-    }
-
-    // Verify students belong to teacher's groups (if provided)
-    if (studentIds && studentIds.length > 0) {
-      // Get all groups for this teacher
-      const teacherGroups = await prisma.group.findMany({
-        where: { teacherId },
-        select: { id: true },
-      });
-
-      const groupIds = teacherGroups.map((g) => g.id);
-
-      const students = await prisma.user.findMany({
-        where: {
-          id: { in: studentIds },
-          role: "STUDENT",
-        },
-      });
-
-      if (students.length !== studentIds.length) {
-        return NextResponse.json(
-          { error: "One or more student IDs are invalid" },
-          { status: 400 },
-        );
-      }
-    }
-
-    // Create recording
-    try {
-      const recording = await prisma.recording.create({
-        data: {
-          lessonType: lessonType as any,
-          date: new Date(date),
-          youtubeLink,
-          message: message || null,
-          teacherId,
-          groupId: groupId || null,
-          students: studentIds
-            ? {
-                connect: studentIds.map((id: string) => ({ id })),
-              }
-            : undefined,
-        },
-        include: {
-          group: {
-            select: {
-              id: true,
-              name: true,
-              level: true,
-            },
-          },
-          students: {
-            select: {
-              id: true,
-              name: true,
-              email: true,
-              level: true,
-            },
-          },
-          attachments: {
-            select: {
-              id: true,
-              filename: true,
-              originalName: true,
-              mimeType: true,
-              size: true,
-            },
-          },
-        },
-      });
-
-      return NextResponse.json(
-        {
-          message: "Recording created successfully",
-          recording,
-        },
-        { status: 201 },
-      );
-    } catch (prismaError: any) {
-      console.error("Prisma create error:", prismaError);
-
-      // Handle specific Prisma validation errors
-      if (prismaError.code === "P2002") {
-        return NextResponse.json(
-          { error: "A recording with this data already exists" },
-          { status: 409 },
-        );
-      }
-
-      if (prismaError.code === "P2003") {
-        return NextResponse.json(
-          { error: "Invalid foreign key reference" },
-          { status: 400 },
-        );
-      }
-
-      return NextResponse.json(
-        { error: "Failed to create recording: " + prismaError.message },
-        { status: 400 },
-      );
-    }
+    return NextResponse.json(recording);
   } catch (error) {
     console.error("Create recording error:", error);
 

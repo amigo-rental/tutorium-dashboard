@@ -23,7 +23,7 @@ import {
   StatsGridSkeleton,
   RecentLessonsSkeleton,
 } from "@/components/dashboard-skeletons";
-import { Group, Lesson, TeacherMetrics, DashboardStats } from "@/types";
+import { Lesson, TeacherGroup } from "@/types";
 
 // Helper function to get level label
 const getLevelLabel = (level: string) => {
@@ -115,6 +115,12 @@ interface UpcomingLesson {
   duration: string;
   meetingLink?: string;
   type: string;
+  groupName?: string;
+  studentCount?: number;
+  description?: string;
+  topic?: string;
+  isIndividual?: boolean;
+  studentNames?: string;
 }
 
 interface RecentLesson {
@@ -143,6 +149,38 @@ const getLessonGradient = (index: number) => {
   return gradients[index % gradients.length];
 };
 
+interface TeacherMetrics {
+  teacherId: string;
+  totalLessons: number;
+  totalStudents: number;
+  averageRating: number;
+  totalReactions: number;
+  positiveReactions: number;
+  engagementRate: number;
+  lessonsThisMonth: number;
+  studentsThisMonth: number;
+  totalFeedback: number;
+  teacher: any;
+  groups: any[];
+  lessons: any[];
+}
+
+interface TeacherStatsResponse {
+  teacherId: string;
+  totalLessons: number;
+  lessonsThisMonth: number;
+  totalStudents: number;
+  studentsThisMonth: number;
+  averageRating: number;
+  totalReactions: number;
+  positiveReactions: number;
+  engagementRate: number;
+  totalStudyHours: number;
+  totalFeedback: number;
+  recentLessons: any[];
+  groups: any[];
+}
+
 export default function DashboardPage() {
   const { user } = useAuth();
   const [upcomingLesson, setUpcomingLesson] = useState<UpcomingLesson | null>(
@@ -150,7 +188,7 @@ export default function DashboardPage() {
   );
 
   const [recentLessons, setRecentLessons] = useState<RecentLesson[]>([]);
-  const [groups, setGroups] = useState<Group[]>([]);
+  const [groups, setGroups] = useState<TeacherGroup[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [stats, setStats] = useState({
     totalLessons: 0,
@@ -195,458 +233,117 @@ export default function DashboardPage() {
     try {
       setIsLoading(true);
 
-      const [upcomingResponse, recentResponse, groupsResponse] =
-        await Promise.all([
-          apiClient.getUpcomingLessons(),
-          apiClient.getRecentLessons(),
-          apiClient.getGroups(),
-        ]);
+      const [
+        upcomingResponse,
+        recentResponse,
+        groupsResponse,
+        teacherStatsResponse,
+      ] = await Promise.all([
+        apiClient.getUpcomingLessons(),
+        apiClient.getRecentLessons(),
+        apiClient.getTeacherGroups(user?.id || ""),
+        apiClient.getTeacherStats(user?.id || ""),
+      ]);
 
+      console.log("🔍 Tutor Dashboard API responses:", {
+        upcoming: upcomingResponse,
+        recent: recentResponse,
+        groups: groupsResponse,
+        teacherStats: teacherStatsResponse,
+      });
+
+      // For teachers, only show upcoming lessons where they are the teacher
       if (
         upcomingResponse.data &&
         Array.isArray(upcomingResponse.data) &&
         upcomingResponse.data.length > 0
       ) {
-        setUpcomingLesson(upcomingResponse.data[0]);
+        // Filter to ensure only lessons where current user is the teacher
+        const teacherUpcomingLessons = upcomingResponse.data.filter(
+          (lesson: any) =>
+            lesson.teacher === "Вы" || lesson.teacher === user?.name,
+        );
+
+        if (teacherUpcomingLessons.length > 0) {
+          console.log(
+            "✅ Setting teacher upcoming lesson:",
+            teacherUpcomingLessons[0],
+          );
+          setUpcomingLesson(teacherUpcomingLessons[0]);
+        } else {
+          console.log("⚠️ No upcoming lessons for current teacher");
+          setUpcomingLesson(null);
+        }
+      } else {
+        console.log("⚠️ No upcoming lessons data:", upcomingResponse);
+        setUpcomingLesson(null);
       }
 
       if (recentResponse.data && Array.isArray(recentResponse.data)) {
         setRecentLessons(recentResponse.data);
       }
 
+      // Use real teacher groups data
       if (groupsResponse.data && Array.isArray(groupsResponse.data)) {
         setGroups(groupsResponse.data);
       } else {
-        // Mock data for testing - remove this in production when API is ready
-        setGroups([
-          {
-            id: "1",
-            name: "Английский для начинающих",
-            description: "Группа для изучения английского языка с нуля",
-            level: "Начинающий",
-            maxStudents: 8,
-            isActive: true,
-            createdAt: "2024-01-01",
-            updatedAt: "2024-01-01",
-            teacherId: "teacher1",
-            courseId: "course1",
-            students: [],
-            _count: { students: 6 },
-          },
-          {
-            id: "2",
-            name: "Разговорный английский",
-            description: "Практика разговорной речи",
-            level: "Средний",
-            maxStudents: 6,
-            isActive: true,
-            createdAt: "2024-01-01",
-            updatedAt: "2024-01-01",
-            teacherId: "teacher2",
-            courseId: "course2",
-            students: [],
-            _count: { students: 4 },
-          },
-          {
-            id: "3",
-            name: "Бизнес английский",
-            description: "Английский для работы и бизнеса",
-            level: "Продвинутый",
-            maxStudents: 10,
-            isActive: true,
-            createdAt: "2024-01-01",
-            updatedAt: "2024-01-01",
-            teacherId: "teacher3",
-            courseId: "course3",
-            students: [],
-            _count: { students: 8 },
-          },
-        ]);
+        console.log("⚠️ No teacher groups data:", groupsResponse);
+        setGroups([]);
       }
 
-      // Comprehensive mock data for teacher dashboard
-      const teacherMetrics: TeacherMetrics = {
-        teacherId: "teacher1",
-        totalLessons: 156,
-        totalStudents: 42,
-        averageRating: 4.7,
-        totalReactions: 1247,
-        positiveReactions: 1089,
-        engagementRate: 87.3,
-        lessonsThisMonth: 18,
-        studentsThisMonth: 38,
-        teacher: user!,
-        groups: [],
-        lessons: [],
-      };
+      // Use real teacher statistics
+      if (teacherStatsResponse.data) {
+        const stats = teacherStatsResponse.data as TeacherStatsResponse;
 
-      const dashboardStats: DashboardStats = {
-        totalLessons: 156,
-        totalStudents: 42,
-        averageRating: 4.7,
-        totalReactions: 1247,
-        positiveReactions: 1089,
-        engagementRate: 87.3,
-        lessonsThisMonth: 18,
-        studentsThisMonth: 38,
-        topReactions: ["THUMBS_UP", "LOVE", "HELPFUL", "EXCITED", "CLAP"],
-        recentFeedback: [],
-      };
+        // Set teacher metrics
+        const teacherMetrics: TeacherMetrics = {
+          teacherId: stats.teacherId,
+          totalLessons: stats.totalLessons,
+          totalStudents: stats.totalStudents,
+          averageRating: stats.averageRating,
+          totalReactions: stats.totalReactions,
+          positiveReactions: stats.positiveReactions,
+          engagementRate: stats.engagementRate,
+          lessonsThisMonth: stats.lessonsThisMonth,
+          studentsThisMonth: stats.studentsThisMonth,
+          totalFeedback: stats.totalFeedback,
+          teacher: user!,
+          groups: stats.groups || [],
+          lessons: stats.recentLessons || [],
+        };
 
-      // Mock lessons with comprehensive data
-      const mockLessons: Lesson[] = [
-        {
-          id: "1",
-          title: "Present Simple vs Present Continuous",
-          description:
-            "Изучение различий между простым и продолженным настоящим временем",
-          date: "2024-01-15",
-          startTime: "10:00",
-          endTime: "11:30",
-          duration: 90,
-          lessonType: "GROUP",
-          status: "COMPLETED",
-          isActive: true,
-          createdAt: "2024-01-15T10:00:00Z",
-          updatedAt: "2024-01-15T11:30:00Z",
-          teacherId: "teacher1",
-          teacher: {
-            id: "teacher1",
-            email: "teacher@example.com",
-            name: "Анна Петрова",
-            firstName: "Анна",
-            lastName: "Петрова",
-            role: "TEACHER",
-            avatar: undefined,
-            isActive: true,
-            createdAt: "2024-01-01T00:00:00Z",
-            updatedAt: "2024-01-01T00:00:00Z",
-          },
-          groupId: "1",
-          group: groups[0],
-          studentIds: [
-            "student1",
-            "student2",
-            "student3",
-            "student4",
-            "student5",
-            "student6",
-          ],
-          students: [],
-          materials: [],
-          recording: {
-            id: "rec1",
-            lessonId: "1",
-            recordingUrl: "https://youtube.com/watch?v=example1",
-            duration: 5400,
-            quality: "HD",
-            isPublished: true,
-            publishedAt: "2024-01-15T12:00:00Z",
-            createdAt: "2024-01-15T11:30:00Z",
-            updatedAt: "2024-01-15T12:00:00Z",
-          },
-          reactions: [
-            {
-              id: "r1",
-              lessonId: "1",
-              studentId: "student1",
-              reactionType: "THUMBS_UP",
-              emoji: "👍",
-              createdAt: "2024-01-15T12:30:00Z",
-              lesson: {} as Lesson,
-              student: {} as any,
-            },
-            {
-              id: "r2",
-              lessonId: "1",
-              studentId: "student2",
-              reactionType: "LOVE",
-              emoji: "❤️",
-              createdAt: "2024-01-15T12:35:00Z",
-              lesson: {} as Lesson,
-              student: {} as any,
-            },
-            {
-              id: "r3",
-              lessonId: "1",
-              studentId: "student3",
-              reactionType: "HELPFUL",
-              emoji: "💡",
-              createdAt: "2024-01-15T12:40:00Z",
-              lesson: {} as Lesson,
-              student: {} as any,
-            },
-            {
-              id: "r4",
-              lessonId: "1",
-              studentId: "student4",
-              reactionType: "EXCITED",
-              emoji: "🎉",
-              createdAt: "2024-01-15T12:45:00Z",
-              lesson: {} as Lesson,
-              student: {} as any,
-            },
-            {
-              id: "r5",
-              lessonId: "1",
-              studentId: "student5",
-              reactionType: "CLAP",
-              emoji: "👏",
-              createdAt: "2024-01-15T12:50:00Z",
-              lesson: {} as Lesson,
-              student: {} as any,
-            },
-            {
-              id: "r6",
-              lessonId: "1",
-              studentId: "student6",
-              reactionType: "THUMBS_UP",
-              emoji: "👍",
-              createdAt: "2024-01-15T12:55:00Z",
-              lesson: {} as Lesson,
-              student: {} as any,
-            },
-          ],
-          feedback: [],
-          _count: { students: 6, reactions: 6, feedback: 0 },
-        },
-        {
-          id: "2",
-          title: "Business Vocabulary and Phrases",
-          description:
-            "Расширение делового словарного запаса и изучение полезных фраз",
-          date: "2024-01-14",
-          startTime: "15:00",
-          endTime: "16:30",
-          duration: 90,
-          lessonType: "GROUP",
-          status: "COMPLETED",
-          isActive: true,
-          createdAt: "2024-01-14T15:00:00Z",
-          updatedAt: "2024-01-14T16:30:00Z",
-          teacherId: "teacher1",
-          teacher: {
-            id: "teacher1",
-            email: "teacher@example.com",
-            name: "Михаил Иванов",
-            firstName: "Михаил",
-            lastName: "Иванов",
-            role: "TEACHER",
-            avatar: undefined,
-            isActive: true,
-            createdAt: "2024-01-01T00:00:00Z",
-            updatedAt: "2024-01-01T00:00:00Z",
-          },
-          groupId: "2",
-          group: groups[1],
-          studentIds: [
-            "student7",
-            "student8",
-            "student9",
-            "student10",
-            "student11",
-            "student12",
-          ],
-          students: [],
-          materials: [],
-          recording: {
-            id: "rec2",
-            lessonId: "2",
-            recordingUrl: "https://youtube.com/watch?v=example2",
-            duration: 5400,
-            quality: "HD",
-            isPublished: true,
-            publishedAt: "2024-01-14T17:00:00Z",
-            createdAt: "2024-01-14T16:30:00Z",
-            updatedAt: "2024-01-14T17:00:00Z",
-          },
-          reactions: [
-            {
-              id: "r7",
-              lessonId: "2",
-              studentId: "student7",
-              reactionType: "THUMBS_UP",
-              emoji: "👍",
-              createdAt: "2024-01-14T17:30:00Z",
-              lesson: {} as Lesson,
-              student: {} as any,
-            },
-            {
-              id: "r8",
-              lessonId: "2",
-              studentId: "student8",
-              reactionType: "LOVE",
-              emoji: "❤️",
-              createdAt: "2024-01-14T17:35:00Z",
-              lesson: {} as Lesson,
-              student: {} as any,
-            },
-            {
-              id: "r9",
-              lessonId: "2",
-              studentId: "student9",
-              reactionType: "HELPFUL",
-              emoji: "💡",
-              createdAt: "2024-01-14T17:40:00Z",
-              lesson: {} as Lesson,
-              student: {} as any,
-            },
-            {
-              id: "r10",
-              lessonId: "2",
-              studentId: "student10",
-              reactionType: "EXCITED",
-              emoji: "🎉",
-              createdAt: "2024-01-14T17:45:00Z",
-              lesson: {} as Lesson,
-              student: {} as any,
-            },
-            {
-              id: "r11",
-              lessonId: "2",
-              studentId: "student11",
-              reactionType: "CLAP",
-              emoji: "👏",
-              createdAt: "2024-01-14T17:50:00Z",
-              lesson: {} as Lesson,
-              student: {} as any,
-            },
-            {
-              id: "r12",
-              lessonId: "2",
-              studentId: "student12",
-              reactionType: "THUMBS_UP",
-              emoji: "👍",
-              createdAt: "2024-01-14T17:55:00Z",
-              lesson: {} as Lesson,
-              student: {} as any,
-            },
-            {
-              id: "r13",
-              lessonId: "2",
-              studentId: "student13",
-              reactionType: "LOVE",
-              emoji: "❤️",
-              createdAt: "2024-01-14T18:00:00Z",
-              lesson: {} as Lesson,
-              student: {} as any,
-            },
-            {
-              id: "r14",
-              lessonId: "2",
-              studentId: "student14",
-              reactionType: "HELPFUL",
-              emoji: "💡",
-              createdAt: "2024-01-14T18:05:00Z",
-              lesson: {} as Lesson,
-              student: {} as any,
-            },
-          ],
-          feedback: [],
-          _count: { students: 8, reactions: 8, feedback: 0 },
-        },
-        {
-          id: "3",
-          title: "Advanced Conversation Practice",
-          description: "Практика разговорной речи на продвинутом уровне",
-          date: "2024-01-13",
-          startTime: "18:00",
-          endTime: "19:30",
-          duration: 90,
-          lessonType: "GROUP",
-          status: "COMPLETED",
-          isActive: true,
-          createdAt: "2024-01-13T18:00:00Z",
-          updatedAt: "2024-01-13T19:30:00Z",
-          teacherId: "teacher1",
-          teacher: {
-            id: "teacher1",
-            email: "teacher@example.com",
-            name: "Елена Сидорова",
-            firstName: "Елена",
-            lastName: "Сидорова",
-            role: "TEACHER",
-            avatar: undefined,
-            isActive: true,
-            createdAt: "2024-01-01T00:00:00Z",
-            updatedAt: "2024-01-01T00:00:00Z",
-          },
-          groupId: "3",
-          group: groups[2],
-          studentIds: ["student15", "student16", "student17", "student18"],
-          students: [],
-          materials: [],
-          recording: {
-            id: "rec3",
-            lessonId: "3",
-            recordingUrl: "https://youtube.com/watch?v=example3",
-            duration: 5400,
-            quality: "HD",
-            isPublished: true,
-            publishedAt: "2024-01-13T20:00:00Z",
-            createdAt: "2024-01-13T19:30:00Z",
-            updatedAt: "2024-01-13T20:00:00Z",
-          },
-          reactions: [
-            {
-              id: "r15",
-              lessonId: "3",
-              studentId: "student15",
-              reactionType: "THUMBS_UP",
-              emoji: "👍",
-              createdAt: "2024-01-13T20:30:00Z",
-              lesson: {} as Lesson,
-              student: {} as any,
-            },
-            {
-              id: "r16",
-              lessonId: "3",
-              studentId: "student16",
-              reactionType: "LOVE",
-              emoji: "❤️",
-              createdAt: "2024-01-13T20:35:00Z",
-              lesson: {} as Lesson,
-              student: {} as any,
-            },
-            {
-              id: "r17",
-              lessonId: "3",
-              studentId: "student17",
-              reactionType: "EXCITED",
-              emoji: "🎉",
-              createdAt: "2024-01-13T20:40:00Z",
-              lesson: {} as Lesson,
-              student: {} as any,
-            },
-            {
-              id: "r18",
-              lessonId: "3",
-              studentId: "student18",
-              reactionType: "CLAP",
-              emoji: "👏",
-              createdAt: "2024-01-13T20:45:00Z",
-              lesson: {} as Lesson,
-              student: {} as any,
-            },
-          ],
-          feedback: [],
-          _count: { students: 4, reactions: 4, feedback: 0 },
-        },
-      ];
+        setTeacherMetrics(teacherMetrics);
 
-      // Set teacher metrics and lessons
-      setTeacherMetrics(teacherMetrics);
-      setLessons(mockLessons);
+        // Calculate stats from real teacher metrics
+        setStats({
+          totalLessons: stats.totalLessons,
+          studyTime: stats.totalStudyHours,
+          averageScore: Math.round(stats.averageRating * 20), // Convert rating to percentage
+          achievements: Math.floor(stats.totalLessons / 10), // Achievement every 10 lessons
+        });
 
-      // Calculate stats from teacher metrics
-      setStats({
-        totalLessons: teacherMetrics.totalLessons,
-        studyTime: teacherMetrics.totalLessons * 1.5, // 1.5 hours per lesson
-        averageScore: Math.round(teacherMetrics.averageRating * 20), // Convert 4.7 to 94
-        achievements: Math.floor(teacherMetrics.totalLessons / 10), // Achievement every 10 lessons
-      });
+        console.log("✅ Teacher stats loaded:", stats);
+      } else {
+        console.log("⚠️ No teacher stats data:", teacherStatsResponse);
+
+        // Fallback to default values
+        setStats({
+          totalLessons: 0,
+          studyTime: 0,
+          averageScore: 0,
+          achievements: 0,
+        });
+      }
     } catch (error) {
-      // Error loading dashboard data
+      console.error("Error loading tutor dashboard data:", error);
+
+      // Set default values on error
+      setStats({
+        totalLessons: 0,
+        studyTime: 0,
+        averageScore: 0,
+        achievements: 0,
+      });
     } finally {
       setIsLoading(false);
     }
@@ -690,7 +387,7 @@ export default function DashboardPage() {
   }
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requiredRole="TEACHER">
       {isLoading ? (
         <DashboardSkeleton />
       ) : (
@@ -705,7 +402,6 @@ export default function DashboardPage() {
               </h1>
               <p className="text-black/70 text-xl font-medium mt-2">
                 Добро пожаловать в дашборд преподавателя
-                <span className="block mt-1 text-lg">Роль: Преподаватель</span>
               </p>
             </div>
           )}
@@ -752,11 +448,46 @@ export default function DashboardPage() {
                             Длительность: {upcomingLesson.duration}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">
-                            Онлайн занятие
-                          </span>
-                        </div>
+                        {/* Group or Student Info */}
+                        {upcomingLesson.groupName ? (
+                          <div className="flex items-center gap-2">
+                            <svg
+                              className="w-4 h-4 text-blue-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                              />
+                            </svg>
+                            <span className="font-medium text-sm text-blue-700">
+                              {upcomingLesson.groupName}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <svg
+                              className="w-4 h-4 text-purple-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                              />
+                            </svg>
+                            <span className="font-medium text-sm text-purple-700">
+                              {upcomingLesson.studentNames || "Студент"}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -779,6 +510,16 @@ export default function DashboardPage() {
                     <p className="text-black font-bold text-lg mb-2">
                       Нет предстоящих уроков
                     </p>
+                    <p className="text-black/70 font-medium text-base mb-4">
+                      Запланируй следующее занятие для своих студентов
+                    </p>
+                    <Button
+                      className="font-bold bg-[#007EFB] text-white"
+                      size="md"
+                      variant="flat"
+                    >
+                      Создать урок
+                    </Button>
                   </div>
                 )}
               </div>
@@ -854,7 +595,7 @@ export default function DashboardPage() {
                     Рейтинг преподавателя
                   </div>
                   <div className="text-black/70 font-medium text-xs mt-1">
-                    Из 5 звезд
+                    Из 5 звезд • {teacherMetrics?.totalFeedback || 0} отзывов
                   </div>
                 </div>
               </div>
@@ -884,6 +625,74 @@ export default function DashboardPage() {
             </div>
           )}
 
+          {/* Quick Actions Section */}
+          <section className="mb-12">
+            <div className="flex items-center justify-between mb-6">
+              <div>
+                <h2 className="text-3xl font-bold text-black">
+                  Быстрые действия
+                </h2>
+                <p className="text-black/70 font-medium text-lg mt-1">
+                  Управляй своими уроками и группами
+                </p>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+              <Button
+                as={Link}
+                className="h-24 bg-gradient-to-br from-[#007EFB] to-[#00B67A] text-white font-bold text-lg hover:opacity-90 transition-all duration-300"
+                href="/lessons/create"
+                size="lg"
+                variant="flat"
+              >
+                <div className="text-center">
+                  <div className="text-2xl mb-2">📝</div>
+                  <div>Создать урок</div>
+                </div>
+              </Button>
+
+              <Button
+                as={Link}
+                className="h-24 bg-gradient-to-br from-[#EE7A3F] to-[#FDD130] text-white font-bold text-lg hover:opacity-90 transition-all duration-300"
+                href="/groups/create"
+                size="lg"
+                variant="flat"
+              >
+                <div className="text-center">
+                  <div className="text-2xl mb-2">👥</div>
+                  <div>Создать группу</div>
+                </div>
+              </Button>
+
+              <Button
+                as={Link}
+                className="h-24 bg-gradient-to-br from-[#FDD130] to-[#EE7A3F] text-white font-bold text-lg hover:opacity-90 transition-all duration-300"
+                href="/schedule"
+                size="lg"
+                variant="flat"
+              >
+                <div className="text-center">
+                  <div className="text-2xl mb-2">📅</div>
+                  <div>Расписание</div>
+                </div>
+              </Button>
+
+              <Button
+                as={Link}
+                className="h-24 bg-gradient-to-br from-[#00B67A] to-[#007EFB] text-white font-bold text-lg hover:opacity-90 transition-all duration-300"
+                href="/analytics"
+                size="lg"
+                variant="flat"
+              >
+                <div className="text-center">
+                  <div className="text-2xl mb-2">📊</div>
+                  <div>Аналитика</div>
+                </div>
+              </Button>
+            </div>
+          </section>
+
           {/* Main Content */}
           <div className="space-y-8">
             {/* Groups Section */}
@@ -895,7 +704,7 @@ export default function DashboardPage() {
                       Твои группы
                     </h2>
                     <p className="text-black/70 font-medium text-lg mt-1">
-                      Группы, в которых ты состоишь
+                      Группы, которыми ты управляешь как преподаватель
                     </p>
                   </div>
                   <Button
@@ -905,7 +714,7 @@ export default function DashboardPage() {
                     size="lg"
                     variant="light"
                   >
-                    Посмотреть все
+                    Управлять группами
                     <svg
                       className="w-4 h-4 transition-transform group-hover:translate-x-1"
                       fill="none"
@@ -939,9 +748,14 @@ export default function DashboardPage() {
                               {group.name}
                             </h3>
                             <p className="text-black/70 font-medium text-sm">
-                              {group.level} • {group._count?.students || 0}{" "}
+                              {group.level} • {group.studentCount || 0}{" "}
                               студентов
                             </p>
+                            {group.course && (
+                              <p className="text-black/50 font-medium text-xs mt-1">
+                                Курс: {group.course.name}
+                              </p>
+                            )}
                           </div>
                         </div>
 
@@ -950,22 +764,37 @@ export default function DashboardPage() {
                             <span className="text-black/70 font-medium">
                               Прогресс
                             </span>
-                            <span className="text-black font-bold">75%</span>
+                            <span className="text-black font-bold">
+                              {group.progress || 0}%
+                            </span>
                           </div>
                           <div className="w-full bg-slate-200/50 rounded-full h-2">
                             <div
                               className="h-2 bg-gradient-to-r from-[#007EFB] to-[#00B67A] rounded-full"
-                              style={{ width: "75%" }}
+                              style={{ width: `${group.progress || 0}%` }}
                             />
+                          </div>
+                          <div className="flex items-center justify-between text-xs text-black/50">
+                            <span>Уроков: {group.lessonCount || 0}</span>
+                            <span>Макс: {group.maxStudents}</span>
                           </div>
                         </div>
 
-                        <Button
-                          className="w-full mt-4 font-semibold text-white bg-[#007EFB] hover:bg-[#007EFB]/90"
-                          size="lg"
-                        >
-                          Открыть в Telegram
-                        </Button>
+                        <div className="flex gap-2 mt-4">
+                          <Button
+                            className="flex-1 font-semibold text-white bg-[#007EFB] hover:bg-[#007EFB]/90"
+                            size="md"
+                          >
+                            Управлять
+                          </Button>
+                          <Button
+                            className="flex-1 font-semibold text-[#007EFB] border border-[#007EFB] hover:bg-[#007EFB]/10"
+                            size="md"
+                            variant="bordered"
+                          >
+                            Telegram
+                          </Button>
+                        </div>
                       </div>
                     ))}
 
@@ -1027,7 +856,7 @@ export default function DashboardPage() {
                   size="lg"
                   variant="light"
                 >
-                  Посмотреть все
+                  История уроков
                   <svg
                     className="w-4 h-4 transition-transform group-hover:translate-x-1"
                     fill="none"
@@ -1081,13 +910,14 @@ export default function DashboardPage() {
                               {lesson.title}
                             </h4>
                             <p className="text-black/70 font-medium text-sm">
-                              {lesson.date} • {lesson.teacher.name}
+                              {lesson.date} •{" "}
+                              {lesson.group?.name || "Индивидуальный урок"}
                             </p>
                           </div>
 
                           {/* Feedback Reaction Counts Only */}
                           <div className="flex items-center gap-3 flex-shrink-0">
-                            {/* Feedback Reactions Summary */}
+                            {/* Student Count */}
                             <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 rounded-xl">
                               <svg
                                 className="w-4 h-4 text-blue-600"
@@ -1096,14 +926,14 @@ export default function DashboardPage() {
                                 viewBox="0 0 24 24"
                               >
                                 <path
-                                  d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
                                   strokeWidth={2}
                                 />
                               </svg>
                               <span className="text-blue-700 font-medium text-xs">
-                                {lesson._count?.reactions || 0} реакций
+                                {lesson._count?.students || 0} студентов
                               </span>
                             </div>
 
@@ -1135,6 +965,28 @@ export default function DashboardPage() {
                                 👍
                               </span>
                             </div>
+
+                            {/* Recording Status */}
+                            {lesson.recording && (
+                              <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-100 rounded-xl">
+                                <svg
+                                  className="w-4 h-4 text-purple-600"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                  />
+                                </svg>
+                                <span className="text-purple-700 font-medium text-xs">
+                                  Запись
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -1153,13 +1005,14 @@ export default function DashboardPage() {
                               {lesson.title}
                             </h4>
                             <p className="text-black/70 font-medium text-xs">
-                              {lesson.date} • {lesson.teacher.name}
+                              {lesson.date} •{" "}
+                              {lesson.group?.name || "Индивидуальный"}
                             </p>
                           </div>
 
                           {/* Compact Feedback Section */}
                           <div className="flex items-center gap-2 flex-shrink-0">
-                            {/* Feedback Reactions - Compact */}
+                            {/* Student Count - Compact */}
                             <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 rounded-lg">
                               <svg
                                 className="w-3 h-3 text-blue-600"
@@ -1168,14 +1021,14 @@ export default function DashboardPage() {
                                 viewBox="0 0 24 24"
                               >
                                 <path
-                                  d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
                                   strokeWidth={2}
                                 />
                               </svg>
                               <span className="text-blue-700 font-medium text-xs">
-                                {lesson._count?.reactions || 0}
+                                {lesson._count?.students || 0}
                               </span>
                             </div>
 
@@ -1207,6 +1060,28 @@ export default function DashboardPage() {
                                 👍
                               </span>
                             </div>
+
+                            {/* Recording Status - Compact */}
+                            {lesson.recording && (
+                              <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 rounded-lg">
+                                <svg
+                                  className="w-3 h-3 text-purple-600"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                  />
+                                </svg>
+                                <span className="text-purple-700 font-medium text-xs">
+                                  📹
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
 
@@ -1226,14 +1101,15 @@ export default function DashboardPage() {
                                 {lesson.title}
                               </h4>
                               <p className="text-black/70 font-medium text-sm">
-                                {lesson.date} • {lesson.teacher.name}
+                                {lesson.date} •{" "}
+                                {lesson.group?.name || "Индивидуальный урок"}
                               </p>
                             </div>
                           </div>
 
                           {/* Mobile Feedback Row */}
                           <div className="flex items-center gap-2 flex-wrap">
-                            {/* Feedback Reactions */}
+                            {/* Student Count */}
                             <div className="flex items-center gap-2 px-3 py-1.5 bg-blue-100 rounded-xl">
                               <svg
                                 className="w-4 h-4 text-blue-600"
@@ -1242,14 +1118,14 @@ export default function DashboardPage() {
                                 viewBox="0 0 24 24"
                               >
                                 <path
-                                  d="M14.828 14.828a4 4 0 01-5.656 0M9 10h1m4 0h1m-6 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                                  d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"
                                   strokeLinecap="round"
                                   strokeLinejoin="round"
                                   strokeWidth={2}
                                 />
                               </svg>
                               <span className="text-blue-700 font-medium text-xs">
-                                {lesson._count?.reactions || 0} реакций
+                                {lesson._count?.students || 0} студентов
                               </span>
                             </div>
 
@@ -1281,6 +1157,28 @@ export default function DashboardPage() {
                                 👍
                               </span>
                             </div>
+
+                            {/* Recording Status */}
+                            {lesson.recording && (
+                              <div className="flex items-center gap-2 px-3 py-1.5 bg-purple-100 rounded-xl">
+                                <svg
+                                  className="w-4 h-4 text-purple-600"
+                                  fill="none"
+                                  stroke="currentColor"
+                                  viewBox="0 0 24 24"
+                                >
+                                  <path
+                                    d="M15 10l4.553-2.276A1 1 0 0121 8.618v6.764a1 1 0 01-1.447.894L15 14M5 18h8a2 2 0 002-2V8a2 2 0 00-2-2H5a2 2 0 00-2 2v8a2 2 0 002 2z"
+                                    strokeLinecap="round"
+                                    strokeLinejoin="round"
+                                    strokeWidth={2}
+                                  />
+                                </svg>
+                                <span className="text-purple-700 font-medium text-xs">
+                                  Запись
+                                </span>
+                              </div>
+                            )}
                           </div>
                         </div>
                       </div>
@@ -1295,7 +1193,7 @@ export default function DashboardPage() {
                       Нет недавних уроков
                     </p>
                     <p className="text-slate-500 text-base">
-                      Твои уроки появятся здесь после первого занятия
+                      Проведите свой первый урок, чтобы увидеть его здесь
                     </p>
                   </div>
                 )}

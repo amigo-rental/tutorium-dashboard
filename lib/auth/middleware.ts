@@ -1,5 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
-import { verifyTokenEdge } from "./jwt-edge";
+
+import { verifyToken } from "./jwt";
 
 // Define public routes that don't require authentication
 const publicRoutes = ["/", "/login", "/api/auth/login", "/api/auth/register"];
@@ -9,7 +10,7 @@ const roleBasedRoutes = {
   "/dashboard": ["STUDENT", "TEACHER", "ADMIN"],
   "/groups": ["STUDENT", "TEACHER", "ADMIN"],
   "/tutor": ["TEACHER", "ADMIN"],
-  "/teacher": ["TEACHER", "ADMIN"],
+  "/uploader": ["TEACHER", "ADMIN"],
   "/admin": ["ADMIN"],
   "/settings": ["STUDENT", "TEACHER", "ADMIN"],
   "/schedule": ["STUDENT", "TEACHER", "ADMIN"],
@@ -41,6 +42,7 @@ export interface AuthCheckResult {
   message: string;
   user: {
     id: string;
+    userId: string; // Add this for backward compatibility
     email: string;
     role: string;
   } | null;
@@ -48,27 +50,29 @@ export interface AuthCheckResult {
 
 // Function to check if user has required role for API routes
 export function requireRole(allowedRoles: string[]) {
-  return async (request: NextRequest): Promise<AuthCheckResult | NextResponse> => {
+  return async (
+    request: NextRequest,
+  ): Promise<AuthCheckResult | NextResponse> => {
     const cookieToken = request.cookies.get("token")?.value;
-    
+
     if (!cookieToken) {
       return {
         success: false,
         status: 401,
         message: "Authentication required",
-        user: null
+        user: null,
       };
     }
 
     try {
-      const decoded = await verifyTokenEdge(cookieToken);
-      
+      const decoded = verifyToken(cookieToken);
+
       if (!allowedRoles.includes(decoded.role)) {
         return {
           success: false,
           status: 403,
           message: "Insufficient permissions",
-          user: null
+          user: null,
         };
       }
 
@@ -77,17 +81,20 @@ export function requireRole(allowedRoles: string[]) {
         status: 200,
         message: "Access granted",
         user: {
-          id: decoded.userId,
+          id: decoded.userId, // Keep this as 'id' for consistency
+          userId: decoded.userId, // Also include userId for backward compatibility
           email: decoded.email,
-          role: decoded.role
-        }
+          role: decoded.role,
+        },
       };
     } catch (error) {
+      console.error("Token verification error:", error);
+
       return {
         success: false,
         status: 401,
         message: "Invalid token",
-        user: null
+        user: null,
       };
     }
   };
@@ -114,11 +121,16 @@ export function middleware(request: NextRequest) {
 
   // Check for authentication token
   const cookieToken = request.cookies.get("token")?.value;
-  
+
   if (!cookieToken) {
-    console.log("Middleware: No token found, redirecting to login from:", pathname);
+    console.log(
+      "Middleware: No token found, redirecting to login from:",
+      pathname,
+    );
     const loginUrl = new URL("/login", request.url);
+
     loginUrl.searchParams.set("redirect", pathname);
+
     return NextResponse.redirect(loginUrl);
   }
 
@@ -126,8 +138,8 @@ export function middleware(request: NextRequest) {
   // We'll let the API routes handle the detailed verification with requireRole
   try {
     // Basic token validation for middleware (just check if it exists and has the right format)
-    if (cookieToken.split('.').length !== 3) {
-      throw new Error('Invalid token format');
+    if (cookieToken.split(".").length !== 3) {
+      throw new Error("Invalid token format");
     }
 
     // For API routes, let them handle detailed verification
@@ -140,6 +152,7 @@ export function middleware(request: NextRequest) {
         // Add basic user info to headers for API routes to use
         // The actual verification will be done by requireRole in the API route
         const requestHeaders = new Headers(request.headers);
+
         requestHeaders.set("x-has-token", "true");
 
         return NextResponse.next({
@@ -151,11 +164,14 @@ export function middleware(request: NextRequest) {
     }
 
     // For page routes, check role-based access
-    const route = Object.keys(roleBasedRoutes).find(route => pathname.startsWith(route));
-    
+    const route = Object.keys(roleBasedRoutes).find((route) =>
+      pathname.startsWith(route),
+    );
+
     if (route) {
       // For page routes, we'll do basic validation and let the page handle detailed role checking
       const requestHeaders = new Headers(request.headers);
+
       requestHeaders.set("x-has-token", "true");
 
       return NextResponse.next({
@@ -167,6 +183,7 @@ export function middleware(request: NextRequest) {
 
     // Add basic user info to headers for page routes
     const requestHeaders = new Headers(request.headers);
+
     requestHeaders.set("x-has-token", "true");
 
     return NextResponse.next({
@@ -174,12 +191,16 @@ export function middleware(request: NextRequest) {
         headers: requestHeaders,
       },
     });
-
   } catch (error) {
-    console.log("Middleware: Invalid token, redirecting to login from:", pathname);
+    console.log(
+      "Middleware: Invalid token, redirecting to login from:",
+      pathname,
+    );
     // Clear invalid token
     const response = NextResponse.redirect(new URL("/login", request.url));
+
     response.cookies.delete("token");
+
     return response;
   }
 }

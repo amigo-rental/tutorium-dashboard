@@ -36,8 +36,8 @@ The following pages have been updated to use the new auth system:
 - `/admin` - Admin panel
 - `/settings` - User settings
 - `/courses` - Course listings
-- `/teacher` - Teacher upload page
-- `/teacher-new` - New teacher interface
+- `/uploader` - Teacher upload page
+
 - `/login` - Authentication page
 - `/` - Home page
 
@@ -78,7 +78,7 @@ The following pages have been updated to use the new auth system:
 - **`/dashboard`** - STUDENT, TEACHER, ADMIN
 - **`/groups`** - STUDENT, TEACHER, ADMIN
 - **`/tutor`** - TEACHER, ADMIN
-- **`/teacher`** - TEACHER, ADMIN
+- **`/uploader`** - TEACHER, ADMIN
 - **`/admin`** - ADMIN only
 - **`/settings`** - STUDENT, TEACHER, ADMIN
 - **`/schedule`** - STUDENT, TEACHER, ADMIN

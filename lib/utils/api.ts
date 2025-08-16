@@ -30,6 +30,7 @@ class ApiClient {
 
         try {
           const errorData = await response.json();
+
           errorMessage = errorData.error || errorMessage;
         } catch {
           // If JSON parsing fails, try to get text
@@ -57,6 +58,7 @@ class ApiClient {
       return { data, message: data.message };
     } catch (error) {
       console.error("API request failed:", error);
+
       return { error: "Network error occurred" };
     }
   }
@@ -90,6 +92,10 @@ class ApiClient {
   // Groups
   async getGroups() {
     return this.request("/groups");
+  }
+
+  async getUserGroups() {
+    return this.request("/groups/user");
   }
 
   async getAllGroups() {
@@ -146,10 +152,10 @@ class ApiClient {
   }
 
   // File Uploads
-  async uploadFiles(recordingId: string, files: File[]) {
+  async uploadFiles(lessonId: string, files: File[]) {
     const formData = new FormData();
 
-    formData.append("recordingId", recordingId);
+    formData.append("lessonId", lessonId);
 
     files.forEach((file) => {
       formData.append("files", file);
@@ -171,6 +177,7 @@ class ApiClient {
       return { data, message: data.message };
     } catch (error) {
       console.error("File upload failed:", error);
+
       return { error: "Upload failed" };
     }
   }
@@ -216,15 +223,21 @@ class ApiClient {
   }
 
   // Feedback methods
-  async getFeedback() {
-    return this.request("/feedback");
+  async getFeedback(lessonId?: string) {
+    const endpoint = lessonId ? `/feedback?lessonId=${lessonId}` : "/feedback";
+
+    return this.request(endpoint);
+  }
+
+  async getUserFeedback() {
+    return this.request("/feedback/user");
   }
 
   async createFeedback(data: {
     rating: number;
     comment?: string;
     isAnonymous?: boolean;
-    recordingId: string;
+    lessonId: string;
   }) {
     return this.request("/feedback", {
       method: "POST",
@@ -314,8 +327,37 @@ class ApiClient {
     return this.request("/admin/stats");
   }
 
+  // Teacher methods
+  async getTeacherStats(teacherId: string) {
+    return this.request(`/teachers/${teacherId}/stats`);
+  }
+
+  async getTeacherLessons(teacherId: string, status?: string) {
+    const params = new URLSearchParams();
+
+    if (status) params.append("status", status);
+
+    return this.request(`/teachers/${teacherId}/lessons?${params.toString()}`);
+  }
+
+  async getTeacherGroups(teacherId: string) {
+    return this.request(`/teachers/${teacherId}/groups`);
+  }
+
+  async getTeacherStudents(teacherId: string) {
+    return this.request(`/teachers/${teacherId}/students`);
+  }
+
+  async getTeacherFeedback(teacherId: string) {
+    return this.request(`/teachers/${teacherId}/feedback`);
+  }
+
   async getCourses() {
     return this.request("/courses");
+  }
+
+  async getTopicsByCourse(courseId: string) {
+    return this.request(`/topics?courseId=${courseId}`);
   }
 
   async assignCourseToUser(userId: string, courseId: string) {

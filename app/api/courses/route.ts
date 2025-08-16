@@ -63,7 +63,16 @@ export async function POST(request: NextRequest) {
     if (authCheck instanceof NextResponse) return authCheck;
 
     const body = await request.json();
-    const { name, description, level, duration, topics, difficulty, category, tags } = body;
+    const {
+      name,
+      description,
+      level,
+      duration,
+      topics,
+      difficulty,
+      category,
+      tags,
+    } = body;
 
     if (!name || !level || !duration) {
       return NextResponse.json(

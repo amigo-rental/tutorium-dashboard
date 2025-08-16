@@ -6,7 +6,7 @@ import { requireRole } from "@/lib/auth/middleware";
 // PUT /api/admin/users/[id] - Update user (admin only)
 export async function PUT(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const authCheck = await requireRole(["ADMIN"])(request);
@@ -116,7 +116,10 @@ export async function PUT(
 
     const averageRating =
       feedbacks.length > 0
-        ? feedbacks.reduce((sum: number, fb: { rating: number }) => sum + fb.rating, 0) / feedbacks.length
+        ? feedbacks.reduce(
+            (sum: number, fb: { rating: number }) => sum + fb.rating,
+            0,
+          ) / feedbacks.length
         : null;
 
     const totalFeedbacks = feedbacks.length;
@@ -142,7 +145,7 @@ export async function PUT(
 // DELETE /api/admin/users/[id] - Delete user (admin only)
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const authCheck = await requireRole(["ADMIN"])(request);

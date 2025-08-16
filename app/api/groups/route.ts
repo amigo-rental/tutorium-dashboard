@@ -2,6 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/db/prisma";
 import { requireRole } from "@/lib/auth/middleware";
+import { getCourseProgressData } from "@/lib/utils/course-progress";
 
 // GET /api/groups - Get groups (all for admin, own for teacher, all for students for enrollment)
 export async function GET(request: NextRequest) {
@@ -60,16 +61,49 @@ export async function GET(request: NextRequest) {
       },
     });
 
+    // Enhance groups with progress data
+    const groupsWithProgress = await Promise.all(
+      groups.map(async (group) => {
+        try {
+          // Get progress data for this specific group
+          const progressData = await getCourseProgressData(
+            (group as any).courseId,
+            group.id,
+          );
+
+          return {
+            ...group,
+            progress: progressData,
+          };
+        } catch (error) {
+          console.error(`Error getting progress for group ${group.id}:`, error);
+
+          // Return group without progress data if there's an error
+          return {
+            ...group,
+            progress: {
+              progressPercent: 0,
+              completedTopics: 0,
+              totalTopics: 0,
+              lastStudiedTopic: null,
+              nextTopic: null,
+              nextTopicId: null,
+            },
+          };
+        }
+      }),
+    );
+
     console.log(
       "Groups API: Returning",
-      groups.length,
-      "groups (all active groups) for",
+      groupsWithProgress.length,
+      "groups with progress data for",
       userRole,
       "user:",
       userId,
     );
 
-    return NextResponse.json(groups);
+    return NextResponse.json(groupsWithProgress);
   } catch (error) {
     console.error("Get groups error:", error);
 

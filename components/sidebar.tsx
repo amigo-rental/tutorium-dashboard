@@ -185,7 +185,7 @@ const getNavigationItems = (userRole: string) => {
       return [
         { name: "Тьютор", href: "/tutor", icon: TutorIcon },
         { name: "Группы", href: "/groups", icon: BookIcon },
-        { name: "Загрузчик", href: "/teacher", icon: UploadIcon },
+        { name: "Загрузчик", href: "/uploader", icon: UploadIcon },
         { name: "Настройки", href: "/settings", icon: SettingsIcon },
       ];
     case "ADMIN":

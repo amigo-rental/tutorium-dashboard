@@ -313,27 +313,33 @@ export default function AdminPage() {
         const groupsData = Array.isArray(groupsResponse.data)
           ? groupsResponse.data
           : [];
-        const usersWithStats = (usersResponse.data as UserType[]).map(
-          (user) => ({
-            ...user,
-            group:
-              user.group ||
-              groupsData.find((g: Group) => g.id === user.groupId),
-            groups: user.group
-              ? [user.group]
-              : user.groupId
-                ? [groupsData.find((g: Group) => g.id === user.groupId)].filter(
-                    Boolean,
-                  )
-                : [],
-            averageRating: (user as any).averageRating || undefined,
-            totalFeedbacks: 0,
-            lastActiveDate: user.updatedAt,
-            courses: (user as any).enrolledCourses || [],
-          }),
-        );
+        const usersWithStats = (usersResponse.data as any[]).map((user) => ({
+          ...user,
+          group:
+            user.group || groupsData.find((g: Group) => g.id === user.groupId),
+          groups: user.group
+            ? [user.group]
+            : user.groupId
+              ? [groupsData.find((g: Group) => g.id === user.groupId)].filter(
+                  Boolean,
+                )
+              : [],
+          averageRating: user.averageRating || undefined,
+          totalFeedbacks: user.totalFeedbacks || 0,
+          lastActiveDate: user.updatedAt,
+          courses: user.enrolledCourses || [],
+        }));
 
         console.log("👤 Users with stats:", usersWithStats);
+        console.log("🔍 Sample user data:", usersWithStats[0]);
+        console.log(
+          "⭐ Ratings check:",
+          usersWithStats.map((u) => ({
+            name: u.name,
+            rating: u.averageRating,
+            feedbacks: u.totalFeedbacks,
+          })),
+        );
         setUsers(usersWithStats);
       } else if (usersResponse.error) {
         console.error("🚨 API Error loading users:", usersResponse.error);
@@ -950,7 +956,7 @@ export default function AdminPage() {
   }
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requiredRole="ADMIN">
       <div className="min-h-screen bg-white lg:ml-4 xl:ml-0">
         {/* Hero Section */}
         <div className="pt-12 mb-8">

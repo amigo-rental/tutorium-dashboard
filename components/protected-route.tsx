@@ -11,7 +11,11 @@ interface ProtectedRouteProps {
   requiredRole?: string;
 }
 
-export function ProtectedRoute({ children, fallback, requiredRole }: ProtectedRouteProps) {
+export function ProtectedRoute({
+  children,
+  fallback,
+  requiredRole,
+}: ProtectedRouteProps) {
   const { user, isLoading } = useAuth();
   const router = useRouter();
 
@@ -48,6 +52,7 @@ export function ProtectedRoute({ children, fallback, requiredRole }: ProtectedRo
     } else {
       router.push("/dashboard");
     }
+
     return null;
   }
 

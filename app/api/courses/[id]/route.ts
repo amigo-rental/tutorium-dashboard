@@ -6,10 +6,12 @@ import { requireRole } from "@/lib/auth/middleware";
 // GET /api/courses/[id] - Get a specific course
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
-    const authCheck = await requireRole(["ADMIN", "TEACHER", "STUDENT"])(request);
+    const authCheck = await requireRole(["ADMIN", "TEACHER", "STUDENT"])(
+      request,
+    );
 
     if (authCheck instanceof NextResponse) return authCheck;
 
@@ -34,7 +36,7 @@ export async function GET(
             _count: {
               select: {
                 students: true,
-                recordings: true,
+                lessons: true,
               },
             },
           },
@@ -67,7 +69,7 @@ export async function GET(
         maxStudents: group.maxStudents,
         teacher: group.teacher,
         totalStudents: group._count.students,
-        totalRecordings: group._count.recordings,
+        totalRecordings: group._count.lessons,
       })),
     };
 
@@ -85,7 +87,7 @@ export async function GET(
 // PUT /api/courses/[id] - Update a course (Admin/Teacher only)
 export async function PUT(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const authCheck = await requireRole(["ADMIN", "TEACHER"])(request);
@@ -145,7 +147,7 @@ export async function PUT(
 // DELETE /api/courses/[id] - Delete a course (Admin only)
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> }
+  context: { params: Promise<{ id: string }> },
 ) {
   try {
     const authCheck = await requireRole(["ADMIN"])(request);

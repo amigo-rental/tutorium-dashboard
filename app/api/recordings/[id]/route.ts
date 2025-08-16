@@ -3,12 +3,13 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { requireRole } from "@/lib/auth/middleware";
 
-// GET /api/recordings/[id] - Get a specific recording
+// GET /api/recordings/[id] - Get a specific recording (completed lesson)
 export async function GET(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
+    const { id } = await params;
     const authCheck = await requireRole(["ADMIN", "TEACHER", "STUDENT"])(
       request,
     );
@@ -19,11 +20,30 @@ export async function GET(
     const userId = authenticatedRequest.user.userId;
     const userRole = authenticatedRequest.user.role;
 
-    const { id } = await context.params;
-
-    const recording = await prisma.recording.findUnique({
-      where: { id },
+    // Get the lesson/recording
+    const lesson = await prisma.lesson.findUnique({
+      where: {
+        id: id,
+        status: "COMPLETED",
+        youtubeLink: {
+          not: null,
+        },
+      },
       include: {
+        group: {
+          select: {
+            id: true,
+            name: true,
+            level: true,
+            students: {
+              select: {
+                id: true,
+                name: true,
+                email: true,
+              },
+            },
+          },
+        },
         teacher: {
           select: {
             id: true,
@@ -31,11 +51,11 @@ export async function GET(
             email: true,
           },
         },
-        group: {
+        topic: {
           select: {
             id: true,
             name: true,
-            level: true,
+            description: true,
           },
         },
         students: {
@@ -53,32 +73,14 @@ export async function GET(
             originalName: true,
             mimeType: true,
             size: true,
-          },
-        },
-        feedbacks: {
-          include: {
-            student: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
-          },
-        },
-        attendance: {
-          include: {
-            student: {
-              select: {
-                id: true,
-                name: true,
-              },
-            },
+            description: true,
+            createdAt: true,
           },
         },
       },
     });
 
-    if (!recording) {
+    if (!lesson) {
       return NextResponse.json(
         { error: "Recording not found" },
         { status: 404 },
@@ -86,32 +88,48 @@ export async function GET(
     }
 
     // Check access permissions
-    let hasAccess = false;
+    if (userRole === "STUDENT") {
+      // Students can only access recordings from their enrolled groups or individual lessons
+      const hasAccess =
+        (lesson.groupId &&
+          lesson.group?.students?.some((s) => s.id === userId)) ||
+        lesson.students?.some((s) => s.id === userId);
 
-    if (userRole === "ADMIN") {
-      hasAccess = true;
-    } else if (userRole === "TEACHER" && recording.teacherId === userId) {
-      hasAccess = true;
-    } else if (userRole === "STUDENT") {
-      // Student has access if they're in the group or directly assigned to the recording
-      if (recording.groupId) {
-        const student = await prisma.user.findFirst({
-          where: {
-            id: userId,
-            groupId: recording.groupId,
-          },
-        });
-
-        hasAccess = !!student;
-      } else {
-        // Check if student is directly assigned to this individual recording
-        hasAccess = recording.students.some((student) => student.id === userId);
+      if (!hasAccess) {
+        return NextResponse.json({ error: "Access denied" }, { status: 403 });
+      }
+    } else if (userRole === "TEACHER") {
+      // Teachers can only access their own recordings
+      if (lesson.teacherId !== userId) {
+        return NextResponse.json({ error: "Access denied" }, { status: 403 });
       }
     }
+    // Admins can access all recordings
 
-    if (!hasAccess) {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 });
-    }
+    // Convert lesson to recording format for response
+    const recording = {
+      id: lesson.id,
+      title: lesson.title,
+      description: lesson.description,
+      date: lesson.date,
+      lessonType: lesson.lessonType,
+      youtubeLink: lesson.youtubeLink,
+      message: lesson.notes,
+      isPublished: lesson.isPublished,
+      createdAt: lesson.createdAt,
+      updatedAt: lesson.updatedAt,
+      duration: lesson.duration,
+      viewCount: lesson.viewCount,
+      averageRating: lesson.averageRating,
+      totalFeedback: lesson.totalFeedback,
+      teacherId: lesson.teacherId,
+      groupId: lesson.groupId,
+      group: lesson.group,
+      teacher: lesson.teacher,
+      topic: lesson.topic,
+      students: lesson.students,
+      attachments: lesson.attachments,
+    };
 
     return NextResponse.json(recording);
   } catch (error) {
@@ -124,160 +142,88 @@ export async function GET(
   }
 }
 
-// PUT /api/recordings/[id] - Update a recording
+// PUT /api/recordings/[id] - Update a recording (completed lesson)
 export async function PUT(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const authCheck = await requireRole(["ADMIN", "TEACHER"])(request);
+    const { id } = await params;
+    const authCheck = await requireRole(["TEACHER", "ADMIN"])(request);
 
     if (authCheck instanceof NextResponse) return authCheck;
 
     const authenticatedRequest = authCheck as any;
-    const userId = authenticatedRequest.user.userId;
-    const userRole = authenticatedRequest.user.role;
+    const teacherId = authenticatedRequest.user.userId;
 
-    const {
-      lessonType,
-      date,
-      youtubeLink,
-      message,
-      groupId,
-      studentIds,
-      isPublished,
-    } = await request.json();
-
-    // Check if recording exists
-    const existingRecording = await prisma.recording.findUnique({
-      where: { id: await context.params },
+    // Check if the lesson exists and belongs to the teacher
+    const existingLesson = await prisma.lesson.findFirst({
+      where: {
+        id: id,
+        teacherId,
+        status: "COMPLETED",
+      },
     });
 
-    if (!existingRecording) {
+    if (!existingLesson) {
       return NextResponse.json(
-        { error: "Recording not found" },
+        { error: "Recording not found or access denied" },
         { status: 404 },
       );
     }
 
-    // Check permissions - teachers can only update their own recordings
-    if (userRole === "TEACHER" && existingRecording.teacherId !== userId) {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 });
-    }
+    const { title, description, youtubeLink, message, isPublished, materials } =
+      await request.json();
 
-    // Validate lesson type if provided
-    if (lessonType && !["GROUP", "INDIVIDUAL"].includes(lessonType)) {
-      return NextResponse.json(
-        { error: "Invalid lesson type" },
-        { status: 400 },
-      );
-    }
-
-    // Validate date format if provided
-    if (date) {
-      const dateObj = new Date(date);
-
-      if (isNaN(dateObj.getTime())) {
-        return NextResponse.json(
-          { error: "Invalid date format" },
-          { status: 400 },
-        );
-      }
-    }
-
-    // If groupId is provided, verify it belongs to teacher
-    if (groupId) {
-      const group = await prisma.group.findFirst({
-        where: {
-          id: groupId,
-          teacherId: userRole === "ADMIN" ? undefined : userId,
-        },
-      });
-
-      if (!group) {
-        return NextResponse.json(
-          { error: "Invalid group ID" },
-          { status: 400 },
-        );
-      }
-    }
-
-    // If studentIds are provided, verify they exist
-    if (studentIds && Array.isArray(studentIds) && studentIds.length > 0) {
-      const students = await prisma.user.findMany({
-        where: {
-          id: { in: studentIds },
-          role: "STUDENT",
-        },
-      });
-
-      if (students.length !== studentIds.length) {
-        return NextResponse.json(
-          { error: "One or more student IDs are invalid" },
-          { status: 400 },
-        );
-      }
-    }
-
-    // Prepare update data
-    const updateData: any = {};
-
-    if (lessonType !== undefined) updateData.lessonType = lessonType;
-    if (date !== undefined) updateData.date = new Date(date);
-    if (youtubeLink !== undefined) updateData.youtubeLink = youtubeLink;
-    if (message !== undefined) updateData.message = message;
-    if (groupId !== undefined) updateData.groupId = groupId || null;
-    if (isPublished !== undefined) updateData.isPublished = isPublished;
-
-    // Handle student assignments for individual lessons
-    if (studentIds !== undefined) {
-      if (Array.isArray(studentIds) && studentIds.length > 0) {
-        updateData.students = {
-          set: studentIds.map((id: string) => ({ id })),
-        };
-      } else {
-        updateData.students = {
-          set: [],
-        };
-      }
-    }
-
-    // Update recording
-    const updatedRecording = await prisma.recording.update({
-      where: { id: await context.params },
-      data: updateData,
+    // Update the lesson
+    const updatedLesson = await prisma.lesson.update({
+      where: { id: id },
+      data: {
+        title: title || undefined,
+        description: description || undefined,
+        youtubeLink: youtubeLink || undefined,
+        notes: message || undefined,
+        isPublished: isPublished !== undefined ? isPublished : undefined,
+        materials: materials || undefined,
+      },
       include: {
         group: {
           select: {
             id: true,
             name: true,
-            level: true,
           },
         },
-        students: {
+        topic: {
           select: {
             id: true,
             name: true,
-            email: true,
-            level: true,
           },
         },
-        attachments: {
-          select: {
-            id: true,
-            filename: true,
-            originalName: true,
-            mimeType: true,
-            size: true,
-          },
-        },
+        attachments: true,
       },
     });
 
-    return NextResponse.json({
-      message: "Recording updated successfully",
-      recording: updatedRecording,
-    });
+    // Convert to recording format for response
+    const recording = {
+      id: updatedLesson.id,
+      title: updatedLesson.title,
+      description: updatedLesson.description,
+      date: updatedLesson.date,
+      lessonType: updatedLesson.lessonType,
+      youtubeLink: updatedLesson.youtubeLink,
+      message: updatedLesson.notes,
+      isPublished: updatedLesson.isPublished,
+      createdAt: updatedLesson.createdAt,
+      updatedAt: updatedLesson.updatedAt,
+      duration: updatedLesson.duration,
+      teacherId: updatedLesson.teacherId,
+      groupId: updatedLesson.groupId,
+      group: updatedLesson.group,
+      topic: updatedLesson.topic,
+      attachments: updatedLesson.attachments,
+    };
+
+    return NextResponse.json(recording);
   } catch (error) {
     console.error("Update recording error:", error);
 
@@ -288,70 +234,42 @@ export async function PUT(
   }
 }
 
-// DELETE /api/recordings/[id] - Delete a recording
+// DELETE /api/recordings/[id] - Delete a recording (completed lesson)
 export async function DELETE(
   request: NextRequest,
-  context: { params: Promise<{ id: string }> },
+  { params }: { params: Promise<{ id: string }> },
 ) {
   try {
-    const authCheck = await requireRole(["ADMIN", "TEACHER"])(request);
+    const { id } = await params;
+    const authCheck = await requireRole(["TEACHER", "ADMIN"])(request);
 
     if (authCheck instanceof NextResponse) return authCheck;
 
     const authenticatedRequest = authCheck as any;
-    const userId = authenticatedRequest.user.userId;
-    const userRole = authenticatedRequest.user.role;
+    const teacherId = authenticatedRequest.user.userId;
 
-    // Check if recording exists
-    const existingRecording = await prisma.recording.findUnique({
-      where: { id: await context.params },
-      include: {
-        _count: {
-          select: {
-            feedbacks: true,
-            attendance: true,
-            attachments: true,
-          },
-        },
+    // Check if the lesson exists and belongs to the teacher
+    const existingLesson = await prisma.lesson.findFirst({
+      where: {
+        id: id,
+        teacherId,
+        status: "COMPLETED",
       },
     });
 
-    if (!existingRecording) {
+    if (!existingLesson) {
       return NextResponse.json(
-        { error: "Recording not found" },
+        { error: "Recording not found or access denied" },
         { status: 404 },
       );
     }
 
-    // Check permissions - teachers can only delete their own recordings
-    if (userRole === "TEACHER" && existingRecording.teacherId !== userId) {
-      return NextResponse.json({ error: "Access denied" }, { status: 403 });
-    }
-
-    // Check if recording has associated data
-    const hasData =
-      existingRecording._count.feedbacks > 0 ||
-      existingRecording._count.attendance > 0 ||
-      existingRecording._count.attachments > 0;
-
-    if (hasData) {
-      return NextResponse.json(
-        {
-          error:
-            "Cannot delete recording with associated feedback, attendance, or attachments",
-        },
-        { status: 400 },
-      );
-    }
-
-    // Delete recording (cascade will handle related records)
-    await prisma.recording.delete({
-      where: { id: await context.params },
+    // Delete the lesson (this will cascade to attachments, feedback, and attendance)
+    await prisma.lesson.delete({
+      where: { id: id },
     });
 
-    return NextResponse.json({
-      message: "Recording deleted successfully",
-    });
+    return NextResponse.json({ message: "Recording deleted successfully" });
   } catch (error) {
     console.error("Delete recording error:", error);
 

@@ -56,9 +56,11 @@ interface CourseCardProps {
   progressPercent: number;
   teacher: string;
   nextLesson?: string;
+  nextLessonTopic?: string;
   totalLessons: number;
   completedLessons: number;
   coverImage?: string;
+  lastStudiedTopic?: string;
 }
 
 export function CourseCard({
@@ -67,9 +69,11 @@ export function CourseCard({
   progressPercent,
   teacher,
   nextLesson,
+  nextLessonTopic,
   totalLessons,
   completedLessons,
   coverImage,
+  lastStudiedTopic,
 }: CourseCardProps) {
   const [isDropdownOpen, setIsDropdownOpen] = useState(false);
 
@@ -131,7 +135,7 @@ export function CourseCard({
 
   return (
     <div
-      className={`relative bg-gradient-to-br ${getBgByProgress(Math.floor(progressPercent))} border border-slate-200/50 rounded-3xl p-6 group hover:shadow-2xl hover:shadow-slate-300/25 transition-all duration-500 overflow-hidden`}
+      className={`relative bg-gradient-to-br ${getBgByProgress(Math.floor(progressPercent))} border border-slate-200/50 rounded-3xl p-6 group hover:shadow-2xl hover:shadow-slate-300/25 transition-all duration-500 overflow-hidden h-full flex flex-col`}
     >
       {/* Background decoration */}
       <div className="absolute top-0 right-0 w-32 h-32 opacity-5">
@@ -140,7 +144,7 @@ export function CourseCard({
         />
       </div>
 
-      <div className="relative z-10">
+      <div className="relative z-10 flex flex-col h-full">
         {/* Header */}
         <div className="flex items-start justify-between mb-6">
           <div className="flex-1">
@@ -195,12 +199,14 @@ export function CourseCard({
             </div>
           </div>
           <p className="text-slate-600 font-semibold text-xs mt-2">
-            {completedLessons} из {totalLessons} тем пройдено
+            {lastStudiedTopic
+              ? `Последняя тема: ${lastStudiedTopic}`
+              : `${completedLessons} из ${totalLessons} тем пройдено`}
           </p>
         </div>
 
         {/* Next lesson */}
-        {nextLesson && (
+        {nextLessonTopic && (
           <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 mb-6 border border-white/50">
             <div className="flex items-center gap-2 mb-1">
               <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
@@ -208,12 +214,17 @@ export function CourseCard({
                 Следующий урок
               </span>
             </div>
-            <p className="text-slate-700 font-semibold text-sm">{nextLesson}</p>
+            <p className="text-slate-700 font-semibold text-sm">
+              {nextLessonTopic}
+            </p>
           </div>
         )}
 
+        {/* Spacer to push buttons to bottom */}
+        <div className="flex-1" />
+
         {/* Actions */}
-        <div className="flex gap-3">
+        <div className="flex gap-3 mt-auto">
           <Button
             className={`flex-1 font-semibold text-white transition-all duration-300`}
             size="lg"
@@ -366,7 +377,7 @@ export function CourseCard({
                         viewBox="0 0 24 24"
                       >
                         <path
-                          d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 013.138-3.138z"
+                          d="M9 12l2 2 4-4M7.835 4.697a3.42 3.42 0 001.946-.806 3.42 3.42 0 014.438 0 3.42 3.42 0 001.946.806 3.42 3.42 0 013.138 3.138 3.42 3.42 0 00.806 1.946 3.42 3.42 0 010 4.438 3.42 3.42 0 00-.806 1.946 3.42 3.42 0 01-3.138 3.138 3.42 3.42 0 00-1.946.806 3.42 3.42 0 01-4.438 0 3.42 3.42 0 00-1.946-.806 3.42 3.42 0 01-3.138-3.138 3.42 3.42 0 00-.806-1.946 3.42 3.42 0 010-4.438 3.42 3.42 0 00.806-1.946 3.42 3.42 0 713.138-3.138z"
                           strokeLinecap="round"
                           strokeLinejoin="round"
                           strokeWidth={2}

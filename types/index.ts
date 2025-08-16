@@ -41,6 +41,28 @@ export interface Group {
   _count?: {
     students: number;
   };
+  // Progress tracking
+  progress?: {
+    progressPercent: number;
+    completedTopics: number;
+    totalTopics: number;
+    lastStudiedTopic: string | null;
+    nextTopic: string | null;
+    nextTopicId: string | null;
+  };
+}
+
+// Extended Group interface for teacher dashboard with additional stats
+export interface TeacherGroup extends Group {
+  studentCount: number; // Number of students in the group
+  lessonCount: number;
+  lastLesson?: {
+    id: string;
+    title: string;
+    date: string;
+    averageRating?: number;
+  } | null;
+  // Note: progress is now inherited from Group interface
 }
 
 export interface Course {
@@ -75,17 +97,25 @@ export type Student = User & { role: "STUDENT" };
 
 export interface Recording {
   id: string;
-  lessonType: "GROUP" | "INDIVIDUAL";
+  title: string;
+  description?: string;
   date: string;
+  lessonType: "GROUP" | "INDIVIDUAL";
   youtubeLink: string;
   message?: string;
   isPublished: boolean;
   createdAt: string;
   updatedAt: string;
+  duration: number;
+  viewCount: number;
+  averageRating?: number;
+  totalFeedback: number;
   teacherId: string;
   groupId?: string;
   group?: Group;
-  students: Student[];
+  teacher?: User;
+  topic?: Topic;
+  students?: Student[];
   attachments: Attachment[];
 }
 
@@ -97,7 +127,7 @@ export interface Attachment {
   size: number;
   path: string;
   createdAt: string;
-  recordingId: string;
+  lessonId: string;
 }
 
 // API Request/Response Types
@@ -135,12 +165,16 @@ export interface CreateStudentRequest {
 }
 
 export interface CreateRecordingRequest {
-  lessonType: "GROUP" | "INDIVIDUAL";
+  title: string;
+  description?: string;
   date: string;
+  lessonType: "GROUP" | "INDIVIDUAL";
   youtubeLink: string;
   message?: string;
   groupId?: string;
   studentIds?: string[];
+  topicId?: string;
+  materials?: string[];
 }
 
 export interface UploadFileRequest {
@@ -150,12 +184,16 @@ export interface UploadFileRequest {
 
 // Frontend State Types
 export interface FormData {
+  title: string;
+  description?: string;
   lessonType: string;
   groupOrStudent: string | string[];
   date: string;
   youtubeLink: string;
   attachments: File[];
   message: string;
+  topicId?: string;
+  materials?: string[];
 }
 
 // Lesson Feedback Types
@@ -334,6 +372,7 @@ export interface TeacherMetrics {
   engagementRate: number; // percentage
   lessonsThisMonth: number;
   studentsThisMonth: number;
+  totalFeedback: number; // Total number of feedback received
 
   // Relations
   teacher: User;

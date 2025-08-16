@@ -80,13 +80,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         "user" in response.data
       ) {
         const { user: userData } = response.data as { user: User };
+
         setUser(userData);
+
         return { success: true };
       }
 
       return { success: false, error: "Login failed" };
     } catch (error) {
       console.error("Login error:", error);
+
       return { success: false, error: "An unexpected error occurred" };
     }
   };
@@ -110,13 +113,16 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
         "user" in response.data
       ) {
         const { user: userData } = response.data as { user: User };
+
         setUser(userData);
+
         return { success: true };
       }
 
       return { success: false, error: "Registration failed" };
     } catch (error) {
       console.error("Registration error:", error);
+
       return { success: false, error: "An unexpected error occurred" };
     }
   };
@@ -138,6 +144,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({
       if (prevUser) {
         return { ...prevUser, ...userData };
       }
+
       return null;
     });
   };

@@ -65,388 +65,959 @@ async function main() {
   console.log("✅ Teachers created:", teachers.length);
 
   // Create courses
+  console.log("Creating courses...");
   const courses = await Promise.all([
-    prisma.course.upsert({
-      where: { id: "course-a1" },
-      update: {},
-      create: {
-        id: "course-a1",
-        name: "Испанский для начинающих A1",
-        description:
-          "Базовый курс испанского языка для абсолютных новичков. Изучаем основы грамматики, лексики и произношения.",
+    prisma.course.create({
+      data: {
+        name: "Испанский с нуля в группе",
+        description: "Базовый курс испанского языка для группового обучения",
         level: "A1",
-        duration: 12, // 12 weeks
+        duration: 12,
+        difficulty: "BEGINNER",
+        category: "GROUP",
+        tags: ["базовый", "группа", "с нуля"],
+        isActive: true,
       },
     }),
-    prisma.course.upsert({
-      where: { id: "course-a2" },
-      update: {},
-      create: {
-        id: "course-a2",
-        name: "Испанский для продолжающих A2",
+    prisma.course.create({
+      data: {
+        name: "Интенсив с нуля до A2",
         description:
-          "Курс для тех, кто уже знает основы испанского. Углубляем знания и развиваем разговорные навыки.",
+          "Интенсивный курс испанского языка от начального до базового уровня",
         level: "A2",
-        duration: 16, // 16 weeks
+        duration: 16,
+        difficulty: "BEGINNER",
+        category: "INTENSIVE",
+        tags: ["интенсив", "с нуля", "до A2"],
+        isActive: true,
       },
     }),
-    prisma.course.upsert({
-      where: { id: "course-b1" },
-      update: {},
-      create: {
-        id: "course-b1",
-        name: "Испанский средний уровень B1",
-        description:
-          "Курс для подготовки к уровню B2. Фокус на сложных грамматических конструкциях и расширенной лексике.",
-        level: "B1",
-        duration: 20, // 20 weeks
-      },
-    }),
-    prisma.course.upsert({
-      where: { id: "course-b2" },
-      update: {},
-      create: {
-        id: "course-b2",
-        name: "Испанский продвинутый уровень B2",
-        description:
-          "Продвинутый курс для свободного общения на испанском языке. Подготовка к международным экзаменам.",
-        level: "B2",
-        duration: 24, // 24 weeks
-      },
-    }),
-    prisma.course.upsert({
-      where: { id: "course-c1" },
-      update: {},
-      create: {
-        id: "course-c1",
-        name: "Испанский профессиональный уровень C1",
-        description:
-          "Профессиональный уровень владения испанским языком. Академический и деловой испанский.",
-        level: "C1",
-        duration: 32, // 32 weeks
+    prisma.course.create({
+      data: {
+        name: "Испанский с нуля индивидуально",
+        description: "Индивидуальное обучение испанскому языку с нуля",
+        level: "A1",
+        duration: 20,
+        difficulty: "BEGINNER",
+        category: "INDIVIDUAL",
+        tags: ["индивидуально", "с нуля", "персонально"],
+        isActive: true,
       },
     }),
   ]);
 
   console.log("✅ Courses created:", courses.length);
 
-  // Create topics for each course
-  const topics = await Promise.all([
-    // A1 Course Topics
+  // Create topics for all courses
+  console.log("Creating topics...");
+
+  // Create topics for "Испанский с нуля в группе" course
+  const groupCourseTopics = await Promise.all([
+    // 1A: алфавит и правила чтения
     prisma.topic.create({
       data: {
-        name: "Приветствие и знакомство",
-        description: "Базовые фразы для знакомства, числа 1-10, глагол 'ser'",
+        name: "1А: алфавит и правила чтения",
+        description: "Изучаем испанский алфавит, правила произношения и чтения",
         order: 1,
-        courseId: courses[0].id,
+        courseId: courses[0].id, // Испанский с нуля в группе
+        isActive: true,
       },
     }),
+    // 1B: приветствие, цифры
     prisma.topic.create({
       data: {
-        name: "Семья и друзья",
-        description:
-          "Лексика по теме семьи, притяжательные местоимения, глагол 'tener'",
+        name: "1B: приветствие, цифры",
+        description: "Базовые приветствия, представления и числа от 1 до 100",
         order: 2,
         courseId: courses[0].id,
+        isActive: true,
       },
     }),
+    // 1C: являться и находиться
     prisma.topic.create({
       data: {
-        name: "Еда и напитки",
-        description: "Названия продуктов, глагол 'gustar', артикли",
+        name: "1С: являться и находиться",
+        description: "Глаголы ser и estar - основные различия и использование",
         order: 3,
         courseId: courses[0].id,
+        isActive: true,
       },
     }),
+    // 1D: артикль, род и множественное число
     prisma.topic.create({
       data: {
-        name: "Город и транспорт",
-        description: "Названия мест в городе, направления, предлоги места",
+        name: "1D: артикль, род и множественное число",
+        description:
+          "Определенные и неопределенные артикли, род существительных, множественное число",
         order: 4,
         courseId: courses[0].id,
+        isActive: true,
       },
     }),
+    // 1E: принадлежащее местоимение
     prisma.topic.create({
       data: {
-        name: "Время и расписание",
+        name: "1Е: принадлежащее местоимение",
         description:
-          "Часы, дни недели, глаголы 'ser' и 'estar', настоящее время",
+          "Притяжательные местоимения: mi, tu, su, nuestro, vuestro, su",
         order: 5,
         courseId: courses[0].id,
+        isActive: true,
       },
     }),
+    // 1F: глагол estar + эмоции
     prisma.topic.create({
       data: {
-        name: "Покупки и цены",
-        description: "Магазины, цвета, размеры одежды, числа 11-100",
+        name: "1F: глагол estar + эмоции",
+        description:
+          "Глагол estar с прилагательными для описания эмоций и состояний",
         order: 6,
         courseId: courses[0].id,
+        isActive: true,
       },
     }),
-
-    // A2 Course Topics
+    // 1G: повторение
     prisma.topic.create({
       data: {
-        name: "Путешествия",
+        name: "1G: повторение",
+        description: "Повторение и закрепление материала первого блока",
+        order: 7,
+        courseId: courses[0].id,
+        isActive: true,
+      },
+    }),
+    // 1H: проверка знаний
+    prisma.topic.create({
+      data: {
+        name: "1H: проверка знаний",
+        description: "Контрольная работа по первому блоку тем",
+        order: 8,
+        courseId: courses[0].id,
+        isActive: true,
+      },
+    }),
+    // 2A: presente de indicativo - правильные глаголы
+    prisma.topic.create({
+      data: {
+        name: "2A: presente de indicativo - правильные глаголы",
         description:
-          "Аэропорт, отель, туристические фразы, прошедшее время (pretérito indefinido)",
-        order: 1,
-        courseId: courses[1].id,
+          "Настоящее время изъявительного наклонения для правильных глаголов",
+        order: 9,
+        courseId: courses[0].id,
+        isActive: true,
       },
     }),
+    // 2B: presente - неправильные глаголы
     prisma.topic.create({
       data: {
-        name: "Работа и профессии",
+        name: "2B: presente - неправильные глаголы",
         description:
-          "Названия профессий, описание обязанностей, прошедшее время (pretérito imperfecto)",
-        order: 2,
-        courseId: courses[1].id,
+          "Настоящее время для неправильных глаголов: ser, estar, tener, ir, hacer",
+        order: 10,
+        courseId: courses[0].id,
+        isActive: true,
       },
     }),
+    // 2C: вопросы и ответы в настоящем времени
     prisma.topic.create({
       data: {
-        name: "Здоровье и медицина",
-        description: "Части тела, симптомы, посещение врача, модальные глаголы",
-        order: 3,
-        courseId: courses[1].id,
+        name: "2С: вопросы и ответы в настоящем времени",
+        description: "Построение вопросов и ответов в настоящем времени",
+        order: 11,
+        courseId: courses[0].id,
+        isActive: true,
       },
     }),
+    // 2D: практика настоящего времени
     prisma.topic.create({
       data: {
-        name: "Культура и традиции",
+        name: "2D: практика настоящего времени",
+        description: "Практические упражнения по настоящему времени",
+        order: 12,
+        courseId: courses[0].id,
+        isActive: true,
+      },
+    }),
+    // 2E: практика настоящего времени
+    prisma.topic.create({
+      data: {
+        name: "2E: практика настоящего времени",
+        description: "Дополнительная практика настоящего времени",
+        order: 13,
+        courseId: courses[0].id,
+        isActive: true,
+      },
+    }),
+    // 2F: практика настоящего времени
+    prisma.topic.create({
+      data: {
+        name: "2F: практика настоящего времени",
+        description: "Продолжение практики настоящего времени",
+        order: 14,
+        courseId: courses[0].id,
+        isActive: true,
+      },
+    }),
+    // 2G: повторение
+    prisma.topic.create({
+      data: {
+        name: "2G: повторение",
+        description: "Повторение и закрепление материала второго блока",
+        order: 15,
+        courseId: courses[0].id,
+        isActive: true,
+      },
+    }),
+    // 2H: проверка знаний
+    prisma.topic.create({
+      data: {
+        name: "2H: проверка знаний",
+        description: "Контрольная работа по второму блоку тем",
+        order: 16,
+        courseId: courses[0].id,
+        isActive: true,
+      },
+    }),
+    // 3A: ser, estar, tener, haber
+    prisma.topic.create({
+      data: {
+        name: "3A: ser, estar, tener, haber",
+        description: "Углубленное изучение основных глаголов испанского языка",
+        order: 17,
+        courseId: courses[0].id,
+        isActive: true,
+      },
+    }),
+    // 3B: tener que, hay que
+    prisma.topic.create({
+      data: {
+        name: "3B: tener que, hay que",
         description:
-          "Праздники, обычаи, культурные особенности, условные предложения",
-        order: 4,
-        courseId: courses[1].id,
+          "Модальные конструкции для выражения необходимости и обязательства",
+        order: 18,
+        courseId: courses[0].id,
+        isActive: true,
       },
     }),
+    // 3C: глагол hay
     prisma.topic.create({
       data: {
-        name: "Технологии и интернет",
-        description: "Компьютерные термины, социальные сети, будущее время",
-        order: 5,
-        courseId: courses[1].id,
+        name: "3C: глагол hay",
+        description: "Использование глагола hay для выражения существования",
+        order: 19,
+        courseId: courses[0].id,
+        isActive: true,
       },
     }),
-
-    // B1 Course Topics
+    // 3D: наречия места
     prisma.topic.create({
       data: {
-        name: "Деловая коммуникация",
+        name: "3D: наречия места",
+        description: "Наречия места: aquí, allí, cerca, lejos, dentro, fuera",
+        order: 20,
+        courseId: courses[0].id,
+        isActive: true,
+      },
+    }),
+    // 3E: разговорная практика
+    prisma.topic.create({
+      data: {
+        name: "3E: разговорная практика",
+        description: "Практика разговорной речи на основе изученного материала",
+        order: 21,
+        courseId: courses[0].id,
+        isActive: true,
+      },
+    }),
+    // 3F: вопросительные местоимения
+    prisma.topic.create({
+      data: {
+        name: "3F: вопросительные местоимения",
         description:
-          "Деловые письма, переговоры, презентации, формальный стиль",
-        order: 1,
-        courseId: courses[2].id,
+          "Вопросительные местоимения: qué, quién, dónde, cuándo, cómo, por qué",
+        order: 22,
+        courseId: courses[0].id,
+        isActive: true,
       },
     }),
+    // 3G: повторение
     prisma.topic.create({
       data: {
-        name: "Академический испанский",
-        description:
-          "Научные тексты, аргументация, дискуссии, сложные конструкции",
-        order: 2,
-        courseId: courses[2].id,
+        name: "3G: повторение",
+        description: "Повторение и закрепление материала третьего блока",
+        order: 23,
+        courseId: courses[0].id,
+        isActive: true,
       },
     }),
+    // 3H: проверка знаний
     prisma.topic.create({
       data: {
-        name: "Литература и искусство",
-        description:
-          "Анализ текстов, культурные контексты, литературные приемы",
-        order: 3,
-        courseId: courses[2].id,
-      },
-    }),
-    prisma.topic.create({
-      data: {
-        name: "Современные проблемы",
-        description: "Экология, социальные вопросы, политика, дискуссии",
-        order: 4,
-        courseId: courses[2].id,
-      },
-    }),
-
-    // B2 Course Topics
-    prisma.topic.create({
-      data: {
-        name: "Сложная грамматика",
-        description: "Subjuntivo, условные предложения, пассивный залог",
-        order: 1,
-        courseId: courses[3].id,
-      },
-    }),
-    prisma.topic.create({
-      data: {
-        name: "Идиомы и фразеологизмы",
-        description: "Разговорные выражения, сленг, культурные особенности",
-        order: 2,
-        courseId: courses[3].id,
-      },
-    }),
-    prisma.topic.create({
-      data: {
-        name: "Анализ текстов",
-        description: "Критическое чтение, анализ стиля, интерпретация",
-        order: 3,
-        courseId: courses[3].id,
-      },
-    }),
-    prisma.topic.create({
-      data: {
-        name: "Письменная речь",
-        description: "Эссе, отчеты, официальные документы, стилистика",
-        order: 4,
-        courseId: courses[3].id,
-      },
-    }),
-
-    // C1 Course Topics
-    prisma.topic.create({
-      data: {
-        name: "Академическое письмо",
-        description: "Научные статьи, диссертации, исследовательские работы",
-        order: 1,
-        courseId: courses[4].id,
-      },
-    }),
-    prisma.topic.create({
-      data: {
-        name: "Перевод и интерпретация",
-        description:
-          "Профессиональный перевод, синхронный перевод, локализация",
-        order: 2,
-        courseId: courses[4].id,
-      },
-    }),
-    prisma.topic.create({
-      data: {
-        name: "Лингвистический анализ",
-        description: "Фонетика, морфология, синтаксис, семантика",
-        order: 3,
-        courseId: courses[4].id,
-      },
-    }),
-    prisma.topic.create({
-      data: {
-        name: "Культурология",
-        description:
-          "История испаноязычных стран, культурные традиции, современность",
-        order: 4,
-        courseId: courses[4].id,
+        name: "3H: проверка знаний",
+        description: "Финальная контрольная работа по всему курсу",
+        order: 24,
+        courseId: courses[0].id,
+        isActive: true,
       },
     }),
   ]);
 
+  // Create the same topics for "Интенсив с нуля до A2" course
+  const intensiveCourseTopics = await Promise.all([
+    prisma.topic.create({
+      data: {
+        name: "1А: алфавит и правила чтения",
+        description: "Изучаем испанский алфавит, правила произношения и чтения",
+        order: 1,
+        courseId: courses[1].id, // Интенсив с нуля до A2
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "1B: приветствие, цифры",
+        description: "Базовые приветствия, представления и числа от 1 до 100",
+        order: 2,
+        courseId: courses[1].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "1С: являться и находиться",
+        description: "Глаголы ser и estar - основные различия и использование",
+        order: 3,
+        courseId: courses[1].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "1D: артикль, род и множественное число",
+        description:
+          "Определенные и неопределенные артикли, род существительных, множественное число",
+        order: 4,
+        courseId: courses[1].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "1Е: принадлежащее местоимение",
+        description:
+          "Притяжательные местоимения: mi, tu, su, nuestro, vuestro, su",
+        order: 5,
+        courseId: courses[1].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "1F: глагол estar + эмоции",
+        description:
+          "Глагол estar с прилагательными для описания эмоций и состояний",
+        order: 6,
+        courseId: courses[1].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "1G: повторение",
+        description: "Повторение и закрепление материала первого блока",
+        order: 7,
+        courseId: courses[1].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "1H: проверка знаний",
+        description: "Контрольная работа по первому блоку тем",
+        order: 8,
+        courseId: courses[1].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "2A: presente de indicativo - правильные глаголы",
+        description:
+          "Настоящее время изъявительного наклонения для правильных глаголов",
+        order: 9,
+        courseId: courses[1].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "2B: presente - неправильные глаголы",
+        description:
+          "Настоящее время для неправильных глаголов: ser, estar, tener, ir, hacer",
+        order: 10,
+        courseId: courses[1].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "2С: вопросы и ответы в настоящем времени",
+        description: "Построение вопросов и ответов в настоящем времени",
+        order: 11,
+        courseId: courses[1].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "2D: практика настоящего времени",
+        description: "Практические упражнения по настоящему времени",
+        order: 12,
+        courseId: courses[1].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "2E: практика настоящего времени",
+        description: "Дополнительная практика настоящего времени",
+        order: 13,
+        courseId: courses[1].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "2F: практика настоящего времени",
+        description: "Продолжение практики настоящего времени",
+        order: 14,
+        courseId: courses[1].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "2G: повторение",
+        description: "Повторение и закрепление материала второго блока",
+        order: 15,
+        courseId: courses[1].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "2H: проверка знаний",
+        description: "Контрольная работа по второму блоку тем",
+        order: 16,
+        courseId: courses[1].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "3A: ser, estar, tener, haber",
+        description: "Углубленное изучение основных глаголов испанского языка",
+        order: 17,
+        courseId: courses[1].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "3B: tener que, hay que",
+        description:
+          "Модальные конструкции для выражения необходимости и обязательства",
+        order: 18,
+        courseId: courses[1].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "3C: глагол hay",
+        description: "Использование глагола hay для выражения существования",
+        order: 19,
+        courseId: courses[1].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "3D: наречия места",
+        description: "Наречия места: aquí, allí, cerca, lejos, dentro, fuera",
+        order: 20,
+        courseId: courses[1].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "3E: разговорная практика",
+        description: "Практика разговорной речи на основе изученного материала",
+        order: 21,
+        courseId: courses[1].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "3F: вопросительные местоимения",
+        description:
+          "Вопросительные местоимения: qué, quién, dónde, cuándo, cómo, por qué",
+        order: 22,
+        courseId: courses[1].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "3G: повторение",
+        description: "Повторение и закрепление материала третьего блока",
+        order: 23,
+        courseId: courses[1].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "3H: проверка знаний",
+        description: "Финальная контрольная работа по всему курсу",
+        order: 24,
+        courseId: courses[1].id,
+        isActive: true,
+      },
+    }),
+  ]);
+
+  // Create the same topics for "Испанский с нуля индивидуально" course
+  const individualCourseTopics = await Promise.all([
+    prisma.topic.create({
+      data: {
+        name: "1А: алфавит и правила чтения",
+        description: "Изучаем испанский алфавит, правила произношения и чтения",
+        order: 1,
+        courseId: courses[2].id, // Испанский с нуля индивидуально
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "1B: приветствие, цифры",
+        description: "Базовые приветствия, представления и числа от 1 до 100",
+        order: 2,
+        courseId: courses[2].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "1С: являться и находиться",
+        description: "Глаголы ser и estar - основные различия и использование",
+        order: 3,
+        courseId: courses[2].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "1D: артикль, род и множественное число",
+        description:
+          "Определенные и неопределенные артикли, род существительных, множественное число",
+        order: 4,
+        courseId: courses[2].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "1Е: принадлежащее местоимение",
+        description:
+          "Притяжательные местоимения: mi, tu, su, nuestro, vuestro, su",
+        order: 5,
+        courseId: courses[2].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "1F: глагол estar + эмоции",
+        description:
+          "Глагол estar с прилагательными для описания эмоций и состояний",
+        order: 6,
+        courseId: courses[2].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "1G: повторение",
+        description: "Повторение и закрепление материала первого блока",
+        order: 7,
+        courseId: courses[2].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "1H: проверка знаний",
+        description: "Контрольная работа по первому блоку тем",
+        order: 8,
+        courseId: courses[2].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "2A: presente de indicativo - правильные глаголы",
+        description:
+          "Настоящее время изъявительного наклонения для правильных глаголов",
+        order: 9,
+        courseId: courses[2].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "2B: presente - неправильные глаголы",
+        description:
+          "Настоящее время для неправильных глаголов: ser, estar, tener, ir, hacer",
+        order: 10,
+        courseId: courses[2].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "2С: вопросы и ответы в настоящем времени",
+        description: "Построение вопросов и ответов в настоящем времени",
+        order: 11,
+        courseId: courses[2].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "2D: практика настоящего времени",
+        description: "Практические упражнения по настоящему времени",
+        order: 12,
+        courseId: courses[2].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "2E: практика настоящего времени",
+        description: "Дополнительная практика настоящего времени",
+        order: 13,
+        courseId: courses[2].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "2F: практика настоящего времени",
+        description: "Продолжение практики настоящего времени",
+        order: 14,
+        courseId: courses[2].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "2G: повторение",
+        description: "Повторение и закрепление материала второго блока",
+        order: 15,
+        courseId: courses[2].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "2H: проверка знаний",
+        description: "Контрольная работа по второму блоку тем",
+        order: 16,
+        courseId: courses[2].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "3A: ser, estar, tener, haber",
+        description: "Углубленное изучение основных глаголов испанского языка",
+        order: 17,
+        courseId: courses[2].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "3B: tener que, hay que",
+        description:
+          "Модальные конструкции для выражения необходимости и обязательства",
+        order: 18,
+        courseId: courses[2].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "3C: глагол hay",
+        description: "Использование глагола hay для выражения существования",
+        order: 19,
+        courseId: courses[2].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "3D: наречия места",
+        description: "Наречия места: aquí, allí, cerca, lejos, dentro, fuera",
+        order: 20,
+        courseId: courses[2].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "3E: разговорная практика",
+        description: "Практика разговорной речи на основе изученного материала",
+        order: 21,
+        courseId: courses[2].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "3F: вопросительные местоимения",
+        description:
+          "Вопросительные местоимения: qué, quién, dónde, cuándo, cómo, por qué",
+        order: 22,
+        courseId: courses[2].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "3G: повторение",
+        description: "Повторение и закрепление материала третьего блока",
+        order: 23,
+        courseId: courses[2].id,
+        isActive: true,
+      },
+    }),
+    prisma.topic.create({
+      data: {
+        name: "3H: проверка знаний",
+        description: "Финальная контрольная работа по всему курсу",
+        order: 24,
+        courseId: courses[2].id,
+        isActive: true,
+      },
+    }),
+  ]);
+
+  // Combine all topics for easier reference
+  const allTopics = [
+    ...groupCourseTopics,
+    ...intensiveCourseTopics,
+    ...individualCourseTopics,
+  ];
+  const topics = allTopics;
+
   console.log("✅ Topics created:", topics.length);
 
-  // Create groups (now belonging to courses)
+  // Create groups
+  console.log("Creating groups...");
   const groups = await Promise.all([
-    prisma.group.upsert({
-      where: {
-        name_teacherId: {
-          name: "Группа A1 - Утренняя",
-          teacherId: teachers[0].id,
-        },
-      },
-      update: {},
-      create: {
-        name: "Группа A1 - Утренняя",
-        description:
-          "Утренняя группа для начинающих. Занятия по понедельникам, средам и пятницам в 10:00.",
-        level: "A1",
+    // Интенсив группы (Интенсив с нуля до A2)
+    prisma.group.create({
+      data: {
+        name: "Интенсив 10010925",
+        description: "Интенсивная группа по испанскому языку",
+        level: "A2",
         maxStudents: 6,
+        isActive: true,
+        startDate: new Date("2025-01-10"),
+        endDate: new Date("2025-04-25"),
+        schedule: {
+          days: ["Понедельник", "Среда", "Пятница"],
+          time: "19:00-21:00",
+        },
+        meetingLink: "https://zoom.us/j/123456789",
         teacherId: teachers[0].id,
-        courseId: courses[0].id, // A1 course
+        courseId: courses[1].id, // Интенсив с нуля до A2
+        currentStudents: 4,
+        totalLessons: 24,
+        averageRating: 4.8,
       },
     }),
-    prisma.group.upsert({
-      where: {
-        name_teacherId: {
-          name: "Группа A1 - Вечерняя",
-          teacherId: teachers[0].id,
+    prisma.group.create({
+      data: {
+        name: "Интенсив 19210825",
+        description: "Интенсивная группа по испанскому языку",
+        level: "A2",
+        maxStudents: 6,
+        isActive: true,
+        startDate: new Date("2025-08-19"),
+        endDate: new Date("2025-12-05"),
+        schedule: {
+          days: ["Вторник", "Четверг", "Суббота"],
+          time: "18:00-20:00",
         },
+        meetingLink: "https://zoom.us/j/987654321",
+        teacherId: teachers[1].id,
+        courseId: courses[1].id, // Интенсив с нуля до A2
+        currentStudents: 5,
+        totalLessons: 24,
+        averageRating: 4.7,
       },
-      update: {},
-      create: {
-        name: "Группа A1 - Вечерняя",
-        description:
-          "Вечерняя группа для начинающих. Занятия по вторникам и четвергам в 19:00.",
+    }),
+    prisma.group.create({
+      data: {
+        name: "Интенсив 12070725",
+        description: "Интенсивная группа по испанскому языку",
+        level: "A2",
+        maxStudents: 6,
+        isActive: true,
+        startDate: new Date("2025-07-12"),
+        endDate: new Date("2025-10-25"),
+        schedule: {
+          days: ["Понедельник", "Среда", "Пятница"],
+          time: "20:00-22:00",
+        },
+        meetingLink: "https://zoom.us/j/456789123",
+        teacherId: teachers[2].id,
+        courseId: courses[1].id, // Интенсив с нуля до A2
+        currentStudents: 3,
+        totalLessons: 24,
+        averageRating: 4.6,
+      },
+    }),
+    prisma.group.create({
+      data: {
+        name: "Интенсив 20300625",
+        description: "Интенсивная группа по испанскому языку",
+        level: "A2",
+        maxStudents: 6,
+        isActive: true,
+        startDate: new Date("2025-06-20"),
+        endDate: new Date("2025-09-30"),
+        schedule: {
+          days: ["Вторник", "Четверг", "Суббота"],
+          time: "17:00-19:00",
+        },
+        meetingLink: "https://zoom.us/j/789123456",
+        teacherId: teachers[0].id,
+        courseId: courses[1].id, // Интенсив с нуля до A2
+        currentStudents: 6,
+        totalLessons: 24,
+        averageRating: 4.9,
+      },
+    }),
+    prisma.group.create({
+      data: {
+        name: "Интенсив 11030525",
+        description: "Интенсивная группа по испанскому языку",
+        level: "A2",
+        maxStudents: 6,
+        isActive: true,
+        startDate: new Date("2025-05-11"),
+        endDate: new Date("2025-08-20"),
+        schedule: {
+          days: ["Понедельник", "Среда", "Пятница"],
+          time: "16:00-18:00",
+        },
+        meetingLink: "https://zoom.us/j/321654987",
+        teacherId: teachers[1].id,
+        courseId: courses[1].id, // Интенсив с нуля до A2
+        currentStudents: 4,
+        totalLessons: 24,
+        averageRating: 4.5,
+      },
+    }),
+    prisma.group.create({
+      data: {
+        name: "Интенсив 18120525",
+        description: "Интенсивная группа по испанскому языку",
+        level: "A2",
+        maxStudents: 6,
+        isActive: true,
+        startDate: new Date("2025-12-18"),
+        endDate: new Date("2026-03-30"),
+        schedule: {
+          days: ["Вторник", "Четверг", "Суббота"],
+          time: "19:00-21:00",
+        },
+        meetingLink: "https://zoom.us/j/147258369",
+        teacherId: teachers[0].id,
+        courseId: courses[1].id, // Интенсив с нуля до A2
+        currentStudents: 2,
+        totalLessons: 24,
+        averageRating: 4.4,
+      },
+    }),
+    // Группа группы (Испанский с нуля в группе)
+    prisma.group.create({
+      data: {
+        name: "Группа 20020925",
+        description: "Группа по испанскому языку с нуля",
         level: "A1",
         maxStudents: 8,
-        teacherId: teachers[0].id,
-        courseId: courses[0].id, // A1 course
-      },
-    }),
-    prisma.group.upsert({
-      where: {
-        name_teacherId: {
-          name: "Группа A2 - Вечерняя",
-          teacherId: teachers[0].id,
+        isActive: true,
+        startDate: new Date("2025-09-20"),
+        endDate: new Date("2026-01-10"),
+        schedule: {
+          days: ["Понедельник", "Среда"],
+          time: "18:00-20:00",
         },
-      },
-      update: {},
-      create: {
-        name: "Группа A2 - Вечерняя",
-        description:
-          "Вечерняя группа для продолжающих. Занятия по понедельникам и средам в 20:00.",
-        level: "A2",
-        maxStudents: 5,
-        teacherId: teachers[0].id,
-        courseId: courses[1].id, // A2 course
-      },
-    }),
-    prisma.group.upsert({
-      where: {
-        name_teacherId: {
-          name: "Группа B1 - Интенсив",
-          teacherId: teachers[1].id,
-        },
-      },
-      update: {},
-      create: {
-        name: "Группа B1 - Интенсив",
-        description:
-          "Интенсивная подготовка к B2. Занятия 5 раз в неделю по 2 часа.",
-        level: "B1",
-        maxStudents: 4,
-        teacherId: teachers[1].id,
-        courseId: courses[2].id, // B1 course
-      },
-    }),
-    prisma.group.upsert({
-      where: {
-        name_teacherId: {
-          name: "Группа B2 - Подготовка к экзамену",
-          teacherId: teachers[1].id,
-        },
-      },
-      update: {},
-      create: {
-        name: "Группа B2 - Подготовка к экзамену",
-        description:
-          "Подготовка к международным экзаменам DELE B2. Занятия по субботам и воскресеньям.",
-        level: "B2",
-        maxStudents: 6,
-        teacherId: teachers[1].id,
-        courseId: courses[3].id, // B2 course
-      },
-    }),
-    prisma.group.upsert({
-      where: {
-        name_teacherId: {
-          name: "Группа C1 - Профессиональный",
-          teacherId: teachers[2].id,
-        },
-      },
-      update: {},
-      create: {
-        name: "Группа C1 - Профессиональный",
-        description:
-          "Профессиональный уровень для преподавателей и переводчиков. Занятия по воскресеньям.",
-        level: "C1",
-        maxStudents: 3,
+        meetingLink: "https://zoom.us/j/963852741",
         teacherId: teachers[2].id,
-        courseId: courses[4].id, // C1 course
+        courseId: courses[0].id, // Испанский с нуля в группе
+        currentStudents: 6,
+        totalLessons: 24,
+        averageRating: 4.7,
+      },
+    }),
+    prisma.group.create({
+      data: {
+        name: "Группа 10100925",
+        description: "Группа по испанскому языку с нуля",
+        level: "A1",
+        maxStudents: 8,
+        isActive: true,
+        startDate: new Date("2025-09-10"),
+        endDate: new Date("2025-12-30"),
+        schedule: {
+          days: ["Вторник", "Четверг"],
+          time: "19:00-21:00",
+        },
+        meetingLink: "https://zoom.us/j/852963741",
+        teacherId: teachers[1].id,
+        courseId: courses[0].id, // Испанский с нуля в группе
+        currentStudents: 7,
+        totalLessons: 24,
+        averageRating: 4.8,
+      },
+    }),
+    prisma.group.create({
+      data: {
+        name: "Группа 10050825",
+        description: "Группа по испанскому языку с нуля",
+        level: "A1",
+        maxStudents: 8,
+        isActive: true,
+        startDate: new Date("2025-08-10"),
+        endDate: new Date("2025-11-25"),
+        schedule: {
+          days: ["Понедельник", "Четверг"],
+          time: "17:00-19:00",
+        },
+        meetingLink: "https://zoom.us/j/741852963",
+        teacherId: teachers[0].id,
+        courseId: courses[0].id, // Испанский с нуля в группе
+        currentStudents: 5,
+        totalLessons: 24,
+        averageRating: 4.6,
       },
     }),
   ]);
@@ -465,7 +1036,7 @@ async function main() {
         role: "STUDENT",
         level: "A2",
         avatar: "ЕГ",
-        groupId: groups[2].id, // A2 group
+        groupId: groups[0].id, // Интенсив 10010925
       },
     }),
     prisma.user.upsert({
@@ -476,9 +1047,9 @@ async function main() {
         email: "mikhail.petrov@example.com",
         password: hashedPassword,
         role: "STUDENT",
-        level: "B1",
+        level: "A2",
         avatar: "МП",
-        groupId: groups[3].id, // B1 group
+        groupId: groups[1].id, // Интенсив 19210825
       },
     }),
     prisma.user.upsert({
@@ -491,7 +1062,7 @@ async function main() {
         role: "STUDENT",
         level: "A1",
         avatar: "АС",
-        groupId: groups[0].id, // A1 morning group
+        groupId: groups[6].id, // Группа 20020925
       },
     }),
     prisma.user.upsert({
@@ -502,9 +1073,9 @@ async function main() {
         email: "dmitry.kozlov@example.com",
         password: hashedPassword,
         role: "STUDENT",
-        level: "B2",
+        level: "A2",
         avatar: "ДК",
-        groupId: groups[4].id, // B2 group
+        groupId: groups[4].id, // Интенсив 20300625
       },
     }),
     prisma.user.upsert({
@@ -517,7 +1088,7 @@ async function main() {
         role: "STUDENT",
         level: "A2",
         avatar: "МИ",
-        groupId: groups[2].id, // A2 group
+        groupId: groups[0].id, // Интенсив 10010925
       },
     }),
     prisma.user.upsert({
@@ -530,7 +1101,7 @@ async function main() {
         role: "STUDENT",
         level: "A1",
         avatar: "АС",
-        groupId: groups[1].id, // A1 evening group
+        groupId: groups[7].id, // Группа 10100925
       },
     }),
     prisma.user.upsert({
@@ -541,9 +1112,9 @@ async function main() {
         email: "olga.volkova@example.com",
         password: hashedPassword,
         role: "STUDENT",
-        level: "C1",
+        level: "A2",
         avatar: "ОВ",
-        groupId: groups[5].id, // C1 group
+        groupId: groups[5].id, // Интенсив 11030525
       },
     }),
     prisma.user.upsert({
@@ -554,9 +1125,9 @@ async function main() {
         email: "sergey.novikov@example.com",
         password: hashedPassword,
         role: "STUDENT",
-        level: "B1",
+        level: "A2",
         avatar: "СН",
-        groupId: groups[3].id, // B1 group
+        groupId: groups[1].id, // Интенсив 19210825
       },
     }),
     prisma.user.upsert({
@@ -569,7 +1140,7 @@ async function main() {
         role: "STUDENT",
         level: "A1",
         avatar: "НК",
-        groupId: groups[0].id, // A1 morning group
+        groupId: groups[6].id, // Группа 20020925
       },
     }),
     prisma.user.upsert({
@@ -580,105 +1151,105 @@ async function main() {
         email: "vladimir.sokolov@example.com",
         password: hashedPassword,
         role: "STUDENT",
-        level: "B2",
+        level: "A2",
         avatar: "ВС",
-        groupId: groups[4].id, // B2 group
+        groupId: groups[4].id, // Интенсив 20300625
       },
     }),
   ]);
 
   console.log("✅ Students created:", students.length);
 
-  // Automatically enroll students in courses based on their groups
+  // Enroll students in courses
   console.log("Enrolling students in courses...");
   const enrollments = await Promise.all([
-    // Elena Garcia - A2 course (via A2 group)
+    // Elena Grigorieva - A2 course (via intensive group)
     prisma.user.update({
       where: { id: students[0].id },
       data: {
         enrolledCourses: {
-          connect: { id: courses[1].id }, // A2 course
+          connect: { id: courses[1].id }, // Интенсив с нуля до A2
         },
       },
     }),
-    // Mikhail Petrov - B1 course (via B1 group)
+    // Maria Petrova - A2 course (via intensive group)
     prisma.user.update({
       where: { id: students[1].id },
       data: {
         enrolledCourses: {
-          connect: { id: courses[2].id }, // B1 course
+          connect: { id: courses[1].id }, // Интенсив с нуля до A2
         },
       },
     }),
-    // Anna Sidorova - A1 course (via A1 morning group)
+    // Anna Sidorova - A1 course (via group course)
     prisma.user.update({
       where: { id: students[2].id },
       data: {
         enrolledCourses: {
-          connect: { id: courses[0].id }, // A1 course
+          connect: { id: courses[0].id }, // Испанский с нуля в группе
         },
       },
     }),
-    // Dmitry Kozlov - B2 course (via B2 group)
+    // Dmitry Kozlov - A2 course (via intensive group)
     prisma.user.update({
       where: { id: students[3].id },
       data: {
         enrolledCourses: {
-          connect: { id: courses[3].id }, // B2 course
+          connect: { id: courses[1].id }, // Интенсив с нуля до A2
         },
       },
     }),
-    // Maria Ivanova - A2 course (via A2 group)
+    // Maria Ivanova - A2 course (via intensive group)
     prisma.user.update({
       where: { id: students[4].id },
       data: {
         enrolledCourses: {
-          connect: { id: courses[1].id }, // A2 course
+          connect: { id: courses[1].id }, // Интенсив с нуля до A2
         },
       },
     }),
-    // Alexander Smirnov - A1 course (via A1 evening group)
+    // Alexander Smirnov - A1 course (via group course)
     prisma.user.update({
       where: { id: students[5].id },
       data: {
         enrolledCourses: {
-          connect: { id: courses[0].id }, // A1 course
+          connect: { id: courses[0].id }, // Испанский с нуля в группе
         },
       },
     }),
-    // Olga Volkova - C1 course (via C1 group)
+    // Olga Volkova - A2 course (via intensive group)
     prisma.user.update({
       where: { id: students[6].id },
       data: {
         enrolledCourses: {
-          connect: { id: courses[4].id }, // C1 course
+          connect: { id: courses[1].id }, // Интенсив с нуля до A2
         },
       },
     }),
-    // Sergey Novikov - B1 course (via B1 group)
+    // Sergey Novikov - A2 course (via intensive group)
     prisma.user.update({
       where: { id: students[7].id },
       data: {
         enrolledCourses: {
-          connect: { id: courses[2].id }, // B1 course
+          connect: { id: courses[1].id }, // Интенсив с нуля до A2
         },
       },
     }),
-    // Natalia Kuznetsova - A1 course (via A1 morning group)
+    // Natalia Kuznetsova - A1 course (via group course)
     prisma.user.update({
       where: { id: students[8].id },
       data: {
         enrolledCourses: {
-          connect: { id: courses[0].id }, // A1 course
+          connect: { id: courses[0].id }, // Испанский с нуля в группе
         },
       },
     }),
-    // Vladimir Sokolov - B2 course (via B2 group)
+    // Vladimir Sokolov - A2 course (via intensive group)
     prisma.user.update({
       where: { id: students[9].id },
       data: {
         enrolledCourses: {
-          connect: { id: courses[3].id }, // B2 course
+          connect: { id: courses[1].id }, // Интенсив с нуля до A2
         },
       },
     }),
@@ -686,141 +1257,184 @@ async function main() {
 
   console.log("✅ Course enrollments created:", enrollments.length);
 
-  // Create sample recordings for different groups
-  const recordings = await Promise.all([
-    // A1 Morning Group Recordings
-    prisma.recording.create({
+  // Create upcoming lessons for different groups
+  console.log("Creating upcoming lessons...");
+  const upcomingLessons = await Promise.all([
+    // A1 Morning Group - Upcoming lessons (synchronized with completed lessons)
+    prisma.lesson.create({
       data: {
-        lessonType: "GROUP",
-        date: new Date("2024-01-15"),
-        youtubeLink: "https://youtube.com/watch?v=a1_lesson1",
-        message:
-          "Отличный урок! Сегодня мы изучили приветствия и числа 1-10. Домашнее задание: упражнения 1-5 в рабочей тетради.",
+        title: "Город и транспорт",
+        description: "Изучаем названия мест в городе, направления, транспорт",
+        date: new Date(Date.now() + 2 * 24 * 60 * 60 * 1000), // 2 days from now
+        startTime: "10:00",
+        endTime: "11:00",
+        duration: 60,
+        isActive: true,
+        meetingLink: "https://zoom.us/j/123456789",
+        notes: "Практика с картой города",
+        materials: [
+          "https://example.com/city_vocabulary.pdf",
+          "https://example.com/transport_audio.mp3",
+        ],
         teacherId: teachers[0].id,
         groupId: groups[0].id, // A1 morning group
+        topicId: topics[3].id, // "Город и транспорт" - matches nextTopicId from last completed lesson
+        lessonType: "GROUP",
+        status: "SCHEDULED",
       },
     }),
-    prisma.recording.create({
+    prisma.lesson.create({
       data: {
-        lessonType: "GROUP",
-        date: new Date("2024-01-17"),
-        youtubeLink: "https://youtube.com/watch?v=a1_lesson2",
-        message:
-          "Изучили тему 'Семья и друзья'. Глагол 'tener' и притяжательные местоимения. Домашнее задание: составить рассказ о своей семье.",
+        title: "Время и расписание",
+        description:
+          "Изучаем как говорить о времени, расписании, планировать встречи",
+        date: new Date(Date.now() + 9 * 24 * 60 * 60 * 1000), // 9 days from now
+        startTime: "10:00",
+        endTime: "11:00",
+        duration: 60,
+        isActive: true,
+        meetingLink: "https://zoom.us/j/987654321",
+        notes: "Студенты должны принести свое расписание",
+        materials: [
+          "https://example.com/time_vocabulary.pdf",
+          "https://example.com/schedule_exercises.pdf",
+        ],
         teacherId: teachers[0].id,
         groupId: groups[0].id, // A1 morning group
+        topicId: topics[4].id, // "Время и расписание" - next topic after "Город и транспорт"
+        lessonType: "GROUP",
+        status: "SCHEDULED",
       },
     }),
 
-    // A1 Evening Group Recordings
-    prisma.recording.create({
+    // A1 Evening Group - Upcoming lessons (synchronized with completed lessons)
+    prisma.lesson.create({
       data: {
-        lessonType: "GROUP",
-        date: new Date("2024-01-16"),
-        youtubeLink: "https://youtube.com/watch?v=a1_evening1",
-        message:
-          "Первый урок вечерней группы! Приветствия и основы произношения. Домашнее задание: выучить алфавит.",
+        title: "Семья и друзья",
+        description:
+          "Изучаем названия членов семьи, глагол 'tener' и притяжательные местоимения",
+        date: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000), // 1 day from now
+        startTime: "20:00",
+        endTime: "21:00",
+        duration: 60,
+        isActive: true,
+        meetingLink: "https://zoom.us/j/456789123",
+        notes: "Практика произношения с аудио материалами",
+        materials: [
+          "https://example.com/family_vocabulary.pdf",
+          "https://example.com/grammar_exercises.pdf",
+        ],
         teacherId: teachers[0].id,
         groupId: groups[1].id, // A1 evening group
+        topicId: topics[1].id, // "Семья и друзья" - matches nextTopicId from last completed lesson
+        lessonType: "GROUP",
+        status: "SCHEDULED",
       },
     }),
 
-    // A2 Group Recordings
-    prisma.recording.create({
+    // A2 Group - Upcoming lessons
+    prisma.lesson.create({
       data: {
-        lessonType: "GROUP",
-        date: new Date("2024-01-16"),
-        youtubeLink: "https://youtube.com/watch?v=a2_lesson1",
-        message:
-          "Урок по теме 'Путешествия'. Изучили лексику для аэропорта и отеля. Домашнее задание: написать рассказ о путешествии.",
+        title: "Путешествия и транспорт",
+        description: "Лексика для аэропорта, отеля, покупки билетов",
+        date: new Date(Date.now() + 3 * 24 * 60 * 60 * 1000), // 3 days from now
+        startTime: "19:00",
+        endTime: "20:00",
+        duration: 60,
+        isActive: true,
+        meetingLink: "https://zoom.us/j/789123456",
+        notes: "Подготовить диалоги для ролевых игр",
+        materials: [
+          "https://example.com/travel_vocabulary.pdf",
+          "https://example.com/dialogues.pdf",
+        ],
         teacherId: teachers[0].id,
         groupId: groups[2].id, // A2 group
-      },
-    }),
-    prisma.recording.create({
-      data: {
+        topicId: topics[5].id, // "Путешествия"
         lessonType: "GROUP",
-        date: new Date("2024-01-18"),
-        youtubeLink: "https://youtube.com/watch?v=a2_lesson2",
-        message:
-          "Грамматика: прошедшее время (pretérito indefinido). Практика в парах и группах. Домашнее задание: упражнения 6-10.",
-        teacherId: teachers[0].id,
-        groupId: groups[2].id, // A2 group
+        status: "SCHEDULED",
       },
     }),
 
-    // B1 Group Recordings
-    prisma.recording.create({
+    // B1 Group - Upcoming lessons
+    prisma.lesson.create({
       data: {
-        lessonType: "GROUP",
-        date: new Date("2024-01-15"),
-        youtubeLink: "https://youtube.com/watch?v=b1_lesson1",
-        message:
-          "Деловая коммуникация. Формальный стиль общения. Домашнее задание: написать деловое письмо.",
+        title: "Деловые переговоры",
+        description:
+          "Формальный стиль общения, деловая лексика, проведение переговоров",
+        date: new Date(Date.now() + 4 * 24 * 60 * 60 * 1000), // 4 days from now
+        startTime: "18:00",
+        endTime: "19:00",
+        duration: 60,
+        isActive: true,
+        meetingLink: "https://zoom.us/j/321654987",
+        notes: "Студенты должны подготовить презентацию своей компании",
+        materials: [
+          "https://example.com/business_communication.pdf",
+          "https://example.com/negotiation_skills.pdf",
+        ],
         teacherId: teachers[1].id,
         groupId: groups[3].id, // B1 group
-      },
-    }),
-    prisma.recording.create({
-      data: {
+        topicId: topics[8].id, // "Деловая коммуникация"
         lessonType: "GROUP",
-        date: new Date("2024-01-17"),
-        youtubeLink: "https://youtube.com/watch?v=b1_lesson2",
-        message:
-          "Академический испанский. Научные тексты и аргументация. Домашнее задание: анализ статьи.",
-        teacherId: teachers[1].id,
-        groupId: groups[3].id, // B1 group
+        status: "SCHEDULED",
       },
     }),
 
-    // B2 Group Recordings
-    prisma.recording.create({
+    // B2 Group - Upcoming lessons
+    prisma.lesson.create({
       data: {
-        lessonType: "GROUP",
-        date: new Date("2024-01-20"),
-        youtubeLink: "https://youtube.com/watch?v=b2_lesson1",
-        message:
-          "Сложная грамматика: Subjuntivo. Подготовка к экзамену DELE B2. Домашнее задание: грамматические упражнения.",
+        title: "Подготовка к DELE B2 - Грамматика",
+        description:
+          "Сложные грамматические конструкции, Subjuntivo, условные предложения",
+        date: new Date(Date.now() + 6 * 24 * 60 * 60 * 1000), // 6 days from now
+        startTime: "15:00",
+        endTime: "16:00",
+        duration: 60,
+        isActive: true,
+        meetingLink: "https://zoom.us/j/654321789",
+        notes: "Тест по грамматике в начале урока",
+        materials: [
+          "https://example.com/grammar_test.pdf",
+          "https://example.com/subjuntivo_exercises.pdf",
+        ],
         teacherId: teachers[1].id,
         groupId: groups[4].id, // B2 group
-      },
-    }),
-
-    // C1 Group Recordings
-    prisma.recording.create({
-      data: {
+        topicId: topics[10].id, // "Сложная грамматика"
         lessonType: "GROUP",
-        date: new Date("2024-01-21"),
-        youtubeLink: "https://youtube.com/watch?v=c1_lesson1",
-        message:
-          "Академическое письмо. Структура научной статьи. Домашнее задание: написать аннотацию к исследованию.",
-        teacherId: teachers[2].id,
-        groupId: groups[5].id, // C1 group
+        status: "SCHEDULED",
       },
     }),
 
     // Individual lessons
-    prisma.recording.create({
+    prisma.lesson.create({
       data: {
-        lessonType: "INDIVIDUAL",
-        date: new Date("2024-01-14"),
-        youtubeLink: "https://youtube.com/watch?v=individual1",
-        message:
-          "Индивидуальный урок по разговорной практике. Фокус на произношении и беглости речи.",
+        title: "Индивидуальная практика разговорной речи",
+        description:
+          "Персональный урок по развитию беглости речи и произношения",
+        date: new Date(Date.now() + 1 * 24 * 60 * 60 * 1000), // 1 day from now
+        startTime: "16:00",
+        endTime: "17:00",
+        duration: 60,
+        isActive: true,
+        meetingLink: "https://zoom.us/j/111222333",
+        notes: "Фокус на произношении и беглости речи",
+        materials: [
+          "https://example.com/conversation_topics.pdf",
+          "https://example.com/pronunciation_exercises.pdf",
+        ],
         teacherId: teachers[0].id,
-        students: {
-          connect: [
-            { id: students[0].id }, // Elena
-            { id: students[1].id }, // Mikhail
-          ],
-        },
+        groupId: null, // Individual lesson
+        topicId: null, // No specific topic for individual lessons
+        lessonType: "INDIVIDUAL",
+        status: "SCHEDULED",
       },
     }),
   ]);
 
-  console.log("✅ Recordings created:", recordings.length);
+  console.log("✅ Upcoming lessons created:", upcomingLessons.length);
 
-  // Create sample attachments for recordings
+  // Create sample attachments for lessons (now using lessonId instead of recordingId)
   const attachments = await Promise.all([
     // A1 Morning Group Attachments
     prisma.attachment.create({
@@ -830,7 +1444,7 @@ async function main() {
         mimeType: "application/pdf",
         size: 512000,
         path: "/uploads/a1_greetings_worksheet.pdf",
-        recordingId: recordings[0].id, // A1 lesson 1
+        lessonId: upcomingLessons[0].id, // A1 lesson
       },
     }),
     prisma.attachment.create({
@@ -840,7 +1454,7 @@ async function main() {
         mimeType: "application/pdf",
         size: 768000,
         path: "/uploads/a1_family_vocabulary.pdf",
-        recordingId: recordings[1].id, // A1 lesson 2
+        lessonId: upcomingLessons[1].id, // A1 lesson
       },
     }),
 
@@ -852,7 +1466,7 @@ async function main() {
         mimeType: "application/pdf",
         size: 1024000,
         path: "/uploads/a2_travel_vocabulary.pdf",
-        recordingId: recordings[3].id, // A2 travel lesson
+        lessonId: upcomingLessons[3].id, // A2 lesson
       },
     }),
     prisma.attachment.create({
@@ -862,7 +1476,7 @@ async function main() {
         mimeType: "application/pdf",
         size: 512000,
         path: "/uploads/a2_past_tense_exercises.pdf",
-        recordingId: recordings[4].id, // A2 grammar lesson
+        lessonId: upcomingLessons[3].id, // A2 lesson
       },
     }),
 
@@ -874,7 +1488,7 @@ async function main() {
         mimeType: "application/pdf",
         size: 1536000,
         path: "/uploads/b1_business_communication.pdf",
-        recordingId: recordings[5].id, // B1 business lesson
+        lessonId: upcomingLessons[4].id, // B1 lesson
       },
     }),
 
@@ -886,7 +1500,7 @@ async function main() {
         mimeType: "application/pdf",
         size: 1024000,
         path: "/uploads/b2_subjuntivo_exercises.pdf",
-        recordingId: recordings[6].id, // B2 grammar lesson
+        lessonId: upcomingLessons[5].id, // B2 lesson
       },
     }),
 
@@ -898,7 +1512,7 @@ async function main() {
         mimeType: "application/pdf",
         size: 2048000,
         path: "/uploads/c1_academic_writing.pdf",
-        recordingId: recordings[7].id, // C1 writing lesson
+        lessonId: upcomingLessons[6].id, // C1 lesson
       },
     }),
   ]);
@@ -915,7 +1529,7 @@ async function main() {
           "Отличный урок! Все понятно объяснили, особенно понравились практические упражнения.",
         isAnonymous: false,
         studentId: students[0].id, // Elena Garcia
-        recordingId: recordings[0].id, // A1 lesson
+        lessonId: upcomingLessons[0].id, // A1 lesson
       },
     }),
     prisma.lessonFeedback.create({
@@ -925,7 +1539,7 @@ async function main() {
           "Хороший урок, но хотелось бы больше практики разговорной речи.",
         isAnonymous: false,
         studentId: students[1].id, // Mikhail Petrov
-        recordingId: recordings[4].id, // A2 lesson
+        lessonId: upcomingLessons[3].id, // A2 lesson
       },
     }),
     prisma.lessonFeedback.create({
@@ -935,7 +1549,7 @@ async function main() {
           "Превосходно! Очень понравилась структура урока и объяснение грамматики.",
         isAnonymous: true,
         studentId: students[2].id, // Anna Sidorova
-        recordingId: recordings[1].id, // A1 lesson
+        lessonId: upcomingLessons[1].id, // A1 lesson
       },
     }),
     prisma.lessonFeedback.create({
@@ -944,7 +1558,7 @@ async function main() {
         comment: "Интересный материал, но темп немного быстрый для меня.",
         isAnonymous: false,
         studentId: students[3].id, // Dmitry Kozlov
-        recordingId: recordings[5].id, // B1 lesson
+        lessonId: upcomingLessons[4].id, // B1 lesson
       },
     }),
     prisma.lessonFeedback.create({
@@ -954,7 +1568,7 @@ async function main() {
           "Отличный урок! Много полезной информации для подготовки к экзамену.",
         isAnonymous: true,
         studentId: students[4].id, // Maria Ivanova
-        recordingId: recordings[3].id, // A2 lesson
+        lessonId: upcomingLessons[2].id, // A2 lesson
       },
     }),
     prisma.lessonFeedback.create({
@@ -964,7 +1578,7 @@ async function main() {
           "Профессиональный подход к обучению. Очень доволен качеством материала.",
         isAnonymous: false,
         studentId: students[6].id, // Olga Volkova
-        recordingId: recordings[7].id, // C1 lesson
+        lessonId: upcomingLessons[5].id, // C1 lesson
       },
     }),
   ]);
@@ -977,7 +1591,7 @@ async function main() {
     // A1 Morning Group Attendance
     prisma.lessonAttendance.create({
       data: {
-        lessonId: recordings[0].id,
+        lessonId: upcomingLessons[0].id,
         studentId: students[2].id, // Anna Sidorova
         status: "PRESENT",
         notes: "Активно участвовала в уроке",
@@ -985,7 +1599,7 @@ async function main() {
     }),
     prisma.lessonAttendance.create({
       data: {
-        lessonId: recordings[0].id,
+        lessonId: upcomingLessons[0].id,
         studentId: students[8].id, // Natalia Kuznetsova
         status: "PRESENT",
         notes: "Хорошо справилась с заданиями",
@@ -995,7 +1609,7 @@ async function main() {
     // A2 Group Attendance
     prisma.lessonAttendance.create({
       data: {
-        lessonId: recordings[3].id,
+        lessonId: upcomingLessons[2].id,
         studentId: students[0].id, // Elena Garcia
         status: "PRESENT",
         notes: "Отличная работа на уроке",
@@ -1003,7 +1617,7 @@ async function main() {
     }),
     prisma.lessonAttendance.create({
       data: {
-        lessonId: recordings[3].id,
+        lessonId: upcomingLessons[2].id,
         studentId: students[4].id, // Maria Ivanova
         status: "LATE",
         notes: "Опоздала на 10 минут",
@@ -1013,7 +1627,7 @@ async function main() {
     // B1 Group Attendance
     prisma.lessonAttendance.create({
       data: {
-        lessonId: recordings[5].id,
+        lessonId: upcomingLessons[4].id,
         studentId: students[1].id, // Mikhail Petrov
         status: "PRESENT",
         notes: "Активно участвовал в дискуссии",
@@ -1021,7 +1635,7 @@ async function main() {
     }),
     prisma.lessonAttendance.create({
       data: {
-        lessonId: recordings[5].id,
+        lessonId: upcomingLessons[4].id,
         studentId: students[7].id, // Sergey Novikov
         status: "ABSENT",
         notes: "По семейным обстоятельствам",
@@ -1031,25 +1645,305 @@ async function main() {
 
   console.log("✅ Attendance records created:", attendanceRecords.length);
 
+  // Create completed lessons with next topic information to demonstrate progress tracking
+  console.log("Creating completed lessons with next topics...");
+  const completedLessons = await Promise.all([
+    // Интенсив 10010925 - Completed lessons showing progress
+    prisma.lesson.create({
+      data: {
+        title: "1А: алфавит и правила чтения",
+        description: "Изучили испанский алфавит, правила произношения и чтения",
+        date: new Date(Date.now() - 14 * 24 * 60 * 60 * 1000), // 14 days ago
+        startTime: "19:00",
+        endTime: "21:00",
+        duration: 120,
+        isActive: true,
+        youtubeLink: "https://youtube.com/watch?v=abc123",
+        transcript:
+          "Полная расшифровка урока по теме '1А: алфавит и правила чтения'",
+        isPublished: true,
+        viewCount: 45,
+        averageRating: 4.8,
+        totalFeedback: 6,
+        teacherId: teachers[0].id,
+        groupId: groups[0].id, // Интенсив 10010925
+        topicId: topics[0].id, // "1А: алфавит и правила чтения"
+        nextTopicId: topics[1].id, // "1B: приветствие, цифры" - next topic
+        lessonType: "GROUP",
+        status: "COMPLETED",
+      },
+    }),
+    prisma.lesson.create({
+      data: {
+        title: "1B: приветствие, цифры",
+        description:
+          "Изучили базовые приветствия, представления и числа от 1 до 100",
+        date: new Date(Date.now() - 7 * 24 * 60 * 60 * 1000), // 7 days ago
+        startTime: "19:00",
+        endTime: "21:00",
+        duration: 120,
+        isActive: true,
+        youtubeLink: "https://youtube.com/watch?v=def456",
+        transcript: "Полная расшифровка урока по теме '1B: приветствие, цифры'",
+        isPublished: true,
+        viewCount: 38,
+        averageRating: 4.9,
+        totalFeedback: 6,
+        teacherId: teachers[0].id,
+        groupId: groups[0].id, // Интенсив 10010925
+        topicId: topics[1].id, // "1B: приветствие, цифры"
+        nextTopicId: topics[2].id, // "1С: являться и находиться" - next topic
+        lessonType: "GROUP",
+        status: "COMPLETED",
+      },
+    }),
+    prisma.lesson.create({
+      data: {
+        title: "1С: являться и находиться",
+        description:
+          "Изучили глаголы ser и estar - основные различия и использование",
+        date: new Date(Date.now() - 3 * 24 * 60 * 60 * 1000), // 3 days ago
+        startTime: "19:00",
+        endTime: "21:00",
+        duration: 120,
+        isActive: true,
+        youtubeLink: "https://youtube.com/watch?v=ghi789",
+        transcript:
+          "Полная расшифровка урока по теме '1С: являться и находиться'",
+        isPublished: true,
+        viewCount: 22,
+        averageRating: 4.7,
+        totalFeedback: 6,
+        teacherId: teachers[0].id,
+        groupId: groups[0].id, // Интенсив 10010925
+        topicId: topics[2].id, // "1С: являться и находиться"
+        nextTopicId: topics[3].id, // "1D: артикль, род и множественное число" - next topic
+        lessonType: "GROUP",
+        status: "COMPLETED",
+      },
+    }),
+
+    // Интенсив 19210825 - Completed lessons showing progress
+    prisma.lesson.create({
+      data: {
+        title: "1А: алфавит и правила чтения",
+        description: "Изучили испанский алфавит, правила произношения и чтения",
+        date: new Date(Date.now() - 10 * 24 * 60 * 60 * 1000), // 10 days ago
+        startTime: "18:00",
+        endTime: "20:00",
+        duration: 120,
+        isActive: true,
+        youtubeLink: "https://youtube.com/watch?v=jkl012",
+        transcript:
+          "Полная расшифровка урока по теме '1А: алфавит и правила чтения'",
+        isPublished: true,
+        viewCount: 52,
+        averageRating: 4.6,
+        totalFeedback: 8,
+        teacherId: teachers[0].id,
+        groupId: groups[1].id, // Интенсив 19210825
+        topicId: topics[24].id, // "1А: алфавит и правила чтения" from intensive course
+        nextTopicId: topics[25].id, // "1B: приветствие, цифры" - next topic
+        lessonType: "GROUP",
+        status: "COMPLETED",
+      },
+    }),
+
+    // Группа 20020925 - Completed lessons showing progress
+    prisma.lesson.create({
+      data: {
+        title: "1А: алфавит и правила чтения",
+        description: "Изучили испанский алфавит, правила произношения и чтения",
+        date: new Date(Date.now() - 12 * 24 * 60 * 60 * 1000), // 12 days ago
+        startTime: "18:00",
+        endTime: "20:00",
+        duration: 120,
+        isActive: true,
+        youtubeLink: "https://youtube.com/watch?v=mno345",
+        transcript:
+          "Полная расшифровка урока по теме '1А: алфавит и правила чтения'",
+        isPublished: true,
+        viewCount: 48,
+        averageRating: 4.8,
+        totalFeedback: 7,
+        teacherId: teachers[0].id,
+        groupId: groups[6].id, // Группа 20020925
+        topicId: topics[0].id, // "1А: алфавит и правила чтения" from group course
+        nextTopicId: topics[1].id, // "1B: приветствие, цифры" - next topic
+        lessonType: "GROUP",
+        status: "COMPLETED",
+      },
+    }),
+  ]);
+
+  console.log(
+    "✅ Completed lessons with next topics created:",
+    completedLessons.length,
+  );
+
+  // Create feedback for completed lessons
+  console.log("Creating feedback for completed lessons...");
+  const completedLessonFeedbacks = await Promise.all([
+    // Интенсив 10010925 - Feedback for completed lessons
+    prisma.lessonFeedback.create({
+      data: {
+        rating: 5,
+        comment: "Алфавит и правила чтения - отличное начало!",
+        isAnonymous: false,
+        studentId: students[0].id, // Elena Garcia
+        lessonId: completedLessons[0].id, // "1А: алфавит и правила чтения"
+      },
+    }),
+    prisma.lessonFeedback.create({
+      data: {
+        rating: 4,
+        comment: "Приветствие и цифры - понятно объяснили.",
+        isAnonymous: false,
+        studentId: students[4].id, // Maria Ivanova
+        lessonId: completedLessons[1].id, // "1B: приветствие, цифры"
+      },
+    }),
+    prisma.lessonFeedback.create({
+      data: {
+        rating: 5,
+        comment: "Ser и estar - теперь все ясно!",
+        isAnonymous: false,
+        studentId: students[0].id, // Elena Garcia
+        lessonId: completedLessons[2].id, // "1С: являться и находиться"
+      },
+    }),
+
+    // Интенсив 19210825 - Feedback for completed lessons
+    prisma.lessonFeedback.create({
+      data: {
+        rating: 4,
+        comment: "Алфавит и правила чтения - хорошая основа.",
+        isAnonymous: false,
+        studentId: students[1].id, // Mikhail Petrov
+        lessonId: completedLessons[3].id, // "1А: алфавит и правила чтения"
+      },
+    }),
+
+    // Группа 20020925 - Feedback for completed lessons
+    prisma.lessonFeedback.create({
+      data: {
+        rating: 5,
+        comment: "Алфавит и правила чтения - отличный урок!",
+        isAnonymous: false,
+        studentId: students[2].id, // Anna Sidorova
+        lessonId: completedLessons[4].id, // "1А: алфавит и правила чтения"
+      },
+    }),
+  ]);
+
+  console.log(
+    "✅ Feedback for completed lessons created:",
+    completedLessonFeedbacks.length,
+  );
+
+  // Create attendance records for completed lessons
+  console.log("Creating attendance for completed lessons...");
+  const completedLessonAttendance = await Promise.all([
+    // Интенсив 10010925 - Attendance for completed lessons
+    prisma.lessonAttendance.create({
+      data: {
+        lessonId: completedLessons[0].id, // "1А: алфавит и правила чтения"
+        studentId: students[0].id, // Elena Garcia
+        status: "PRESENT",
+        notes: "Активно участвовала в уроке",
+      },
+    }),
+    prisma.lessonAttendance.create({
+      data: {
+        lessonId: completedLessons[0].id, // "1А: алфавит и правила чтения"
+        studentId: students[4].id, // Maria Ivanova
+        status: "PRESENT",
+        notes: "Хорошо справилась с заданиями",
+      },
+    }),
+    prisma.lessonAttendance.create({
+      data: {
+        lessonId: completedLessons[1].id, // "1B: приветствие, цифры"
+        studentId: students[0].id, // Elena Garcia
+        status: "PRESENT",
+        notes: "Отличная работа с лексикой",
+      },
+    }),
+    prisma.lessonAttendance.create({
+      data: {
+        lessonId: completedLessons[1].id, // "1B: приветствие, цифры"
+        studentId: students[4].id, // Maria Ivanova
+        status: "PRESENT",
+        notes: "Хорошо усвоила грамматику",
+      },
+    }),
+
+    // Интенсив 19210825 - Attendance for completed lessons
+    prisma.lessonAttendance.create({
+      data: {
+        lessonId: completedLessons[3].id, // "1А: алфавит и правила чтения"
+        studentId: students[1].id, // Mikhail Petrov
+        status: "PRESENT",
+        notes: "Отлично справился с произношением",
+      },
+    }),
+
+    // Группа 20020925 - Attendance for completed lessons
+    prisma.lessonAttendance.create({
+      data: {
+        lessonId: completedLessons[4].id, // "1А: алфавит и правила чтения"
+        studentId: students[2].id, // Anna Sidorova
+        status: "PRESENT",
+        notes: "Хорошо усвоила правила чтения",
+      },
+    }),
+  ]);
+
+  console.log(
+    "✅ Attendance for completed lessons created:",
+    completedLessonAttendance.length,
+  );
+
   console.log("🎉 Database seeding completed successfully!");
+
   console.log("\n📋 Test Accounts:");
-  console.log("Admin Email: admin@tutorium.com");
-  console.log("Teacher 1 Email: teacher@tutorium.com");
-  console.log("Teacher 2 Email: maria.gonzalez@tutorium.com");
-  console.log("Teacher 3 Email: carlos.lopez@tutorium.com");
+  console.log("Admin Email:", admin.email);
+  console.log("Teacher 1 Email:", teachers[0].email);
+  console.log("Teacher 2 Email:", teachers[1].email);
+  console.log("Teacher 3 Email:", teachers[2].email);
   console.log("Password: password123");
+
   console.log("\n📚 Courses Available:");
-  console.log("- A1: Испанский для начинающих (12 weeks)");
-  console.log("- A2: Испанский для продолжающих (16 weeks)");
-  console.log("- B1: Испанский средний уровень (20 weeks)");
-  console.log("- B2: Испанский продвинутый уровень (24 weeks)");
-  console.log("- C1: Испанский профессиональный уровень (32 weeks)");
+  console.log("- Испанский с нуля в группе (24 topics)");
+  console.log("- Интенсив с нуля до A2 (24 topics)");
+  console.log("- Испанский с нуля индивидуально (24 topics)");
+
   console.log("\n👥 Groups Created:");
-  console.log("- 2 A1 groups (morning & evening)");
-  console.log("- 1 A2 group");
-  console.log("- 1 B1 intensive group");
-  console.log("- 1 B2 exam preparation group");
-  console.log("- 1 C1 professional group");
+  console.log(
+    "- 6 Интенсив groups (Интенсив 10010925, Интенсив 19210825, etc.)",
+  );
+  console.log(
+    "- 3 Группа groups (Группа 20020925, Группа 10100925, Группа 10050825)",
+  );
+
+  console.log("\n📊 Progress Tracking Demo:");
+  console.log("- Интенсив 10010925: 3/24 topics completed (12.5% progress)");
+  console.log("  • Last studied: '1С: являться и находиться'");
+  console.log("  • Next topic: '1D: артикль, род и множественное число'");
+  console.log("- Интенсив 19210825: 1/24 topics completed (4.2% progress)");
+  console.log("  • Last studied: '1А: алфавит и правила чтения'");
+  console.log("  • Next topic: '1B: приветствие, цифры'");
+  console.log("- Группа 20020925: 1/24 topics completed (4.2% progress)");
+  console.log("  • Last studied: '1А: алфавит и правила чтения'");
+  console.log("  • Next topic: '1B: приветствие, цифры'");
+
+  console.log("\n🎯 What You'll See:");
+  console.log("• Course cards showing real progress percentages");
+  console.log("• 'Следующий урок' displaying actual topic names");
+  console.log("• 'Последняя тема' showing recently completed topics");
+  console.log("• Progress bars reflecting real topic completion");
+  console.log("• All groups using real school naming convention");
+  console.log("• Consistent topic structure across all courses");
 }
 
 main()

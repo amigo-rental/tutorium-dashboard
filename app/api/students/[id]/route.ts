@@ -17,9 +17,11 @@ export async function GET(
     const userId = authenticatedRequest.user.userId;
     const userRole = authenticatedRequest.user.role;
 
+    const { id } = await context.params;
+
     const student = await prisma.user.findUnique({
       where: {
-        id: await context.params,
+        id: id,
         role: "STUDENT",
       },
       include: {
@@ -51,7 +53,7 @@ export async function GET(
         },
         feedbacks: {
           include: {
-            recording: {
+            lesson: {
               select: {
                 id: true,
                 date: true,
@@ -125,10 +127,12 @@ export async function PUT(
     const { name, email, level, groupId, avatar, isActive } =
       await request.json();
 
+    const { id } = await context.params;
+
     // Check if student exists
     const existingStudent = await prisma.user.findUnique({
       where: {
-        id: await context.params,
+        id: id,
         role: "STUDENT",
       },
       include: {
@@ -224,7 +228,7 @@ export async function PUT(
 
     // Update student
     const updatedStudent = await prisma.user.update({
-      where: { id: await context.params },
+      where: { id: id },
       data: updateData,
       include: {
         group: {
@@ -268,10 +272,12 @@ export async function DELETE(
     const userId = authenticatedRequest.user.userId;
     const userRole = authenticatedRequest.user.role;
 
+    const { id } = await context.params;
+
     // Check if student exists
     const existingStudent = await prisma.user.findUnique({
       where: {
-        id: await context.params,
+        id: id,
         role: "STUDENT",
       },
       include: {
@@ -284,7 +290,7 @@ export async function DELETE(
           select: {
             feedbacks: true,
             attendance: true,
-            studentRecordings: true,
+            lessons: true,
           },
         },
       },
@@ -309,7 +315,7 @@ export async function DELETE(
     const hasData =
       existingStudent._count.feedbacks > 0 ||
       existingStudent._count.attendance > 0 ||
-      existingStudent._count.studentRecordings > 0;
+      existingStudent._count.lessons > 0;
 
     if (hasData) {
       return NextResponse.json(
@@ -323,7 +329,7 @@ export async function DELETE(
 
     // Delete student (cascade will handle related records)
     await prisma.user.delete({
-      where: { id: await context.params },
+      where: { id: id },
     });
 
     return NextResponse.json({

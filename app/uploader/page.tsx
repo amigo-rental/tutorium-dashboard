@@ -18,12 +18,14 @@ import { Avatar } from "@heroui/avatar";
 
 import { useAuth } from "@/lib/auth/context";
 import { apiClient } from "@/lib/utils/api";
-import { Group, User, Recording as ApiRecording } from "@/types";
+import { Group, User, Recording as ApiRecording, Topic } from "@/types";
 import { ProtectedRoute } from "@/components/protected-route";
 import { TeacherPageSkeleton } from "@/components/dashboard-skeletons";
 
 interface Recording {
   id: string;
+  title?: string;
+  description?: string;
   lessonType: "group" | "individual";
   groupOrStudent: string | string[];
   date: string;
@@ -31,6 +33,9 @@ interface Recording {
   attachments: string[];
   message: string;
   createdAt: string;
+  materials?: string[];
+  topicId?: string;
+  nextTopicId?: string;
 }
 
 export default function TeacherPage() {
@@ -40,18 +45,24 @@ export default function TeacherPage() {
     null,
   );
   const [formData, setFormData] = useState({
+    title: "",
+    description: "",
     lessonType: "",
     groupOrStudent: "" as string | string[],
     date: "",
     youtubeLink: "",
     attachments: [] as File[],
     message: "",
+    materials: [] as string[],
+    topicId: "",
+    nextTopicId: "",
   });
 
   // Real data from API
   const [groups, setGroups] = useState<Group[]>([]);
   const [students, setStudents] = useState<User[]>([]);
   const [recordings, setRecordings] = useState<Recording[]>([]);
+  const [topics, setTopics] = useState<Topic[]>([]);
   const [isLoading, setIsLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
@@ -72,6 +83,27 @@ export default function TeacherPage() {
       loadData();
     }
   }, [user]);
+
+  const loadTopicsForGroup = async (groupId: string) => {
+    try {
+      const selectedGroup = groups.find((g) => g.id === groupId);
+
+      if (selectedGroup && selectedGroup.courseId) {
+        const topicsResponse = await apiClient.getTopicsByCourse(
+          selectedGroup.courseId,
+        );
+
+        if (topicsResponse.data) {
+          setTopics(topicsResponse.data as Topic[]);
+        } else {
+          setTopics([]);
+        }
+      }
+    } catch (error) {
+      console.error("Error loading topics:", error);
+      setTopics([]);
+    }
+  };
 
   const loadData = async () => {
     try {
@@ -111,12 +143,14 @@ export default function TeacherPage() {
           groupOrStudent:
             apiRecording.lessonType === "GROUP"
               ? apiRecording.group?.name || "Unknown Group"
-              : apiRecording.students.map((s) => s.name),
+              : (apiRecording.students || []).map((s) => s.name),
           date: apiRecording.date.split("T")[0], // Extract date part
           youtubeLink: apiRecording.youtubeLink,
           attachments: apiRecording.attachments.map((a) => a.originalName),
           message: apiRecording.message || "",
           createdAt: apiRecording.createdAt,
+          topicId: apiRecording.topic?.id,
+          nextTopicId: "", // This will be set when creating new lessons
         }));
 
         setRecordings(convertedRecordings);
@@ -129,6 +163,7 @@ export default function TeacherPage() {
       setGroups([]);
       setStudents([]);
       setRecordings([]);
+      setTopics([]);
     } finally {
       setIsLoading(false);
     }
@@ -167,6 +202,8 @@ export default function TeacherPage() {
     try {
       // Prepare data for API
       const recordingData = {
+        title: formData.title || "Запись урока",
+        description: formData.description,
         lessonType: formData.lessonType.toUpperCase() as "GROUP" | "INDIVIDUAL",
         date: formData.date,
         youtubeLink: formData.youtubeLink,
@@ -179,6 +216,9 @@ export default function TeacherPage() {
           formData.lessonType === "individual"
             ? (formData.groupOrStudent as string[])
             : undefined,
+        materials: formData.materials || [],
+        topicId: formData.topicId,
+        nextTopicId: formData.nextTopicId,
       };
 
       // Create recording via API
@@ -195,12 +235,17 @@ export default function TeacherPage() {
 
       // Reset form
       setFormData({
+        title: "",
+        description: "",
         lessonType: "",
         groupOrStudent: "",
         date: "",
         youtubeLink: "",
         attachments: [],
         message: "",
+        materials: [],
+        topicId: "",
+        nextTopicId: "",
       });
     } catch (error) {
       console.error("Error creating recording:", error);
@@ -286,12 +331,17 @@ export default function TeacherPage() {
   const handleEdit = (recording: Recording) => {
     setEditingRecording(recording);
     setFormData({
+      title: recording.title || "",
+      description: recording.description || "",
       lessonType: recording.lessonType,
       groupOrStudent: recording.groupOrStudent,
       date: recording.date,
       youtubeLink: recording.youtubeLink,
       attachments: [],
       message: recording.message,
+      materials: recording.materials || [],
+      topicId: recording.topicId || "",
+      nextTopicId: recording.nextTopicId || "",
     });
     onOpen();
   };
@@ -314,12 +364,17 @@ export default function TeacherPage() {
     onClose();
     setEditingRecording(null);
     setFormData({
+      title: "",
+      description: "",
       lessonType: "",
       groupOrStudent: "",
       date: "",
       youtubeLink: "",
       attachments: [],
       message: "",
+      materials: [],
+      topicId: "",
+      nextTopicId: "",
     });
   };
 
@@ -368,7 +423,7 @@ export default function TeacherPage() {
   }
 
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requiredRole="TEACHER">
       <div className="min-h-screen bg-white lg:ml-4 xl:ml-0">
         {/* Hero Section */}
         <div className="pt-12 mb-8">
@@ -431,6 +486,7 @@ export default function TeacherPage() {
 
                       handleInputChange("lessonType", selected);
                       handleInputChange("groupOrStudent", "");
+                      setTopics([]); // Clear topics when lesson type changes
                     }}
                   >
                     <SelectItem key="group" textValue="Групповой урок">
@@ -466,6 +522,7 @@ export default function TeacherPage() {
                         const selected = Array.from(keys)[0] as string;
 
                         handleInputChange("groupOrStudent", selected);
+                        loadTopicsForGroup(selected);
                       }}
                     >
                       {groups.map((group) => (
@@ -536,6 +593,72 @@ export default function TeacherPage() {
                   ) : null}
                 </div>
               </div>
+
+              {/* Topic Selection - Only show for group lessons */}
+              {formData.lessonType === "group" &&
+                formData.groupOrStudent &&
+                topics.length > 0 && (
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div>
+                      <Select
+                        classNames={{
+                          label: "font-bold text-black",
+                          trigger:
+                            "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                          value: "font-medium text-black",
+                        }}
+                        items={topics}
+                        label="Тема занятия"
+                        placeholder="Выберите тему занятия"
+                        selectedKeys={
+                          formData.topicId ? [formData.topicId] : []
+                        }
+                        onSelectionChange={(keys) => {
+                          const selected = Array.from(keys)[0] as string;
+
+                          handleInputChange("topicId", selected);
+                        }}
+                      >
+                        {(topic) => (
+                          <SelectItem key={topic.id} textValue={topic.name}>
+                            {topic.name}
+                          </SelectItem>
+                        )}
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Select
+                        classNames={{
+                          label: "font-bold text-black",
+                          trigger:
+                            "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                          value: "font-medium text-black",
+                        }}
+                        items={[
+                          { id: "", name: "Не планировать следующую тему" },
+                          ...topics,
+                        ]}
+                        label="Следующая тема"
+                        placeholder="Выберите следующую тему или оставьте пустым"
+                        selectedKeys={
+                          formData.nextTopicId ? [formData.nextTopicId] : []
+                        }
+                        onSelectionChange={(keys) => {
+                          const selected = Array.from(keys)[0] as string;
+
+                          handleInputChange("nextTopicId", selected);
+                        }}
+                      >
+                        {(item) => (
+                          <SelectItem key={item.id} textValue={item.name}>
+                            {item.name}
+                          </SelectItem>
+                        )}
+                      </Select>
+                    </div>
+                  </div>
+                )}
 
               {/* Date and YouTube Link */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-6">

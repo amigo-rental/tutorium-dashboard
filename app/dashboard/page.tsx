@@ -117,6 +117,8 @@ interface UpcomingLesson {
   duration: string;
   meetingLink?: string;
   type: string;
+  groupName?: string;
+  isIndividual?: boolean;
 }
 
 interface UserCourse {
@@ -141,6 +143,8 @@ interface RecentLesson {
   filesCount: number;
   hasRecording: boolean;
   recordingUrl?: string;
+  groupName?: string;
+  topic?: string;
 }
 
 // Function to generate lesson gradients based on index
@@ -195,10 +199,73 @@ export default function DashboardPage() {
   );
   const [tempRating, setTempRating] = useState<string>("");
 
-  // Load dashboard data
+  // Load existing ratings for lessons
+  const loadExistingRatings = async () => {
+    try {
+      console.log("🔄 Loading existing ratings...");
+      const ratings: Record<string, string> = {};
+
+      // Get all feedback for the current user
+      const feedbackResponse = await apiClient.getUserFeedback();
+
+      console.log("📊 Feedback response:", feedbackResponse);
+
+      if (feedbackResponse.data && Array.isArray(feedbackResponse.data)) {
+        feedbackResponse.data.forEach((feedback: any) => {
+          ratings[feedback.lessonId] = getEmojiForRating(feedback.rating);
+        });
+        console.log("⭐ Loaded ratings:", ratings);
+      } else {
+        console.log("⚠️ No feedback data or invalid response format");
+      }
+
+      setLessonRatings(ratings);
+    } catch (error) {
+      console.error("❌ Error loading existing ratings:", error);
+    }
+  };
+
+  // Helper function to convert numeric rating to emoji
+  const getEmojiForRating = (rating: number): string => {
+    switch (rating) {
+      case 1:
+        return "😠";
+      case 2:
+        return "😴";
+      case 3:
+        return "😐";
+      case 4:
+        return "😊";
+      case 5:
+        return "🥰";
+      default:
+        return "��";
+    }
+  };
+
+  // Helper function to convert emoji back to numeric rating
+  const getNumericRating = (emoji: string): number => {
+    switch (emoji) {
+      case "😠":
+        return 1;
+      case "😴":
+        return 2;
+      case "😐":
+        return 3;
+      case "😊":
+        return 4;
+      case "🥰":
+        return 5;
+      default:
+        return 3;
+    }
+  };
+
+  // Load data on component mount
   useEffect(() => {
     if (user) {
       loadDashboardData();
+      loadExistingRatings();
     }
   }, [user]);
 
@@ -215,15 +282,45 @@ export default function DashboardPage() {
         apiClient.getUpcomingLessons(),
         apiClient.getUserCourses(),
         apiClient.getRecentLessons(),
-        apiClient.getGroups(),
+        apiClient.getUserGroups(),
       ]);
+
+      console.log("🔍 Dashboard API responses:", {
+        upcoming: upcomingResponse,
+        courses: coursesResponse,
+        recent: recentResponse,
+        groups: groupsResponse,
+      });
 
       if (
         upcomingResponse.data &&
         Array.isArray(upcomingResponse.data) &&
         upcomingResponse.data.length > 0
       ) {
-        setUpcomingLesson(upcomingResponse.data[0]);
+        // For teachers, only show upcoming lessons where they are the teacher
+        if (user?.role === "TEACHER") {
+          const teacherUpcomingLessons = upcomingResponse.data.filter(
+            (lesson: any) =>
+              lesson.teacher === "Вы" || lesson.teacher === user?.name,
+          );
+
+          if (teacherUpcomingLessons.length > 0) {
+            console.log(
+              "✅ Setting teacher upcoming lesson:",
+              teacherUpcomingLessons[0],
+            );
+            setUpcomingLesson(teacherUpcomingLessons[0]);
+          } else {
+            console.log("⚠️ No upcoming lessons for current teacher");
+            setUpcomingLesson(null);
+          }
+        } else {
+          // For students and admins, show the first upcoming lesson
+          console.log("✅ Setting upcoming lesson:", upcomingResponse.data[0]);
+          setUpcomingLesson(upcomingResponse.data[0]);
+        }
+      } else {
+        console.log("⚠️ No upcoming lessons data:", upcomingResponse);
       }
 
       if (coursesResponse.data && Array.isArray(coursesResponse.data)) {
@@ -272,37 +369,62 @@ export default function DashboardPage() {
   };
 
   const handleRateLesson = (lessonId: string) => {
+    console.log("🎯 Rating lesson:", lessonId);
     setCurrentRatingLesson(lessonId);
     setTempRating(lessonRatings[lessonId] || "");
     setRatingModalOpen(true);
+    console.log("📱 Modal opened, current rating lesson set to:", lessonId);
   };
 
   const handleRatingSubmit = async (rating: string, numericRating: number) => {
-    if (currentRatingLesson && selectedLesson) {
+    console.log("🚀 Submitting rating:", {
+      rating,
+      numericRating,
+      currentRatingLesson,
+    });
+
+    if (currentRatingLesson) {
       try {
+        console.log("📤 Submitting feedback to API...");
         // Submit feedback to API
-        await apiClient.createFeedback({
+        const response = await apiClient.createFeedback({
           rating: numericRating,
-          recordingId: selectedLesson.id,
+          lessonId: currentRatingLesson,
           isAnonymous: false,
         });
+
+        console.log("✅ API response:", response);
 
         // Update local state
         setLessonRatings((prev) => ({
           ...prev,
           [currentRatingLesson]: rating,
         }));
-        setTempRating(rating);
+
+        // Close modal and reset state
         setRatingModalOpen(false);
+        setCurrentRatingLesson(null);
+        setTempRating("");
+
+        console.log("🔄 Reloading ratings...");
+        // Reload ratings to ensure consistency
+        await loadExistingRatings();
       } catch (error) {
-        console.error("Error submitting feedback:", error);
+        console.error("❌ Error submitting feedback:", error);
         // Could add error handling UI here
       }
+    } else {
+      console.log("⚠️ No current rating lesson set");
     }
   };
 
+  const handleEmojiSelect = async (emoji: string, numericRating: number) => {
+    // Submit rating immediately on emoji click
+    await handleRatingSubmit(emoji, numericRating);
+  };
+
   return (
-    <ProtectedRoute>
+    <ProtectedRoute requiredRole="STUDENT">
       {isLoading ? (
         <DashboardSkeleton />
       ) : (
@@ -317,11 +439,6 @@ export default function DashboardPage() {
               </h1>
               <p className="text-black/70 text-xl font-medium mt-2">
                 Добро пожаловать в ваш личный кабинет
-                {user?.role === "STUDENT" && user?.level && (
-                  <span className="block mt-1 text-lg">
-                    Уровень: {getLevelLabel(user.level)}
-                  </span>
-                )}
               </p>
             </div>
           )}
@@ -368,11 +485,46 @@ export default function DashboardPage() {
                             Длительность: {upcomingLesson.duration}
                           </span>
                         </div>
-                        <div className="flex items-center gap-2">
-                          <span className="font-medium text-sm">
-                            Онлайн занятие
-                          </span>
-                        </div>
+                        {/* Group or Teacher Info */}
+                        {upcomingLesson.groupName ? (
+                          <div className="flex items-center gap-2">
+                            <svg
+                              className="w-4 h-4 text-blue-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                              />
+                            </svg>
+                            <span className="font-medium text-sm text-blue-700">
+                              {upcomingLesson.groupName}
+                            </span>
+                          </div>
+                        ) : (
+                          <div className="flex items-center gap-2">
+                            <svg
+                              className="w-4 h-4 text-purple-600"
+                              fill="none"
+                              stroke="currentColor"
+                              viewBox="0 0 24 24"
+                            >
+                              <path
+                                d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                strokeLinecap="round"
+                                strokeLinejoin="round"
+                                strokeWidth={2}
+                              />
+                            </svg>
+                            <span className="font-medium text-sm text-purple-700">
+                              {upcomingLesson.teacher}
+                            </span>
+                          </div>
+                        )}
                       </div>
                     </div>
 
@@ -576,12 +728,14 @@ export default function DashboardPage() {
                             <span className="text-black/70 font-medium">
                               Прогресс
                             </span>
-                            <span className="text-black font-bold">75%</span>
+                            <span className="text-black font-bold">
+                              {group.progress?.progressPercent || 0}%
+                            </span>
                           </div>
                           <div className="w-full bg-slate-200/50 rounded-full h-2">
                             <div
-                              className="h-2 bg-gradient-to-r from-[#007EFB] to-[#00B67A] rounded-full"
-                              style={{ width: "75%" }}
+                              className="h-2 bg-gradient-to-r from-[#007EFB] to-[#00B67A] rounded-full transition-all duration-500"
+                              style={{ width: `${group.progress?.progressPercent || 0}%` }}
                             />
                           </div>
                         </div>
@@ -793,6 +947,69 @@ export default function DashboardPage() {
                             <p className="text-black/70 font-medium text-sm">
                               {lesson.date} • {lesson.teacher}
                             </p>
+                            {/* Group or Individual Lesson Info */}
+                            <div className="flex items-center gap-2 mt-1">
+                              {lesson.groupName ? (
+                                <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 rounded-lg">
+                                  <svg
+                                    className="w-3 h-3 text-blue-600"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                    />
+                                  </svg>
+                                  <span className="text-blue-700 font-medium text-xs">
+                                    {lesson.groupName}
+                                  </span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 rounded-lg">
+                                  <svg
+                                    className="w-3 h-3 text-purple-600"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                    />
+                                  </svg>
+                                  <span className="text-purple-700 font-medium text-xs">
+                                    Индивидуальный урок
+                                  </span>
+                                </div>
+                              )}
+                              {/* Topic info if available */}
+                              {lesson.topic && (
+                                <div className="flex items-center gap-1 px-2 py-1 bg-slate-100 rounded-lg">
+                                  <svg
+                                    className="w-3 h-3 text-slate-600"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                    />
+                                  </svg>
+                                  <span className="text-slate-700 font-medium text-xs">
+                                    {lesson.topic}
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                           </div>
 
                           {/* Tools & Info Section */}
@@ -892,6 +1109,48 @@ export default function DashboardPage() {
                             <p className="text-black/70 font-medium text-xs">
                               {lesson.date} • {lesson.teacher}
                             </p>
+                            {/* Group or Individual Lesson Info - Medium */}
+                            <div className="flex items-center gap-1 mt-1">
+                              {lesson.groupName ? (
+                                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-blue-100 rounded-md">
+                                  <svg
+                                    className="w-2.5 h-2.5 text-blue-600"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                    />
+                                  </svg>
+                                  <span className="text-blue-700 font-medium text-xs">
+                                    {lesson.groupName}
+                                  </span>
+                                </div>
+                              ) : (
+                                <div className="flex items-center gap-1 px-1.5 py-0.5 bg-purple-100 rounded-md">
+                                  <svg
+                                    className="w-2.5 h-2.5 text-purple-600"
+                                    fill="none"
+                                    stroke="currentColor"
+                                    viewBox="0 0 24 24"
+                                  >
+                                    <path
+                                      d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                      strokeWidth={2}
+                                    />
+                                  </svg>
+                                  <span className="text-purple-700 font-medium text-xs">
+                                    Индивидуальный
+                                  </span>
+                                </div>
+                              )}
+                            </div>
                           </div>
 
                           {/* Compact Tools Section */}
@@ -992,6 +1251,69 @@ export default function DashboardPage() {
                               <p className="text-black/70 font-medium text-sm">
                                 {lesson.date} • {lesson.teacher}
                               </p>
+                              {/* Group or Individual Lesson Info - Mobile */}
+                              <div className="flex items-center gap-2 mt-1">
+                                {lesson.groupName ? (
+                                  <div className="flex items-center gap-1 px-2 py-1 bg-blue-100 rounded-lg">
+                                    <svg
+                                      className="w-3 h-3 text-blue-600"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0zm6 3a2 2 0 11-4 0 2 2 0 014 0zM7 10a2 2 0 11-4 0 2 2 0 014 0z"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                      />
+                                    </svg>
+                                    <span className="text-blue-700 font-medium text-xs">
+                                      {lesson.groupName}
+                                    </span>
+                                  </div>
+                                ) : (
+                                  <div className="flex items-center gap-1 px-2 py-1 bg-purple-100 rounded-lg">
+                                    <svg
+                                      className="w-3 h-3 text-purple-600"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                      />
+                                    </svg>
+                                    <span className="text-purple-700 font-medium text-xs">
+                                      Индивидуальный урок
+                                    </span>
+                                  </div>
+                                )}
+                                {/* Topic info if available */}
+                                {lesson.topic && (
+                                  <div className="flex items-center gap-1 px-2 py-1 bg-slate-100 rounded-lg">
+                                    <svg
+                                      className="w-3 h-3 text-slate-600"
+                                      fill="none"
+                                      stroke="currentColor"
+                                      viewBox="0 0 24 24"
+                                    >
+                                      <path
+                                        d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                                        strokeLinecap="round"
+                                        strokeLinejoin="round"
+                                        strokeWidth={2}
+                                      />
+                                    </svg>
+                                    <span className="text-slate-700 font-medium text-xs">
+                                      {lesson.topic}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
                             </div>
                           </div>
 
@@ -1467,81 +1789,47 @@ export default function DashboardPage() {
             </div>
           </ModalHeader>
           <ModalBody className="pt-6">
-            {tempRating ? (
-              // Confirmation view
-              <div className="text-center space-y-6">
-                <div className="p-6 bg-gradient-to-br from-amber-50 to-orange-50 border border-amber-200/50 rounded-2xl">
-                  <div className="text-6xl mb-3">{tempRating}</div>
-                  <h4 className="font-bold text-amber-900 text-lg mb-2">
-                    Твоя оценка
-                  </h4>
-                  <p className="text-amber-700 font-medium text-sm">
-                    {tempRating === "😠" && "Ты был недоволен уроком"}
-                    {tempRating === "😴" && "Урок был скучным"}
-                    {tempRating === "😐" && "Урок был нормальным"}
-                    {tempRating === "😊" && "Тебе понравился урок"}
-                    {tempRating === "🥰" && "Ты в восторге от урока!"}
-                  </p>
-                </div>
-                <div className="flex gap-3">
-                  <Button
-                    className="flex-1 font-medium bg-white text-black border border-slate-300 hover:bg-slate-50"
-                    onClick={() => setTempRating("")}
+            <div className="space-y-6">
+              <div className="grid grid-cols-5 gap-4">
+                {[
+                  {
+                    emoji: "😠",
+                    color: "bg-red-100 hover:bg-red-200",
+                    rating: 1,
+                  },
+                  {
+                    emoji: "😴",
+                    color: "bg-yellow-100 hover:bg-yellow-200",
+                    rating: 2,
+                  },
+                  {
+                    emoji: "😐",
+                    color: "bg-gray-100 hover:bg-gray-200",
+                    rating: 3,
+                  },
+                  {
+                    emoji: "😊",
+                    color: "bg-blue-100 hover:bg-blue-200",
+                    rating: 4,
+                  },
+                  {
+                    emoji: "🥰",
+                    color: "bg-green-100 hover:bg-green-200",
+                    rating: 5,
+                  },
+                ].map((rating) => (
+                  <button
+                    key={rating.emoji}
+                    className={`p-4 rounded-2xl border-2 border-transparent hover:border-amber-300 transition-all duration-200 ${rating.color} flex items-center justify-center`}
+                    onClick={() =>
+                      handleEmojiSelect(rating.emoji, rating.rating)
+                    }
                   >
-                    Изменить
-                  </Button>
-                  <Button
-                    className="flex-1 font-medium bg-amber-500 text-white hover:bg-amber-600"
-                    onClick={() => setRatingModalOpen(false)}
-                  >
-                    Отлично
-                  </Button>
-                </div>
+                    <div className="text-4xl">{rating.emoji}</div>
+                  </button>
+                ))}
               </div>
-            ) : (
-              // Rating selection view
-              <div className="space-y-6">
-                <div className="grid grid-cols-5 gap-4">
-                  {[
-                    {
-                      emoji: "😠",
-                      color: "bg-red-100 hover:bg-red-200",
-                      rating: 1,
-                    },
-                    {
-                      emoji: "😴",
-                      color: "bg-yellow-100 hover:bg-yellow-200",
-                      rating: 2,
-                    },
-                    {
-                      emoji: "😐",
-                      color: "bg-gray-100 hover:bg-gray-200",
-                      rating: 3,
-                    },
-                    {
-                      emoji: "😊",
-                      color: "bg-blue-100 hover:bg-blue-200",
-                      rating: 4,
-                    },
-                    {
-                      emoji: "🥰",
-                      color: "bg-green-100 hover:bg-green-200",
-                      rating: 5,
-                    },
-                  ].map((rating) => (
-                    <button
-                      key={rating.emoji}
-                      className={`p-4 rounded-2xl border-2 border-transparent hover:border-amber-300 transition-all duration-200 ${rating.color} flex items-center justify-center`}
-                      onClick={() =>
-                        handleRatingSubmit(rating.emoji, rating.rating)
-                      }
-                    >
-                      <div className="text-4xl">{rating.emoji}</div>
-                    </button>
-                  ))}
-                </div>
-              </div>
-            )}
+            </div>
           </ModalBody>
         </ModalContent>
       </Modal>

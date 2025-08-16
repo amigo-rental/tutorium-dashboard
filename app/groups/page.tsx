@@ -126,6 +126,14 @@ interface Group {
   progress: number;
   isEnrolled: boolean;
   nextLesson: string;
+  progressData?: {
+    progressPercent: number;
+    lastStudiedTopic: string;
+    completedTopics: number;
+    totalTopics: number;
+    nextTopic?: string;
+    nextTopicId?: string;
+  };
 }
 
 interface User {
@@ -232,13 +240,10 @@ const transformGroupData = (apiGroup: any, currentUser: User | null): Group => {
     else if (hour < 18) timeOfDay = "afternoon";
   }
 
-  // Calculate progress based on students vs max
-  const maxStudents = apiGroup.maxStudents || 20; // Fallback to 20
-  const studentCount = apiGroup._count?.students || 0;
-  const progress = Math.min((studentCount / maxStudents) * 100, 100);
-
-  // Generate block info
-  const currentBlock = Math.floor(progress / 12.5) + 1;
+  // Use real progress data from API if available, otherwise fallback to mock data
+  const progressData = apiGroup.progress;
+  const progress = progressData?.progressPercent || 0;
+  const currentBlock = progressData ? Math.floor(progress / 12.5) + 1 : 1;
   const totalBlocks = 8;
 
   // Generate current lesson based on level
@@ -273,7 +278,9 @@ const transformGroupData = (apiGroup: any, currentUser: User | null): Group => {
   const levelLessons =
     lessons[apiGroup.level as keyof typeof lessons] || lessons["A1"];
   const currentLesson =
-    levelLessons[Math.min(currentBlock - 1, levelLessons.length - 1)] || "Урок";
+    progressData?.lastStudiedTopic ||
+    levelLessons[Math.min(currentBlock - 1, levelLessons.length - 1)] ||
+    "Урок";
 
   // Check if user is enrolled
   const isEnrolled = currentUser?.groupId === apiGroup.id;
@@ -306,6 +313,7 @@ const transformGroupData = (apiGroup: any, currentUser: User | null): Group => {
     isEnrolled,
     nextLesson,
     students: apiGroup.students || [],
+    progressData: progressData || null,
   };
 };
 
@@ -475,7 +483,7 @@ export default function GroupsPage() {
                 <UsersIcon className="w-7 h-7 text-[#00B67A]" />
               </div>
               <div>
-                <h2 className="font-bold text-3xl text-black">Мои группы</h2>
+                <h2 className="font-bold text-3xl text-black">Твои группы</h2>
                 <p className="text-black/70 font-medium text-base">
                   Группы, в которых ты уже учишься
                 </p>
@@ -792,7 +800,7 @@ function GroupCard({ group, isMyGroup }: { group: Group; isMyGroup: boolean }) {
 
   return (
     <div
-      className={`relative bg-gradient-to-br ${getBgByProgress(Math.floor(group.progress))} border border-slate-200/50 rounded-3xl p-6 group hover:shadow-2xl hover:shadow-slate-300/25 transition-all duration-500 overflow-hidden`}
+      className={`relative bg-gradient-to-br ${getBgByProgress(Math.floor(group.progress))} border border-slate-200/50 rounded-3xl p-6 group hover:shadow-2xl hover:shadow-slate-300/25 transition-all duration-500 overflow-hidden flex flex-col h-full`}
     >
       {/* Background decoration */}
       <div className="absolute top-0 right-0 w-32 h-32 opacity-5">
@@ -801,7 +809,7 @@ function GroupCard({ group, isMyGroup }: { group: Group; isMyGroup: boolean }) {
         />
       </div>
 
-      <div className="relative z-10">
+      <div className="relative z-10 flex flex-col h-full">
         {/* Header */}
         <div className="flex items-start justify-between mb-6">
           <div className="flex-1">
@@ -878,13 +886,39 @@ function GroupCard({ group, isMyGroup }: { group: Group; isMyGroup: boolean }) {
               />
             </div>
           </div>
-          <p className="text-slate-600 font-semibold text-xs mt-2">
-            {group.currentLesson}
-          </p>
+          
+          {/* Progress Details */}
+          <div className="mt-3 space-y-2">
+            {group.progressData ? (
+              <>
+                <p className="text-slate-600 font-semibold text-xs">
+                  {group.progressData.completedTopics} из {group.progressData.totalTopics} тем пройдено
+                </p>
+                {group.progressData.lastStudiedTopic && (
+                  <p className="text-slate-500 font-medium text-xs">
+                    Последняя тема: {group.progressData.lastStudiedTopic}
+                  </p>
+                )}
+                {group.progressData.nextTopic && (
+                  <p className="text-slate-500 font-medium text-xs">
+                    Следующая тема: {group.progressData.nextTopic}
+                  </p>
+                )}
+              </>
+            ) : (
+              <p className="text-slate-600 font-semibold text-xs">
+                {group.currentLesson}
+              </p>
+            )}
+          </div>
+          
         </div>
 
-        {/* Students and Next Lesson */}
-        <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 mb-6 border border-white/50">
+        {/* Flex spacer to push button to bottom */}
+        <div className="flex-1" />
+
+        {/* Students and Next Lesson - Bottom Section */}
+        <div className="bg-white/60 backdrop-blur-sm rounded-2xl p-4 mb-4 border border-white/50">
           <div className="flex items-center justify-between mb-2">
             <div className="flex items-center gap-2">
               <UsersIcon className="w-4 h-4 text-slate-600" />
