@@ -396,8 +396,6 @@ class ApiClient {
     });
   }
 
-
-
   async getTopicsByCourse(courseId: string) {
     return this.request(`/topics?courseId=${courseId}`);
   }
@@ -422,11 +420,13 @@ class ApiClient {
     courseId?: string;
   }) {
     const searchParams = new URLSearchParams();
+
     if (params?.studentId) searchParams.append("studentId", params.studentId);
     if (params?.teacherId) searchParams.append("teacherId", params.teacherId);
     if (params?.courseId) searchParams.append("courseId", params.courseId);
-    
+
     const endpoint = `/lessons/individual${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+
     return this.request(endpoint);
   }
 

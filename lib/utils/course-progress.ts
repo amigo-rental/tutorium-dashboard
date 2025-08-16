@@ -159,7 +159,7 @@ export async function getGroupProgressData(groupId: string) {
     return await getCourseProgressData(group.courseId, groupId);
   } catch (error) {
     console.error("Error getting group progress:", error);
-    
+
     return {
       progressPercent: 0,
       completedTopics: 0,
@@ -175,7 +175,10 @@ export async function getGroupProgressData(groupId: string) {
  * Get course progress across all student's groups
  * This tracks overall course progress by finding the furthest topic covered across all groups
  */
-export async function getCourseProgressAcrossGroups(courseId: string, userId: string) {
+export async function getCourseProgressAcrossGroups(
+  courseId: string,
+  userId: string,
+) {
   try {
     // Get all groups the student is enrolled in that belong to this course
     const userGroups = await prisma.group.findMany({
@@ -232,7 +235,7 @@ export async function getCourseProgressAcrossGroups(courseId: string, userId: st
         topicId: { not: null },
         status: "COMPLETED",
         groupId: {
-          in: userGroups.map(g => g.id),
+          in: userGroups.map((g) => g.id),
         },
       },
       include: {
@@ -244,10 +247,7 @@ export async function getCourseProgressAcrossGroups(courseId: string, userId: st
           },
         },
       },
-      orderBy: [
-        { topic: { order: "desc" } },
-        { date: "desc" },
-      ],
+      orderBy: [{ topic: { order: "desc" } }, { date: "desc" }],
     });
 
     // Calculate completed topics
@@ -258,9 +258,8 @@ export async function getCourseProgressAcrossGroups(courseId: string, userId: st
     const progressPercent = Math.round((completedTopics / totalTopics) * 100);
 
     // Get the most advanced topic (highest order) that has been completed
-    const lastStudiedTopic = completedLessons.length > 0 
-      ? completedLessons[0].topic?.name 
-      : null;
+    const lastStudiedTopic =
+      completedLessons.length > 0 ? completedLessons[0].topic?.name : null;
 
     // Find the next topic after the most advanced completed topic
     let nextTopic = null;
@@ -299,7 +298,7 @@ export async function getCourseProgressAcrossGroups(courseId: string, userId: st
     };
   } catch (error) {
     console.error("Error calculating course progress across groups:", error);
-    
+
     return {
       progressPercent: 0,
       completedTopics: 0,

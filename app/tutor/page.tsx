@@ -765,13 +765,19 @@ export default function DashboardPage() {
                               Прогресс
                             </span>
                             <span className="text-black font-bold">
-                              {typeof group.progress === 'object' && group.progress ? group.progress.progressPercent : 0}%
+                              {typeof group.progress === "object" &&
+                              group.progress
+                                ? group.progress.progressPercent
+                                : 0}
+                              %
                             </span>
                           </div>
                           <div className="w-full bg-slate-200/50 rounded-full h-2">
                             <div
                               className="h-2 bg-gradient-to-r from-[#007EFB] to-[#00B67A] rounded-full"
-                              style={{ width: `${typeof group.progress === 'object' && group.progress ? group.progress.progressPercent : 0}%` }}
+                              style={{
+                                width: `${typeof group.progress === "object" && group.progress ? group.progress.progressPercent : 0}%`,
+                              }}
                             />
                           </div>
                           <div className="flex items-center justify-between text-xs text-black/50">

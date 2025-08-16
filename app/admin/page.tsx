@@ -6,10 +6,9 @@ import { Button } from "@heroui/button";
 import { Input } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
 import { Chip } from "@heroui/chip";
-import { Card, CardBody, CardHeader } from "@heroui/card";
 import { Avatar } from "@heroui/avatar";
-import { Divider } from "@heroui/divider";
 import { useRouter } from "next/navigation";
+
 import { useAuth } from "@/lib/auth/context";
 import { apiClient } from "@/lib/utils/api";
 import { ProtectedRoute } from "@/components/protected-route";
@@ -17,38 +16,98 @@ import { User, Group } from "@/types";
 
 // Icons
 const UsersIcon = () => (
-  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+  <svg
+    className="w-6 h-6"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+    />
   </svg>
 );
 
 const SearchIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+  <svg
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+    />
   </svg>
 );
 
 const FilterIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+  <svg
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+    />
   </svg>
 );
 
 const PlusIcon = () => (
-  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
+  <svg
+    className="w-5 h-5"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      d="M12 6v6m0 0v6m0-6h6m-6 0H6"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+    />
   </svg>
 );
 
 const CalendarIcon = () => (
-  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+  <svg
+    className="w-4 h-4"
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+    />
   </svg>
 );
 
 const ClockIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
-  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
-    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+  <svg
+    className={className}
+    fill="none"
+    stroke="currentColor"
+    viewBox="0 0 24 24"
+  >
+    <path
+      d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+      strokeLinecap="round"
+      strokeLinejoin="round"
+      strokeWidth={2}
+    />
   </svg>
 );
 
@@ -83,15 +142,15 @@ export default function AdminPage() {
   });
 
   useEffect(() => {
-      loadData();
+    loadData();
   }, []);
 
   const loadData = async () => {
     try {
       setIsLoading(true);
       const [usersResponse, groupsResponse] = await Promise.all([
-          apiClient.getAllUsers(),
-          apiClient.getGroups(),
+        apiClient.getAllUsers(),
+        apiClient.getGroups(),
       ]);
 
       if (usersResponse.data) {
@@ -99,8 +158,8 @@ export default function AdminPage() {
       }
       if (groupsResponse.data) {
         setGroups(groupsResponse.data as Group[]);
-          }
-        } catch (error) {
+      }
+    } catch (error) {
       console.error("Error loading data:", error);
     } finally {
       setIsLoading(false);
@@ -121,15 +180,15 @@ export default function AdminPage() {
       // TODO: Implement API call to create lesson
       console.log("Creating lesson:", newLesson);
       setIsCreateLessonModalOpen(false);
-        setNewLesson({
+      setNewLesson({
         studentId: "",
         teacherId: "",
         courseId: "",
-          date: "",
-          startTime: "",
-          endTime: "",
-          notes: "",
-        });
+        date: "",
+        startTime: "",
+        endTime: "",
+        notes: "",
+      });
     } catch (error) {
       console.error("Error creating lesson:", error);
     }
@@ -157,13 +216,15 @@ export default function AdminPage() {
 
   // Filter users based on search and filters
   const filteredUsers = users.filter((user) => {
-    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-                         user.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesSearch =
+      user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      user.email.toLowerCase().includes(searchQuery.toLowerCase());
     const matchesRole = roleFilter === "ALL" || user.role === roleFilter;
-    const matchesStatus = statusFilter === "ALL" || 
-                         (statusFilter === "ACTIVE" && user.isActive) ||
-                         (statusFilter === "INACTIVE" && !user.isActive);
-    
+    const matchesStatus =
+      statusFilter === "ALL" ||
+      (statusFilter === "ACTIVE" && user.isActive) ||
+      (statusFilter === "INACTIVE" && !user.isActive);
+
     return matchesSearch && matchesRole && matchesStatus;
   });
 
@@ -171,13 +232,33 @@ export default function AdminPage() {
   const getRoleInfo = (role: string) => {
     switch (role) {
       case "ADMIN":
-        return { label: "Администратор", color: "danger", bgColor: "bg-red-50", textColor: "text-red-700" };
+        return {
+          label: "Администратор",
+          color: "danger",
+          bgColor: "bg-red-50",
+          textColor: "text-red-700",
+        };
       case "TEACHER":
-        return { label: "Преподаватель", color: "primary", bgColor: "bg-blue-50", textColor: "text-blue-700" };
+        return {
+          label: "Преподаватель",
+          color: "primary",
+          bgColor: "bg-blue-50",
+          textColor: "text-blue-700",
+        };
       case "STUDENT":
-        return { label: "Студент", color: "success", bgColor: "bg-green-50", textColor: "text-green-700" };
-        default:
-        return { label: role, color: "default", bgColor: "bg-gray-50", textColor: "text-gray-700" };
+        return {
+          label: "Студент",
+          color: "success",
+          bgColor: "bg-green-50",
+          textColor: "text-green-700",
+        };
+      default:
+        return {
+          label: role,
+          color: "default",
+          bgColor: "bg-gray-50",
+          textColor: "text-gray-700",
+        };
     }
   };
 
@@ -185,15 +266,40 @@ export default function AdminPage() {
   const getLevelInfo = (level: string | undefined) => {
     switch (level?.toLowerCase()) {
       case "beginner":
-        return { label: "С нуля", color: "success", bgColor: "bg-emerald-50", textColor: "text-emerald-700" };
+        return {
+          label: "С нуля",
+          color: "success",
+          bgColor: "bg-emerald-50",
+          textColor: "text-emerald-700",
+        };
       case "elementary":
-        return { label: "Начинающий", color: "primary", bgColor: "bg-blue-50", textColor: "text-blue-700" };
+        return {
+          label: "Начинающий",
+          color: "primary",
+          bgColor: "bg-blue-50",
+          textColor: "text-blue-700",
+        };
       case "intermediate":
-        return { label: "Продолжающий", color: "warning", bgColor: "bg-amber-50", textColor: "text-amber-700" };
+        return {
+          label: "Продолжающий",
+          color: "warning",
+          bgColor: "bg-amber-50",
+          textColor: "text-amber-700",
+        };
       case "advanced":
-        return { label: "Продвинутый", color: "danger", bgColor: "bg-red-50", textColor: "text-red-700" };
+        return {
+          label: "Продвинутый",
+          color: "danger",
+          bgColor: "bg-red-50",
+          textColor: "text-red-700",
+        };
       default:
-        return { label: level || "Не указан", color: "default", bgColor: "bg-gray-50", textColor: "text-gray-700" };
+        return {
+          label: level || "Не указан",
+          color: "default",
+          bgColor: "bg-gray-50",
+          textColor: "text-gray-700",
+        };
     }
   };
 
@@ -205,6 +311,7 @@ export default function AdminPage() {
       averageRating: 0, // TODO: Add this property to User type if needed
       lastActive: user.updatedAt,
     };
+
     return stats;
   };
 
@@ -246,22 +353,22 @@ export default function AdminPage() {
               <div className="flex items-center justify-between mb-3">
                 <div className="p-2 bg-[#007EFB]/10 rounded-xl">
                   <UsersIcon />
-        </div>
+                </div>
                 <span className="text-[#007EFB] text-xs font-bold bg-[#007EFB]/10 px-2 py-1 rounded-full">
                   Всего
                 </span>
               </div>
               <div className="text-4xl font-bold text-black mb-1">
                 {users.length}
-            </div>
+              </div>
               <div className="text-black font-medium text-base">
                 Пользователей
-                </div>
+              </div>
               <div className="text-black/70 font-medium text-xs mt-1">
                 В системе
               </div>
-                    </div>
-                    </div>
+            </div>
+          </div>
 
           <div className="bg-white border border-[#00B67A]/20 rounded-2xl p-6 relative overflow-hidden group hover:border-[#00B67A]/40 transition-all duration-300">
             <div className="absolute inset-0 bg-gradient-to-br from-[#00B67A]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -272,19 +379,17 @@ export default function AdminPage() {
                 </div>
                 <span className="text-[#00B67A] text-xs font-bold bg-[#00B67A]/10 px-2 py-1 rounded-full">
                   Активных
-                                </span>
-                              </div>
+                </span>
+              </div>
               <div className="text-4xl font-bold text-black mb-1">
-                {users.filter(u => u.role === "STUDENT").length}
-                            </div>
-              <div className="text-black font-medium text-base">
-                Студентов
-                            </div>
+                {users.filter((u) => u.role === "STUDENT").length}
+              </div>
+              <div className="text-black font-medium text-base">Студентов</div>
               <div className="text-black/70 font-medium text-xs mt-1">
                 Обучаются
-                          </div>
-                        </div>
-                    </div>
+              </div>
+            </div>
+          </div>
 
           <div className="bg-white border border-[#EE7A3F]/20 rounded-2xl p-6 relative overflow-hidden group hover:border-[#EE7A3F]/40 transition-all duration-300">
             <div className="absolute inset-0 bg-gradient-to-br from-[#EE7A3F]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -298,16 +403,16 @@ export default function AdminPage() {
                 </span>
               </div>
               <div className="text-4xl font-bold text-black mb-1">
-                {users.filter(u => u.role === "TEACHER").length}
-        </div>
+                {users.filter((u) => u.role === "TEACHER").length}
+              </div>
               <div className="text-black font-medium text-base">
                 Преподавателей
-                    </div>
+              </div>
               <div className="text-black/70 font-medium text-xs mt-1">
                 Ведут уроки
               </div>
-                    </div>
-                  </div>
+            </div>
+          </div>
 
           <div className="bg-white border border-[#FDD130]/20 rounded-2xl p-6 relative overflow-hidden group hover:border-[#FDD130]/40 transition-all duration-300">
             <div className="absolute inset-0 bg-gradient-to-br from-[#FDD130]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
@@ -315,43 +420,41 @@ export default function AdminPage() {
               <div className="flex items-center justify-between mb-3">
                 <div className="p-2 bg-[#FDD130]/10 rounded-xl">
                   <div className="w-6 h-6 text-[#FDD130]">👥</div>
-                    </div>
+                </div>
                 <span className="text-[#FDD130] text-xs font-bold bg-[#FDD130]/10 px-2 py-1 rounded-full">
                   Групп
                 </span>
-                    </div>
+              </div>
               <div className="text-4xl font-bold text-black mb-1">
                 {groups.length}
-                    </div>
+              </div>
               <div className="text-black font-medium text-base">
                 Активных групп
-                    </div>
+              </div>
               <div className="text-black/70 font-medium text-xs mt-1">
                 Проводят занятия
-                  </div>
-                        </div>
-                      </div>
-                    </div>
+              </div>
+            </div>
+          </div>
+        </div>
 
-                    {/* User Management Section */}
+        {/* User Management Section */}
         <section className="relative">
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h2 className="text-4xl font-bold text-black">
-                Пользователи
-              </h2>
+              <h2 className="text-4xl font-bold text-black">Пользователи</h2>
               <p className="text-black/70 font-medium text-lg mt-1">
                 Управление студентами, преподавателями и администраторами
               </p>
-                </div>
-              <Button
+            </div>
+            <Button
               className="font-bold text-white bg-[#007EFB] hover:bg-[#007EFB]/90 px-8"
               size="lg"
               startContent={<PlusIcon />}
               onClick={() => handleCreateUser()}
             >
               Добавить пользователя
-              </Button>
+            </Button>
           </div>
 
           {/* Search and Filters */}
@@ -365,7 +468,7 @@ export default function AdminPage() {
                 <div>
                   <h3 className="font-bold text-2xl text-black">
                     Поиск и фильтры
-                    </h3>
+                  </h3>
                   <p className="text-black/70 font-medium text-base">
                     Найди нужных пользователей
                   </p>
@@ -375,55 +478,62 @@ export default function AdminPage() {
               <div className="flex flex-col lg:flex-row gap-4">
                 <div className="flex-1">
                   <Input
+                    classNames={{
+                      input: "font-medium text-black",
+                      inputWrapper:
+                        "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none h-12",
+                    }}
                     placeholder="Поиск по имени или email..."
-                    value={searchQuery}
-                    onChange={(e) => setSearchQuery(e.target.value)}
                     startContent={
                       <SearchIcon className="w-5 h-5 text-gray-400" />
                     }
-                    classNames={{
-                      input: "font-medium text-black",
-                      inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none h-12"
-                    }}
+                    value={searchQuery}
                     variant="bordered"
+                    onChange={(e) => setSearchQuery(e.target.value)}
                   />
                 </div>
 
                 <div className="flex gap-3">
-                        <Select
+                  <Select
+                    className="w-40"
+                    classNames={{
+                      trigger:
+                        "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none h-12",
+                    }}
                     placeholder="Роль"
                     selectedKeys={[roleFilter]}
-                    onSelectionChange={(keys) => setRoleFilter(Array.from(keys)[0] as string)}
-                    className="w-40"
-                          classNames={{
-                      trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none h-12"
-                          }}
-                          variant="bordered"
+                    variant="bordered"
+                    onSelectionChange={(keys) =>
+                      setRoleFilter(Array.from(keys)[0] as string)
+                    }
                   >
                     <SelectItem key="ALL">Все роли</SelectItem>
                     <SelectItem key="STUDENT">Студенты</SelectItem>
                     <SelectItem key="TEACHER">Преподаватели</SelectItem>
                     <SelectItem key="ADMIN">Администраторы</SelectItem>
-                        </Select>
+                  </Select>
 
-                            <Select
+                  <Select
+                    className="w-40"
+                    classNames={{
+                      trigger:
+                        "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none h-12",
+                    }}
                     placeholder="Статус"
                     selectedKeys={[statusFilter]}
-                    onSelectionChange={(keys) => setStatusFilter(Array.from(keys)[0] as string)}
-                    className="w-40"
-                              classNames={{
-                      trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none h-12"
-                              }}
-                              variant="bordered"
+                    variant="bordered"
+                    onSelectionChange={(keys) =>
+                      setStatusFilter(Array.from(keys)[0] as string)
+                    }
                   >
                     <SelectItem key="ALL">Все статусы</SelectItem>
                     <SelectItem key="ACTIVE">Активные</SelectItem>
                     <SelectItem key="INACTIVE">Неактивные</SelectItem>
-                            </Select>
+                  </Select>
                 </div>
               </div>
             </div>
-                          </div>
+          </div>
 
           {/* Users Grid */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
@@ -431,110 +541,131 @@ export default function AdminPage() {
               const roleInfo = getRoleInfo(user.role);
               const levelInfo = getLevelInfo(user.level);
               const stats = getUserStats(user);
-              
+
               return (
                 <button
                   key={user.id}
                   className="group cursor-pointer bg-white border border-slate-200/60 rounded-2xl p-6 relative overflow-hidden hover:border-slate-300/60 transition-all duration-300 hover:shadow-lg text-left w-full"
-                  onClick={() => handleUserClick(user)}
                   type="button"
+                  onClick={() => handleUserClick(user)}
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <div className="relative z-10">
                     {/* User Header */}
                     <div className="flex items-start justify-between mb-4">
-                      <Avatar
-                        src={user.avatar}
-                        name={user.name}
-                        size="lg"
-                      />
+                      <Avatar name={user.name} size="lg" src={user.avatar} />
                       <div className="flex flex-col items-end gap-2">
-                                      <Chip
-                          color={roleInfo.color as any}
-                                        variant="flat"
-                          size="sm"
+                        <Chip
                           className={roleInfo.bgColor}
+                          color={roleInfo.color as any}
+                          size="sm"
+                          variant="flat"
                         >
                           {roleInfo.label}
-                                      </Chip>
-                        <div className={`px-2 py-1 rounded-lg text-xs font-medium ${levelInfo.bgColor} ${levelInfo.textColor}`}>
+                        </Chip>
+                        <div
+                          className={`px-2 py-1 rounded-lg text-xs font-medium ${levelInfo.bgColor} ${levelInfo.textColor}`}
+                        >
                           {levelInfo.label}
-                                  </div>
-                                </div>
-                          </div>
+                        </div>
+                      </div>
+                    </div>
 
                     {/* User Info */}
                     <div className="mb-4">
                       <h3 className="font-bold text-black text-lg mb-1 group-hover:text-[#007EFB] transition-colors">
                         {user.name}
                       </h3>
-                      <p className="text-black/70 text-sm font-medium mb-2">{user.email}</p>
-                      
+                      <p className="text-black/70 text-sm font-medium mb-2">
+                        {user.email}
+                      </p>
+
                       {/* Status Indicator */}
                       <div className="flex items-center gap-2">
-                        <div className={`w-2 h-2 rounded-full ${user.isActive ? 'bg-green-500' : 'bg-red-500'}`} />
-                        <span className={`text-xs font-medium ${user.isActive ? 'text-green-600' : 'text-red-600'}`}>
-                          {user.isActive ? 'Активен' : 'Неактивен'}
+                        <div
+                          className={`w-2 h-2 rounded-full ${user.isActive ? "bg-green-500" : "bg-red-500"}`}
+                        />
+                        <span
+                          className={`text-xs font-medium ${user.isActive ? "text-green-600" : "text-red-600"}`}
+                        >
+                          {user.isActive ? "Активен" : "Неактивен"}
                         </span>
                       </div>
                     </div>
 
                     {/* User Stats */}
                     <div className="space-y-3 mb-4">
-                                            <div className="flex items-center justify-between text-sm">
-                        <span className="text-black/70 font-medium">Уроков:</span>
-                        <span className="font-semibold text-black">{stats.totalLessons}</span>
+                      <div className="flex items-center justify-between text-sm">
+                        <span className="text-black/70 font-medium">
+                          Уроков:
+                        </span>
+                        <span className="font-semibold text-black">
+                          {stats.totalLessons}
+                        </span>
                       </div>
 
                       {user.role === "STUDENT" && (
                         <>
-                                                    <div className="flex items-center justify-between text-sm">
-                            <span className="text-black/70 font-medium">Завершено:</span>
-                            <span className="font-semibold text-green-600">{stats.completedLessons}</span>
+                          <div className="flex items-center justify-between text-sm">
+                            <span className="text-black/70 font-medium">
+                              Завершено:
+                            </span>
+                            <span className="font-semibold text-green-600">
+                              {stats.completedLessons}
+                            </span>
                           </div>
-                          
+
                           {stats.averageRating > 0 && (
-                                                        <div className="flex items-center justify-between text-sm">
-                              <span className="text-black/70 font-medium">Рейтинг:</span>
+                            <div className="flex items-center justify-between text-sm">
+                              <span className="text-black/70 font-medium">
+                                Рейтинг:
+                              </span>
                               <div className="flex items-center gap-1">
                                 <StarIcon className="w-4 h-4 text-yellow-500" />
-                                <span className="font-semibold text-black">{stats.averageRating.toFixed(1)}</span>
+                                <span className="font-semibold text-black">
+                                  {stats.averageRating.toFixed(1)}
+                                </span>
                               </div>
                             </div>
                           )}
                         </>
                       )}
-                        </div>
+                    </div>
 
-                                        {/* Last Activity */}
+                    {/* Last Activity */}
                     <div className="flex items-center gap-2 text-xs text-black/50 font-medium">
                       <ClockIcon className="w-4 h-4" />
-                      <span>Активен: {new Date(stats.lastActive).toLocaleDateString('ru-RU')}</span>
+                      <span>
+                        Активен:{" "}
+                        {new Date(stats.lastActive).toLocaleDateString("ru-RU")}
+                      </span>
                     </div>
-                      </div>
-                        </button>
+                  </div>
+                </button>
               );
             })}
-                  </div>
+          </div>
 
           {/* Empty State */}
           {filteredUsers.length === 0 && (
             <div className="text-center py-16">
               <div className="w-24 h-24 bg-slate-100 rounded-3xl flex items-center justify-center mx-auto mb-6">
                 <div className="text-4xl">🔍</div>
-                      </div>
-              <h3 className="text-2xl font-bold text-black mb-2">Пользователи не найдены</h3>
-                            <p className="text-black/70 text-lg font-medium">
+              </div>
+              <h3 className="text-2xl font-bold text-black mb-2">
+                Пользователи не найдены
+              </h3>
+              <p className="text-black/70 text-lg font-medium">
                 Попробуйте изменить параметры поиска или фильтры
               </p>
-                      </div>
+            </div>
           )}
         </section>
 
         {/* Individual Lessons Section */}
         <section className="relative mt-12">
           <div className="flex items-center justify-between mb-8">
-                        <div>
+            <div>
               <h2 className="text-4xl font-bold text-black">
                 Индивидуальные занятия
               </h2>
@@ -550,7 +681,7 @@ export default function AdminPage() {
             >
               Создать занятие
             </Button>
-                        </div>
+          </div>
 
           <div className="bg-gradient-to-br from-[#EE7A3F]/5 via-[#FDD130]/5 to-[#00B67A]/5 border border-[#EE7A3F]/20 rounded-3xl p-8 relative overflow-hidden">
             <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#EE7A3F]/10 to-[#FDD130]/10 rounded-full -translate-y-8 translate-x-8" />
@@ -559,300 +690,369 @@ export default function AdminPage() {
                 <div className="p-3 bg-[#EE7A3F]/10 rounded-2xl">
                   <CalendarIcon />
                 </div>
-                            <div>
+                <div>
                   <h3 className="font-bold text-2xl text-black">
                     Планирование занятий
                   </h3>
                   <p className="text-black/70 font-medium text-base">
-                    TODO: Реализовать список и управление индивидуальными уроками
+                    TODO: Реализовать список и управление индивидуальными
+                    уроками
                   </p>
-                              </div>
-                              </div>
-                            </div>
-                      </div>
+                </div>
+              </div>
+            </div>
+          </div>
         </section>
-                    </div>
+      </div>
 
-        {/* Create Individual Lesson Modal */}
-        {isCreateLessonModalOpen && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-3xl p-8 max-w-2xl w-full mx-4">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">Создать индивидуальное занятие</h3>
-              
-              <div className="space-y-6">
-                                    <Select
-                    classNames={{
-                      label: "font-bold text-black",
-                      trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
-                      value: "font-medium text-black",
-                    }}
-                    label="Студент"
-                    placeholder="Выберите студента"
-                    selectedKeys={newLesson.studentId ? [newLesson.studentId] : []}
-                    onSelectionChange={(keys) => {
-                      const selectedStudentId = Array.from(keys)[0] as string;
-                      setNewLesson({ ...newLesson, studentId: selectedStudentId });
-                    }}
-                  >
-                  {users.filter(u => u.role === "STUDENT").map((student) => (
+      {/* Create Individual Lesson Modal */}
+      {isCreateLessonModalOpen && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-3xl p-8 max-w-2xl w-full mx-4">
+            <h3 className="text-2xl font-bold text-gray-900 mb-6">
+              Создать индивидуальное занятие
+            </h3>
+
+            <div className="space-y-6">
+              <Select
+                classNames={{
+                  label: "font-bold text-black",
+                  trigger:
+                    "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                  value: "font-medium text-black",
+                }}
+                label="Студент"
+                placeholder="Выберите студента"
+                selectedKeys={newLesson.studentId ? [newLesson.studentId] : []}
+                onSelectionChange={(keys) => {
+                  const selectedStudentId = Array.from(keys)[0] as string;
+
+                  setNewLesson({ ...newLesson, studentId: selectedStudentId });
+                }}
+              >
+                {users
+                  .filter((u) => u.role === "STUDENT")
+                  .map((student) => (
                     <SelectItem key={student.id}>
                       {student.name} ({student.email})
-                          </SelectItem>
+                    </SelectItem>
                   ))}
-                    </Select>
+              </Select>
 
-                                        <Select
-                      classNames={{
-                        label: "font-bold text-black",
-                        trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
-                        value: "font-medium text-black",
-                      }}
-                      label="Преподаватель"
-                      placeholder="Выберите преподавателя"
-                      selectedKeys={newLesson.teacherId ? [newLesson.teacherId] : []}
-                      onSelectionChange={(keys) => {
-                        const selectedTeacherId = Array.from(keys)[0] as string;
-                        setNewLesson({ ...newLesson, teacherId: selectedTeacherId });
-                      }}
-                    >
-                  {users.filter(u => u.role === "TEACHER").map((teacher) => (
-                          <SelectItem key={teacher.id}>
-                            {teacher.name} ({teacher.email})
-                          </SelectItem>
-                        ))}
-                    </Select>
+              <Select
+                classNames={{
+                  label: "font-bold text-black",
+                  trigger:
+                    "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                  value: "font-medium text-black",
+                }}
+                label="Преподаватель"
+                placeholder="Выберите преподавателя"
+                selectedKeys={newLesson.teacherId ? [newLesson.teacherId] : []}
+                onSelectionChange={(keys) => {
+                  const selectedTeacherId = Array.from(keys)[0] as string;
 
-                                        <Select
-                      classNames={{
-                        label: "font-bold text-black",
-                        trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
-                        value: "font-medium text-black",
-                      }}
-                      label="Курс"
-                      placeholder="Выберите курс"
-                      selectedKeys={newLesson.courseId ? [newLesson.courseId] : []}
-                      onSelectionChange={(keys) => {
-                        const selectedCourseId = Array.from(keys)[0] as string;
-                        setNewLesson({ ...newLesson, courseId: selectedCourseId });
-                      }}
-                    >
-                  {/* TODO: Add courses data */}
-                  <SelectItem key="course1">Курс 1</SelectItem>
-                  <SelectItem key="course2">Курс 2</SelectItem>
-                    </Select>
+                  setNewLesson({ ...newLesson, teacherId: selectedTeacherId });
+                }}
+              >
+                {users
+                  .filter((u) => u.role === "TEACHER")
+                  .map((teacher) => (
+                    <SelectItem key={teacher.id}>
+                      {teacher.name} ({teacher.email})
+                    </SelectItem>
+                  ))}
+              </Select>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    classNames={{
-                      label: "font-bold text-black",
-                      input: "font-medium text-black",
-                      inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
-                    }}
-                    label="Дата"
-                    type="date"
-                    value={newLesson.date}
-                    onChange={(e) => setNewLesson({ ...newLesson, date: e.target.value })}
-                  />
-                  <Input
-                    classNames={{
-                      label: "font-bold text-black",
-                      input: "font-medium text-black",
-                      inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
-                    }}
-                    label="Время начала"
-                    type="time"
-                    value={newLesson.startTime}
-                    onChange={(e) => setNewLesson({ ...newLesson, startTime: e.target.value })}
-                  />
-                </div>
+              <Select
+                classNames={{
+                  label: "font-bold text-black",
+                  trigger:
+                    "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                  value: "font-medium text-black",
+                }}
+                label="Курс"
+                placeholder="Выберите курс"
+                selectedKeys={newLesson.courseId ? [newLesson.courseId] : []}
+                onSelectionChange={(keys) => {
+                  const selectedCourseId = Array.from(keys)[0] as string;
 
-                    <Input
-                      classNames={{
-                        label: "font-bold text-black",
-                        input: "font-medium text-black",
-                        inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
-                      }}
-                      label="Время окончания"
-                      type="time"
-                      value={newLesson.endTime}
-                      onChange={(e) => setNewLesson({ ...newLesson, endTime: e.target.value })}
-                    />
+                  setNewLesson({ ...newLesson, courseId: selectedCourseId });
+                }}
+              >
+                {/* TODO: Add courses data */}
+                <SelectItem key="course1">Курс 1</SelectItem>
+                <SelectItem key="course2">Курс 2</SelectItem>
+              </Select>
 
-                                          <Input
-                      classNames={{
-                        label: "font-bold text-black",
-                        input: "font-medium text-black",
-                        inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
-                      }}
-                      label="Заметки"
-                      placeholder="Дополнительная информация о занятии"
-                      value={newLesson.notes}
-                      onChange={(e) => setNewLesson({ ...newLesson, notes: e.target.value })}
-                      />
-                  </div>
+              <div className="grid grid-cols-2 gap-4">
+                <Input
+                  classNames={{
+                    label: "font-bold text-black",
+                    input: "font-medium text-black",
+                    inputWrapper:
+                      "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                  }}
+                  label="Дата"
+                  type="date"
+                  value={newLesson.date}
+                  onChange={(e) =>
+                    setNewLesson({ ...newLesson, date: e.target.value })
+                  }
+                />
+                <Input
+                  classNames={{
+                    label: "font-bold text-black",
+                    input: "font-medium text-black",
+                    inputWrapper:
+                      "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                  }}
+                  label="Время начала"
+                  type="time"
+                  value={newLesson.startTime}
+                  onChange={(e) =>
+                    setNewLesson({ ...newLesson, startTime: e.target.value })
+                  }
+                />
+              </div>
 
-              <div className="flex gap-4 mt-8">
-                <Button
-                  variant="light"
-                  onClick={() => setIsCreateLessonModalOpen(false)}
-                  className="flex-1"
-                >
+              <Input
+                classNames={{
+                  label: "font-bold text-black",
+                  input: "font-medium text-black",
+                  inputWrapper:
+                    "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                }}
+                label="Время окончания"
+                type="time"
+                value={newLesson.endTime}
+                onChange={(e) =>
+                  setNewLesson({ ...newLesson, endTime: e.target.value })
+                }
+              />
+
+              <Input
+                classNames={{
+                  label: "font-bold text-black",
+                  input: "font-medium text-black",
+                  inputWrapper:
+                    "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                }}
+                label="Заметки"
+                placeholder="Дополнительная информация о занятии"
+                value={newLesson.notes}
+                onChange={(e) =>
+                  setNewLesson({ ...newLesson, notes: e.target.value })
+                }
+              />
+            </div>
+
+            <div className="flex gap-4 mt-8">
+              <Button
+                className="flex-1"
+                variant="light"
+                onClick={() => setIsCreateLessonModalOpen(false)}
+              >
                 Отмена
               </Button>
               <Button
+                className="flex-1 bg-purple-600"
                 color="primary"
                 onClick={handleCreateLesson}
-                  className="flex-1 bg-purple-600"
               >
                 Создать занятие
               </Button>
-                    </div>
-                  </div>
-                    </div>
-        )}
+            </div>
+          </div>
+        </div>
+      )}
 
-        {/* Edit Individual Lesson Modal */}
-        {isEditLessonModalOpen && selectedLesson && (
-          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
-            <div className="bg-white rounded-3xl p-8 max-w-2xl w-full mx-4">
-              <h3 className="text-2xl font-bold text-gray-900 mb-6">Редактировать занятие</h3>
-              
-              <div className="space-y-6">
-                                            <Select
-                        classNames={{
-                          label: "font-bold text-black",
-                          trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
-                          value: "font-medium text-black",
-                        }}
-                        label="Студент"
-                        selectedKeys={[selectedLesson.studentId]}
-                        onSelectionChange={(keys) => {
-                          const selectedStudentId = Array.from(keys)[0] as string;
-                          setSelectedLesson({ ...selectedLesson, studentId: selectedStudentId });
-                        }}
-                      >
-                  {users.filter(u => u.role === "STUDENT").map((student) => (
-                            <SelectItem key={student.id}>
+      {/* Edit Individual Lesson Modal */}
+      {isEditLessonModalOpen && selectedLesson && (
+        <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+          <div className="bg-white rounded-3xl p-8 max-w-2xl w-full mx-4">
+            <h3 className="text-2xl font-bold text-gray-900 mb-6">
+              Редактировать занятие
+            </h3>
+
+            <div className="space-y-6">
+              <Select
+                classNames={{
+                  label: "font-bold text-black",
+                  trigger:
+                    "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                  value: "font-medium text-black",
+                }}
+                label="Студент"
+                selectedKeys={[selectedLesson.studentId]}
+                onSelectionChange={(keys) => {
+                  const selectedStudentId = Array.from(keys)[0] as string;
+
+                  setSelectedLesson({
+                    ...selectedLesson,
+                    studentId: selectedStudentId,
+                  });
+                }}
+              >
+                {users
+                  .filter((u) => u.role === "STUDENT")
+                  .map((student) => (
+                    <SelectItem key={student.id}>
                       {student.name} ({student.email})
-                            </SelectItem>
-                          ))}
-                      </Select>
+                    </SelectItem>
+                  ))}
+              </Select>
 
-                                            <Select
-                        classNames={{
-                          label: "font-bold text-black",
-                          trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
-                          value: "font-medium text-black",
-                        }}
-                        label="Преподаватель"
-                        selectedKeys={[selectedLesson.teacherId]}
-                        onSelectionChange={(keys) => {
-                          const selectedTeacherId = Array.from(keys)[0] as string;
-                          setSelectedLesson({ ...selectedLesson, teacherId: selectedTeacherId });
-                        }}
-                      >
-                  {users.filter(u => u.role === "TEACHER").map((teacher) => (
+              <Select
+                classNames={{
+                  label: "font-bold text-black",
+                  trigger:
+                    "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                  value: "font-medium text-black",
+                }}
+                label="Преподаватель"
+                selectedKeys={[selectedLesson.teacherId]}
+                onSelectionChange={(keys) => {
+                  const selectedTeacherId = Array.from(keys)[0] as string;
+
+                  setSelectedLesson({
+                    ...selectedLesson,
+                    teacherId: selectedTeacherId,
+                  });
+                }}
+              >
+                {users
+                  .filter((u) => u.role === "TEACHER")
+                  .map((teacher) => (
                     <SelectItem key={teacher.id}>
                       {teacher.name} ({teacher.email})
-                          </SelectItem>
-                        ))}
-                      </Select>
+                    </SelectItem>
+                  ))}
+              </Select>
 
-                                            <Select
-                        classNames={{
-                          label: "font-bold text-black",
-                          trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
-                          value: "font-medium text-black",
-                        }}
-                        label="Курс"
-                        selectedKeys={[selectedLesson.courseId]}
-                        onSelectionChange={(keys) => {
-                          const selectedCourseId = Array.from(keys)[0] as string;
-                          setSelectedLesson({ ...selectedLesson, courseId: selectedCourseId });
-                        }}
-                      >
-                  {/* TODO: Add courses data */}
-                  <SelectItem key="course1">Курс 1</SelectItem>
-                  <SelectItem key="course2">Курс 2</SelectItem>
-                      </Select>
+              <Select
+                classNames={{
+                  label: "font-bold text-black",
+                  trigger:
+                    "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                  value: "font-medium text-black",
+                }}
+                label="Курс"
+                selectedKeys={[selectedLesson.courseId]}
+                onSelectionChange={(keys) => {
+                  const selectedCourseId = Array.from(keys)[0] as string;
 
-                                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    classNames={{
-                      label: "font-bold text-black",
-                      input: "font-medium text-black",
-                      inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
-                    }}
-                    label="Дата"
-                    type="date"
-                    value={selectedLesson.date}
-                    onChange={(e) => setSelectedLesson({ ...selectedLesson, date: e.target.value })}
-                  />
-                  <Input
-                    classNames={{
-                      label: "font-bold text-black",
-                      input: "font-medium text-black",
-                      inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
-                    }}
-                    label="Время начала"
-                    type="time"
-                    value={selectedLesson.startTime}
-                    onChange={(e) => setSelectedLesson({ ...selectedLesson, startTime: e.target.value })}
-                  />
-                </div>
+                  setSelectedLesson({
+                    ...selectedLesson,
+                    courseId: selectedCourseId,
+                  });
+                }}
+              >
+                {/* TODO: Add courses data */}
+                <SelectItem key="course1">Курс 1</SelectItem>
+                <SelectItem key="course2">Курс 2</SelectItem>
+              </Select>
 
+              <div className="grid grid-cols-2 gap-4">
                 <Input
                   classNames={{
                     label: "font-bold text-black",
                     input: "font-medium text-black",
-                    inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                    inputWrapper:
+                      "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
                   }}
-                  label="Время окончания"
+                  label="Дата"
+                  type="date"
+                  value={selectedLesson.date}
+                  onChange={(e) =>
+                    setSelectedLesson({
+                      ...selectedLesson,
+                      date: e.target.value,
+                    })
+                  }
+                />
+                <Input
+                  classNames={{
+                    label: "font-bold text-black",
+                    input: "font-medium text-black",
+                    inputWrapper:
+                      "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                  }}
+                  label="Время начала"
                   type="time"
-                  value={selectedLesson.endTime}
-                  onChange={(e) => setSelectedLesson({ ...selectedLesson, endTime: e.target.value })}
+                  value={selectedLesson.startTime}
+                  onChange={(e) =>
+                    setSelectedLesson({
+                      ...selectedLesson,
+                      startTime: e.target.value,
+                    })
+                  }
                 />
+              </div>
 
-                <Input
-                  classNames={{
-                    label: "font-bold text-black",
-                    input: "font-medium text-black",
-                    inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
-                  }}
-                  label="Заметки"
-                  placeholder="Дополнительная информация о занятии"
-                  value={selectedLesson.notes}
-                  onChange={(e) => setSelectedLesson({ ...selectedLesson, notes: e.target.value })}
-                />
-                    </div>
+              <Input
+                classNames={{
+                  label: "font-bold text-black",
+                  input: "font-medium text-black",
+                  inputWrapper:
+                    "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                }}
+                label="Время окончания"
+                type="time"
+                value={selectedLesson.endTime}
+                onChange={(e) =>
+                  setSelectedLesson({
+                    ...selectedLesson,
+                    endTime: e.target.value,
+                  })
+                }
+              />
 
-              <div className="flex gap-4 mt-8">
-                <Button
-                  variant="light"
-                  onClick={() => setIsEditLessonModalOpen(false)}
-                  className="flex-1"
-                >
+              <Input
+                classNames={{
+                  label: "font-bold text-black",
+                  input: "font-medium text-black",
+                  inputWrapper:
+                    "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                }}
+                label="Заметки"
+                placeholder="Дополнительная информация о занятии"
+                value={selectedLesson.notes}
+                onChange={(e) =>
+                  setSelectedLesson({
+                    ...selectedLesson,
+                    notes: e.target.value,
+                  })
+                }
+              />
+            </div>
+
+            <div className="flex gap-4 mt-8">
+              <Button
+                className="flex-1"
+                variant="light"
+                onClick={() => setIsEditLessonModalOpen(false)}
+              >
                 Отмена
               </Button>
               <Button
-                  color="danger"
-                  onClick={() => handleDeleteLesson(selectedLesson.id)}
-                  className="flex-1"
-                >
-                  Удалить
-                </Button>
-                <Button
+                className="flex-1"
+                color="danger"
+                onClick={() => handleDeleteLesson(selectedLesson.id)}
+              >
+                Удалить
+              </Button>
+              <Button
+                className="flex-1 bg-purple-600"
                 color="primary"
-                  onClick={handleEditLesson}
-                  className="flex-1 bg-purple-600"
+                onClick={handleEditLesson}
               >
                 Сохранить изменения
               </Button>
-      </div>
             </div>
           </div>
-        )}
+        </div>
+      )}
     </ProtectedRoute>
   );
 }
-

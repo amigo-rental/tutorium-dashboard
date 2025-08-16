@@ -4,7 +4,6 @@ import { useState, useEffect } from "react";
 import { Button } from "@heroui/button";
 import { Chip } from "@heroui/chip";
 import { Spinner } from "@heroui/spinner";
-import { useDisclosure } from "@heroui/use-disclosure";
 
 import { ProtectedRoute } from "@/components/protected-route";
 import { apiClient } from "@/lib/utils/api";
@@ -79,6 +78,7 @@ export default function IndividualLessonsPage() {
 
   const formatDate = (dateString: string) => {
     const date = new Date(dateString);
+
     return date.toLocaleDateString("ru-RU", {
       year: "numeric",
       month: "long",
@@ -166,7 +166,8 @@ export default function IndividualLessonsPage() {
                       {lesson.title}
                     </h3>
                     <p className="text-black/70 font-medium text-sm">
-                      {lesson.product.course.level} • {lesson.product.course.name}
+                      {lesson.product.course.level} •{" "}
+                      {lesson.product.course.name}
                     </p>
                   </div>
                 </div>
@@ -238,12 +239,12 @@ export default function IndividualLessonsPage() {
                 <div className="flex gap-3">
                   {lesson.youtubeLink && (
                     <Button
-                      className="flex-1 font-semibold text-white bg-[#FF0000] hover:bg-[#FF0000]/90"
-                      size="lg"
                       as="a"
+                      className="flex-1 font-semibold text-white bg-[#FF0000] hover:bg-[#FF0000]/90"
                       href={lesson.youtubeLink}
-                      target="_blank"
                       rel="noopener noreferrer"
+                      size="lg"
+                      target="_blank"
                     >
                       Смотреть на YouTube
                     </Button>
@@ -269,7 +270,8 @@ export default function IndividualLessonsPage() {
               Нет индивидуальных уроков
             </h3>
             <p className="text-gray-600">
-              У вас пока нет индивидуальных уроков. Обратитесь к администратору для получения доступа.
+              У вас пока нет индивидуальных уроков. Обратитесь к администратору
+              для получения доступа.
             </p>
           </div>
         )}

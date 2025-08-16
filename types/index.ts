@@ -460,7 +460,7 @@ export interface Product {
   isActive: boolean;
   createdAt: string;
   updatedAt: string;
-  
+
   // Product-specific data
   groupProduct?: GroupProduct;
   courseProduct?: CourseProduct;
@@ -502,5 +502,3 @@ export interface StudentProduct {
     progressPercent: number;
   };
 }
-
-

@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { prisma } from "@/lib/db/prisma";
 import { requireRole } from "@/lib/auth/middleware";
 
@@ -6,6 +7,7 @@ import { requireRole } from "@/lib/auth/middleware";
 export async function GET(request: NextRequest) {
   try {
     const authCheck = await requireRole(["ADMIN", "TEACHER"])(request);
+
     if (authCheck instanceof NextResponse) return authCheck;
 
     const { searchParams } = new URL(request.url);
@@ -20,7 +22,7 @@ export async function GET(request: NextRequest) {
 
     if (studentId) {
       where.students = {
-        some: { id: studentId }
+        some: { id: studentId },
       };
     }
 
@@ -30,7 +32,7 @@ export async function GET(request: NextRequest) {
 
     if (courseId) {
       where.topic = {
-        courseId: courseId
+        courseId: courseId,
       };
     }
 
@@ -80,9 +82,10 @@ export async function GET(request: NextRequest) {
     return NextResponse.json({ data: lessons });
   } catch (error) {
     console.error("Get individual lessons error:", error);
+
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -91,6 +94,7 @@ export async function GET(request: NextRequest) {
 export async function POST(request: NextRequest) {
   try {
     const authCheck = await requireRole(["ADMIN"])(request);
+
     if (authCheck instanceof NextResponse) return authCheck;
 
     const body = await request.json();
@@ -110,10 +114,18 @@ export async function POST(request: NextRequest) {
     } = body;
 
     // Validate required fields
-    if (!title || !date || !startTime || !endTime || !teacherId || !studentIds || !courseId) {
+    if (
+      !title ||
+      !date ||
+      !startTime ||
+      !endTime ||
+      !teacherId ||
+      !studentIds ||
+      !courseId
+    ) {
       return NextResponse.json(
         { error: "Missing required fields" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -167,12 +179,16 @@ export async function POST(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ data: lesson, message: "Individual lesson created successfully" });
+    return NextResponse.json({
+      data: lesson,
+      message: "Individual lesson created successfully",
+    });
   } catch (error) {
     console.error("Create individual lesson error:", error);
+
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -181,6 +197,7 @@ export async function POST(request: NextRequest) {
 export async function PUT(request: NextRequest) {
   try {
     const authCheck = await requireRole(["ADMIN"])(request);
+
     if (authCheck instanceof NextResponse) return authCheck;
 
     const body = await request.json();
@@ -204,7 +221,7 @@ export async function PUT(request: NextRequest) {
     if (!id) {
       return NextResponse.json(
         { error: "Lesson ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -223,10 +240,12 @@ export async function PUT(request: NextRequest) {
         notes,
         materials,
         status,
-        students: studentIds ? {
-          set: [], // Clear existing connections
-          connect: studentIds.map((id: string) => ({ id })),
-        } : undefined,
+        students: studentIds
+          ? {
+              set: [], // Clear existing connections
+              connect: studentIds.map((id: string) => ({ id })),
+            }
+          : undefined,
       },
       include: {
         teacher: {
@@ -258,12 +277,16 @@ export async function PUT(request: NextRequest) {
       },
     });
 
-    return NextResponse.json({ data: updatedLesson, message: "Lesson updated successfully" });
+    return NextResponse.json({
+      data: updatedLesson,
+      message: "Lesson updated successfully",
+    });
   } catch (error) {
     console.error("Update individual lesson error:", error);
+
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -272,6 +295,7 @@ export async function PUT(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const authCheck = await requireRole(["ADMIN"])(request);
+
     if (authCheck instanceof NextResponse) return authCheck;
 
     const { searchParams } = new URL(request.url);
@@ -280,7 +304,7 @@ export async function DELETE(request: NextRequest) {
     if (!id) {
       return NextResponse.json(
         { error: "Lesson ID is required" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -293,9 +317,10 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ message: "Lesson deleted successfully" });
   } catch (error) {
     console.error("Delete individual lesson error:", error);
+
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

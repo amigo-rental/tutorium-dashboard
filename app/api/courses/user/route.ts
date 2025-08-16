@@ -2,7 +2,10 @@ import { NextRequest, NextResponse } from "next/server";
 
 import { prisma } from "@/lib/db/prisma";
 import { requireRole } from "@/lib/auth/middleware";
-import { getCourseProgressData, getCourseProgressAcrossGroups } from "@/lib/utils/course-progress";
+import {
+  getCourseProgressData,
+  getCourseProgressAcrossGroups,
+} from "@/lib/utils/course-progress";
 
 // GET /api/courses/user - Get courses for the authenticated user
 export async function GET(request: NextRequest) {
@@ -21,7 +24,7 @@ export async function GET(request: NextRequest) {
 
     if (userRole === "STUDENT") {
       // Get user's enrolled courses (admin-assigned)
-      const user = await prisma.user.findUnique({
+      const user = (await prisma.user.findUnique({
         where: { id: userId },
         include: {
           enrolledCourses: {
@@ -40,10 +43,10 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-      }) as any;
+      })) as any;
 
       // Get groups where user is in the students array (many-to-many relationship)
-      const userGroups = await prisma.group.findMany({
+      const userGroups = (await prisma.group.findMany({
         where: {
           isActive: true,
           students: {
@@ -60,7 +63,7 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-      }) as any[];
+      })) as any[];
 
       // Combine courses from both sources
       const groupCourses = userGroups.map((group) => (group as any).course);
@@ -126,7 +129,7 @@ export async function GET(request: NextRequest) {
       courses = Array.from(courseMap.values());
     } else if (userRole === "TEACHER") {
       // Get groups where the user is the teacher
-      const teacherGroups = await prisma.group.findMany({
+      const teacherGroups = (await prisma.group.findMany({
         where: {
           teacherId: userId,
           isActive: true,
@@ -153,7 +156,7 @@ export async function GET(request: NextRequest) {
             },
           },
         },
-      }) as any[];
+      })) as any[];
 
       // Get progress data for each group's course
       const coursesWithProgress = await Promise.all(

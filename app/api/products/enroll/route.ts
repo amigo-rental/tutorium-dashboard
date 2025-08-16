@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+
 import { prisma } from "@/lib/db/prisma";
 import { requireRole } from "@/lib/auth/middleware";
 
@@ -6,14 +7,11 @@ import { requireRole } from "@/lib/auth/middleware";
 export async function POST(request: NextRequest) {
   try {
     const authCheck = await requireRole(["ADMIN"])(request);
+
     if (authCheck instanceof NextResponse) return authCheck;
 
     const body = await request.json();
-    const {
-      studentId,
-      productId,
-      expiresAt,
-    } = body;
+    const { studentId, productId, expiresAt } = body;
 
     // Validate required fields
     if (!studentId || !productId) {
@@ -30,10 +28,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!student) {
-      return NextResponse.json(
-        { error: "Student not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Student not found" }, { status: 404 });
     }
 
     if (student.role !== "STUDENT") {
@@ -50,10 +45,7 @@ export async function POST(request: NextRequest) {
     });
 
     if (!product) {
-      return NextResponse.json(
-        { error: "Product not found" },
-        { status: 404 },
-      );
+      return NextResponse.json({ error: "Product not found" }, { status: 404 });
     }
 
     if (!product.isActive) {
@@ -132,6 +124,7 @@ export async function POST(request: NextRequest) {
     return NextResponse.json(enrollment);
   } catch (error) {
     console.error("Enroll student in product error:", error);
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },
@@ -143,6 +136,7 @@ export async function POST(request: NextRequest) {
 export async function DELETE(request: NextRequest) {
   try {
     const authCheck = await requireRole(["ADMIN"])(request);
+
     if (authCheck instanceof NextResponse) return authCheck;
 
     const { searchParams } = new URL(request.url);
@@ -175,6 +169,7 @@ export async function DELETE(request: NextRequest) {
     return NextResponse.json({ message: "Enrollment removed successfully" });
   } catch (error) {
     console.error("Remove student from product error:", error);
+
     return NextResponse.json(
       { error: "Internal server error" },
       { status: 500 },

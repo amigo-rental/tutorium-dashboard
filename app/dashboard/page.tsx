@@ -735,7 +735,9 @@ export default function DashboardPage() {
                           <div className="w-full bg-slate-200/50 rounded-full h-2">
                             <div
                               className="h-2 bg-gradient-to-r from-[#007EFB] to-[#00B67A] rounded-full transition-all duration-500"
-                              style={{ width: `${group.progress?.progressPercent || 0}%` }}
+                              style={{
+                                width: `${group.progress?.progressPercent || 0}%`,
+                              }}
                             />
                           </div>
                         </div>

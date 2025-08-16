@@ -886,13 +886,14 @@ function GroupCard({ group, isMyGroup }: { group: Group; isMyGroup: boolean }) {
               />
             </div>
           </div>
-          
+
           {/* Progress Details */}
           <div className="mt-3 space-y-2">
             {group.progressData ? (
               <>
                 <p className="text-slate-600 font-semibold text-xs">
-                  {group.progressData.completedTopics} из {group.progressData.totalTopics} тем пройдено
+                  {group.progressData.completedTopics} из{" "}
+                  {group.progressData.totalTopics} тем пройдено
                 </p>
                 {group.progressData.lastStudiedTopic && (
                   <p className="text-slate-500 font-medium text-xs">
@@ -911,7 +912,6 @@ function GroupCard({ group, isMyGroup }: { group: Group; isMyGroup: boolean }) {
               </p>
             )}
           </div>
-          
         </div>
 
         {/* Flex spacer to push button to bottom */}

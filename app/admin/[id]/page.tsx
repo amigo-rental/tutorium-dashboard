@@ -9,9 +9,13 @@ import { Button } from "@heroui/button";
 import { Select, SelectItem } from "@heroui/select";
 import { Chip } from "@heroui/chip";
 import { Checkbox } from "@heroui/checkbox";
-import { Card, CardBody, CardHeader } from "@heroui/card";
-import { Divider } from "@heroui/divider";
-import { Modal, ModalContent, ModalHeader, ModalBody, ModalFooter } from "@heroui/modal";
+import {
+  Modal,
+  ModalContent,
+  ModalHeader,
+  ModalBody,
+  ModalFooter,
+} from "@heroui/modal";
 import { useDisclosure } from "@heroui/use-disclosure";
 import { useRouter } from "next/navigation";
 import { useEffect, useState, use } from "react";
@@ -20,7 +24,7 @@ import { useAuth } from "@/lib/auth/context";
 import { ProtectedRoute } from "@/components/protected-route";
 import { apiClient } from "@/lib/utils/api";
 import { LEVEL_OPTIONS } from "@/lib/constants/levels";
-import { User as UserType, Group, Product, StudentProduct } from "@/types";
+import { User as UserType, Group, StudentProduct } from "@/types";
 
 interface UserWithStats extends UserType {
   averageRating?: number;
@@ -32,7 +36,11 @@ interface UserWithStats extends UserType {
   products?: StudentProduct[];
 }
 
-export default function UserEditPage({ params }: { params: Promise<{ id: string }> }) {
+export default function UserEditPage({
+  params,
+}: {
+  params: Promise<{ id: string }>;
+}) {
   const router = useRouter();
   const { user: currentUser } = useAuth();
   const [isLoading, setIsLoading] = useState(true);
@@ -61,7 +69,11 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
   });
 
   // Product management state
-  const { isOpen: isAddingProduct, onOpen: onAddProductOpen, onOpenChange: onAddProductOpenChange } = useDisclosure();
+  const {
+    isOpen: isAddingProduct,
+    onOpen: onAddProductOpen,
+    onOpenChange: onAddProductOpenChange,
+  } = useDisclosure();
   const [newProduct, setNewProduct] = useState({
     type: "GROUP" as "GROUP" | "COURSE" | "INDIVIDUAL",
     groupId: "",
@@ -78,11 +90,13 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
   const loadData = async () => {
     try {
       setIsLoading(true);
-      
+
       // Load user data
       const userResponse = await apiClient.getUserById(id);
+
       if (userResponse.data) {
         const userData = userResponse.data as UserWithStats;
+
         setUser(userData);
         setFormData({
           name: userData.name,
@@ -109,13 +123,14 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
 
       // Load teachers for individual lessons
       const teachersResponse = await apiClient.getAllUsers();
+
       if (teachersResponse.data) {
         const teachersList = (teachersResponse.data as UserWithStats[]).filter(
-          (u: UserWithStats) => u.role === "TEACHER" && u.isActive
+          (u: UserWithStats) => u.role === "TEACHER" && u.isActive,
         );
+
         setTeachers(teachersList);
       }
-
     } catch (error) {
       console.error("Error loading data:", error);
       setMessage({ type: "error", text: "Ошибка загрузки данных" });
@@ -139,9 +154,8 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
 
     try {
       // Prepare the primary group (first selected group)
-      const primaryGroupId = user.groups && user.groups.length > 0 
-        ? user.groups[0].id 
-        : undefined;
+      const primaryGroupId =
+        user.groups && user.groups.length > 0 ? user.groups[0].id : undefined;
 
       // Prepare course IDs for API
       const courseIds = user.courses?.map((c: any) => c.id) || [];
@@ -178,6 +192,7 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
         case "GROUP":
           if (!newProduct.groupId) {
             setMessage({ type: "error", text: "Выберите группу" });
+
             return;
           }
           // For groups, we don't need courseId since groups are already linked to courses
@@ -190,6 +205,7 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
         case "COURSE":
           if (!newProduct.courseId) {
             setMessage({ type: "error", text: "Выберите курс" });
+
             return;
           }
           productData = {
@@ -200,7 +216,11 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
 
         case "INDIVIDUAL":
           if (!newProduct.teacherId || !newProduct.courseId) {
-            setMessage({ type: "error", text: "Выберите преподавателя и курс" });
+            setMessage({
+              type: "error",
+              text: "Выберите преподавателя и курс",
+            });
+
             return;
           }
           productData = {
@@ -220,15 +240,24 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
           name: (() => {
             switch (productData.type) {
               case "GROUP":
-                const group = groups.find(g => g.id === productData.groupId);
+                const group = groups.find((g) => g.id === productData.groupId);
+
                 return group ? group.name : "Неизвестная группа";
               case "COURSE":
-                const course = courses.find(c => c.id === productData.courseId);
+                const course = courses.find(
+                  (c) => c.id === productData.courseId,
+                );
+
                 return course ? course.name : "Неизвестный курс";
               case "INDIVIDUAL":
-                const teacher = teachers.find(t => t.id === productData.teacherId);
-                const courseForIndividual = courses.find(c => c.id === productData.courseId);
-                return teacher && courseForIndividual 
+                const teacher = teachers.find(
+                  (t) => t.id === productData.teacherId,
+                );
+                const courseForIndividual = courses.find(
+                  (c) => c.id === productData.courseId,
+                );
+
+                return teacher && courseForIndividual
                   ? `Индивидуальные занятия с ${teacher.name} - ${courseForIndividual.name}`
                   : "Индивидуальные занятия";
               default:
@@ -243,26 +272,34 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
           ...(productData.type === "GROUP" && {
             groupProduct: {
               groupId: productData.groupId,
-              group: groups.find(g => g.id === productData.groupId),
-              teacherId: groups.find(g => g.id === productData.groupId)?.teacherId || "",
-              teacher: teachers.find(t => t.id === groups.find(g => g.id === productData.groupId)?.teacherId),
-              courseId: groups.find(g => g.id === productData.groupId)?.courseId || "",
-              course: groups.find(g => g.id === productData.groupId)?.course,
-            }
+              group: groups.find((g) => g.id === productData.groupId),
+              teacherId:
+                groups.find((g) => g.id === productData.groupId)?.teacherId ||
+                "",
+              teacher: teachers.find(
+                (t) =>
+                  t.id ===
+                  groups.find((g) => g.id === productData.groupId)?.teacherId,
+              ),
+              courseId:
+                groups.find((g) => g.id === productData.groupId)?.courseId ||
+                "",
+              course: groups.find((g) => g.id === productData.groupId)?.course,
+            },
           }),
           ...(productData.type === "COURSE" && {
             courseProduct: {
               courseId: productData.courseId,
-              course: courses.find(c => c.id === productData.courseId),
-            }
+              course: courses.find((c) => c.id === productData.courseId),
+            },
           }),
           ...(productData.type === "INDIVIDUAL" && {
             individualProduct: {
               teacherId: productData.teacherId,
-              teacher: teachers.find(t => t.id === productData.teacherId),
+              teacher: teachers.find((t) => t.id === productData.teacherId),
               courseId: productData.courseId,
-              course: courses.find(c => c.id === productData.courseId),
-            }
+              course: courses.find((c) => c.id === productData.courseId),
+            },
           }),
         },
         enrolledAt: new Date().toISOString(),
@@ -270,6 +307,7 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
 
       // Add the product to the user's products array
       const updatedUser = { ...user };
+
       if (!updatedUser.products) {
         updatedUser.products = [];
       }
@@ -357,7 +395,7 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
               <div className="h-8 bg-slate-200 rounded w-2/3 mb-4" />
               <div className="h-6 bg-slate-200 rounded w-1/2" />
             </div>
-            
+
             {/* Cards Skeleton */}
             <div className="space-y-8">
               <div className="h-96 bg-slate-200 rounded-3xl" />
@@ -385,7 +423,7 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
               <p className="text-black/70 text-lg mb-6">
                 Возможно, пользователь был удален или у вас нет доступа
               </p>
-              <Button 
+              <Button
                 className="font-bold text-white bg-[#007EFB] hover:bg-[#007EFB]/90 px-8"
                 size="lg"
                 onClick={() => router.back()}
@@ -406,13 +444,23 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
         <div className="pt-12 mb-8">
           <div className="flex items-center gap-4 mb-4">
             <Button
+              isIconOnly
+              className="p-3 hover:bg-slate-100 rounded-xl transition-colors"
               variant="light"
               onClick={() => router.back()}
-              className="p-3 hover:bg-slate-100 rounded-xl transition-colors"
-              isIconOnly
             >
-              <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 19l-7-7 7-7" />
+              <svg
+                className="w-5 h-5"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  d="M15 19l-7-7 7-7"
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                />
               </svg>
             </Button>
             <div>
@@ -436,16 +484,38 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
             }`}
           >
             <div className="flex items-center gap-3">
-              <div className={`p-2 rounded-xl ${
-                message.type === "success" ? "bg-green-100" : "bg-red-100"
-              }`}>
+              <div
+                className={`p-2 rounded-xl ${
+                  message.type === "success" ? "bg-green-100" : "bg-red-100"
+                }`}
+              >
                 {message.type === "success" ? (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M5 13l4 4L19 7"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                    />
                   </svg>
                 ) : (
-                  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                  <svg
+                    className="w-5 h-5"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M6 18L18 6M6 6l12 12"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                    />
                   </svg>
                 )}
               </div>
@@ -462,13 +532,27 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
               <div className="flex items-center justify-between mb-8">
                 <div className="flex items-center gap-3">
                   <div className="p-3 bg-[#007EFB]/10 rounded-2xl">
-                    <svg className="w-7 h-7 text-[#007EFB]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                      <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z" />
+                    <svg
+                      className="w-7 h-7 text-[#007EFB]"
+                      fill="none"
+                      stroke="currentColor"
+                      viewBox="0 0 24 24"
+                    >
+                      <path
+                        d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                        strokeWidth={2}
+                      />
                     </svg>
                   </div>
                   <div>
-                    <h2 className="font-bold text-3xl text-black">Основная информация</h2>
-                    <p className="text-black/70 font-medium text-base">Личные данные пользователя</p>
+                    <h2 className="font-bold text-3xl text-black">
+                      Основная информация
+                    </h2>
+                    <p className="text-black/70 font-medium text-base">
+                      Личные данные пользователя
+                    </p>
                   </div>
                 </div>
               </div>
@@ -486,14 +570,20 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
                   <h3 className="text-xl font-bold text-black">{user.name}</h3>
                   <Chip
                     color={
-                      user.role === "ADMIN" ? "danger" : 
-                      user.role === "TEACHER" ? "primary" : "secondary"
+                      user.role === "ADMIN"
+                        ? "danger"
+                        : user.role === "TEACHER"
+                          ? "primary"
+                          : "secondary"
                     }
-                    variant="flat"
                     size="sm"
+                    variant="flat"
                   >
-                    {user.role === "ADMIN" ? "Администратор" :
-                     user.role === "TEACHER" ? "Преподаватель" : "Студент"}
+                    {user.role === "ADMIN"
+                      ? "Администратор"
+                      : user.role === "TEACHER"
+                        ? "Преподаватель"
+                        : "Студент"}
                   </Chip>
                 </div>
               </div>
@@ -503,7 +593,8 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
                   classNames={{
                     label: "font-bold text-black",
                     input: "font-medium text-black",
-                    inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                    inputWrapper:
+                      "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
                   }}
                   label="Имя"
                   placeholder="Введите имя"
@@ -515,7 +606,8 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
                   classNames={{
                     label: "font-bold text-black",
                     input: "font-medium text-black",
-                    inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                    inputWrapper:
+                      "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
                   }}
                   label="Email"
                   placeholder="you@tutorium.io"
@@ -527,14 +619,19 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
                 <Select
                   classNames={{
                     label: "font-bold text-black",
-                    trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                    trigger:
+                      "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
                     value: "font-medium text-black",
                   }}
                   label="Роль"
                   selectedKeys={[formData.role]}
                   variant="bordered"
                   onSelectionChange={(keys) => {
-                    const selectedRole = Array.from(keys)[0] as "ADMIN" | "TEACHER" | "STUDENT";
+                    const selectedRole = Array.from(keys)[0] as
+                      | "ADMIN"
+                      | "TEACHER"
+                      | "STUDENT";
+
                     handleInputChange("role", selectedRole);
                   }}
                 >
@@ -547,7 +644,8 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
                   <Select
                     classNames={{
                       label: "font-bold text-black",
-                      trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                      trigger:
+                        "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
                       value: "font-medium text-black",
                     }}
                     label="Уровень"
@@ -556,6 +654,7 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
                     variant="bordered"
                     onSelectionChange={(keys) => {
                       const selectedLevel = Array.from(keys)[0] as string;
+
                       handleInputChange("level", selectedLevel);
                     }}
                   >
@@ -573,7 +672,9 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
                       label: "font-medium text-black",
                     }}
                     isSelected={formData.isActive}
-                    onValueChange={(checked) => handleInputChange("isActive", checked)}
+                    onValueChange={(checked) =>
+                      handleInputChange("isActive", checked)
+                    }
                   >
                     Активный пользователь
                   </Checkbox>
@@ -601,13 +702,27 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
                 <div className="flex items-center justify-between mb-8">
                   <div className="flex items-center gap-3">
                     <div className="p-3 bg-[#00B67A]/10 rounded-2xl">
-                      <svg className="w-7 h-7 text-[#00B67A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+                      <svg
+                        className="w-7 h-7 text-[#00B67A]"
+                        fill="none"
+                        stroke="currentColor"
+                        viewBox="0 0 24 24"
+                      >
+                        <path
+                          d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                        />
                       </svg>
                     </div>
                     <div>
-                      <h2 className="font-bold text-3xl text-black">Управление продуктами</h2>
-                      <p className="text-black/70 font-medium text-base">Курсы, группы и индивидуальные занятия</p>
+                      <h2 className="font-bold text-3xl text-black">
+                        Управление продуктами
+                      </h2>
+                      <p className="text-black/70 font-medium text-base">
+                        Курсы, группы и индивидуальные занятия
+                      </p>
                     </div>
                   </div>
                   <Button
@@ -629,7 +744,9 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
                 </div>
                 {/* Current Products */}
                 <div className="mb-8">
-                  <h3 className="text-xl font-semibold text-black mb-4">Текущие продукты</h3>
+                  <h3 className="text-xl font-semibold text-black mb-4">
+                    Текущие продукты
+                  </h3>
                   {user.products && user.products.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
                       {user.products.map((product) => (
@@ -640,96 +757,143 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
                           <div className="flex items-center justify-between mb-3">
                             <Chip
                               color={
-                                product.product.type === "GROUP" ? "primary" :
-                                product.product.type === "COURSE" ? "success" : "warning"
+                                product.product.type === "GROUP"
+                                  ? "primary"
+                                  : product.product.type === "COURSE"
+                                    ? "success"
+                                    : "warning"
                               }
                               size="sm"
                               variant="flat"
                             >
-                              {product.product.type === "GROUP" ? "Группа" :
-                               product.product.type === "COURSE" ? "Курс" : "Индивидуально"}
+                              {product.product.type === "GROUP"
+                                ? "Группа"
+                                : product.product.type === "COURSE"
+                                  ? "Курс"
+                                  : "Индивидуально"}
                             </Chip>
                             <Button
-                              size="sm"
                               color="danger"
+                              size="sm"
                               variant="light"
                               onClick={() => handleRemoveProduct(product.id)}
                             >
                               Удалить
                             </Button>
                           </div>
-                          
+
                           <h4 className="font-semibold text-black mb-2">
                             {product.product.name}
                           </h4>
-                          
-                          {product.product.type === "GROUP" && product.product.groupProduct && (
-                            <div className="text-base font-medium text-slate-700">
-                              <p>Группа: {product.product.groupProduct.group?.name || "Неизвестная группа"}</p>
-                              <p>Курс: {product.product.groupProduct.course?.name || "Курс не назначен"}</p>
-                            </div>
-                          )}
-                          
-                          {product.product.type === "COURSE" && product.product.courseProduct && (
-                            <div className="text-base font-medium text-slate-700">
-                              <p>Курс: {product.product.courseProduct.course?.name || "Неизвестный курс"}</p>
-                              <p>Уровень: {product.product.courseProduct.course?.level || "Неизвестный уровень"}</p>
-                            </div>
-                          )}
-                          
-                          {product.product.type === "INDIVIDUAL" && product.product.individualProduct && (
-                            <div className="text-base font-medium text-slate-700">
-                              <p>Преподаватель: {product.product.individualProduct.teacher?.name || "Неизвестный преподаватель"}</p>
-                              <p>Курс: {product.product.individualProduct.course?.name || "Неизвестный курс"}</p>
-                            </div>
-                          )}
-                          
+
+                          {product.product.type === "GROUP" &&
+                            product.product.groupProduct && (
+                              <div className="text-base font-medium text-slate-700">
+                                <p>
+                                  Группа:{" "}
+                                  {product.product.groupProduct.group?.name ||
+                                    "Неизвестная группа"}
+                                </p>
+                                <p>
+                                  Курс:{" "}
+                                  {product.product.groupProduct.course?.name ||
+                                    "Курс не назначен"}
+                                </p>
+                              </div>
+                            )}
+
+                          {product.product.type === "COURSE" &&
+                            product.product.courseProduct && (
+                              <div className="text-base font-medium text-slate-700">
+                                <p>
+                                  Курс:{" "}
+                                  {product.product.courseProduct.course?.name ||
+                                    "Неизвестный курс"}
+                                </p>
+                                <p>
+                                  Уровень:{" "}
+                                  {product.product.courseProduct.course
+                                    ?.level || "Неизвестный уровень"}
+                                </p>
+                              </div>
+                            )}
+
+                          {product.product.type === "INDIVIDUAL" &&
+                            product.product.individualProduct && (
+                              <div className="text-base font-medium text-slate-700">
+                                <p>
+                                  Преподаватель:{" "}
+                                  {product.product.individualProduct.teacher
+                                    ?.name || "Неизвестный преподаватель"}
+                                </p>
+                                <p>
+                                  Курс:{" "}
+                                  {product.product.individualProduct.course
+                                    ?.name || "Неизвестный курс"}
+                                </p>
+                              </div>
+                            )}
+
                           <div className="mt-3 text-sm font-medium text-slate-600">
-                            Добавлен: {new Date(product.enrolledAt).toLocaleDateString("ru-RU")}
+                            Добавлен:{" "}
+                            {new Date(product.enrolledAt).toLocaleDateString(
+                              "ru-RU",
+                            )}
                           </div>
                         </div>
                       ))}
                     </div>
                   ) : (
                     <div className="text-center py-8 bg-slate-50 rounded-2xl">
-                      <p className="text-slate-600 font-medium">У пользователя пока нет продуктов</p>
+                      <p className="text-slate-600 font-medium">
+                        У пользователя пока нет продуктов
+                      </p>
                     </div>
                   )}
                 </div>
 
                 {/* Add Product Modal */}
-                <Modal 
-                  isOpen={isAddingProduct} 
-                  onOpenChange={onAddProductOpenChange}
-                  placement="top-center"
-                  size="2xl"
+                <Modal
                   classNames={{
                     base: "bg-white",
                     header: "border-b border-slate-200/60 pb-6",
                     body: "py-8",
-                    footer: "border-t border-slate-200/60 pt-6"
+                    footer: "border-t border-slate-200/60 pt-6",
                   }}
+                  isOpen={isAddingProduct}
+                  placement="top-center"
+                  size="2xl"
+                  onOpenChange={onAddProductOpenChange}
                 >
                   <ModalContent>
                     {(onClose) => (
                       <>
                         <ModalHeader className="flex flex-col gap-1">
-                          <h3 className="text-2xl font-bold text-black">Добавить продукт</h3>
-                          <p className="text-sm text-black/70 font-medium">Выберите тип продукта и заполните необходимые поля</p>
+                          <h3 className="text-2xl font-bold text-black">
+                            Добавить продукт
+                          </h3>
+                          <p className="text-sm text-black/70 font-medium">
+                            Выберите тип продукта и заполните необходимые поля
+                          </p>
                         </ModalHeader>
                         <ModalBody>
                           <div className="space-y-8 py-4">
                             <Select
                               classNames={{
                                 label: "font-bold text-black",
-                                trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                                trigger:
+                                  "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
                                 value: "font-medium text-black",
                               }}
                               label="Тип продукта"
                               selectedKeys={[newProduct.type]}
                               variant="bordered"
                               onSelectionChange={(keys) => {
-                                const selectedType = Array.from(keys)[0] as "GROUP" | "COURSE" | "INDIVIDUAL";
+                                const selectedType = Array.from(keys)[0] as
+                                  | "GROUP"
+                                  | "COURSE"
+                                  | "INDIVIDUAL";
+
                                 // Reset other fields when type changes
                                 setNewProduct({
                                   type: selectedType,
@@ -739,31 +903,55 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
                                 });
                               }}
                             >
-                              <SelectItem key="GROUP" textValue="Группа">Группа</SelectItem>
-                              <SelectItem key="COURSE" textValue="Курс">Курс</SelectItem>
-                              <SelectItem key="INDIVIDUAL" textValue="Индивидуальные занятия">Индивидуальные занятия</SelectItem>
+                              <SelectItem key="GROUP" textValue="Группа">
+                                Группа
+                              </SelectItem>
+                              <SelectItem key="COURSE" textValue="Курс">
+                                Курс
+                              </SelectItem>
+                              <SelectItem
+                                key="INDIVIDUAL"
+                                textValue="Индивидуальные занятия"
+                              >
+                                Индивидуальные занятия
+                              </SelectItem>
                             </Select>
 
                             {/* Course selection is only required for COURSE and INDIVIDUAL types */}
-                            {(newProduct.type === "COURSE" || newProduct.type === "INDIVIDUAL") && (
+                            {(newProduct.type === "COURSE" ||
+                              newProduct.type === "INDIVIDUAL") && (
                               <Select
                                 key={`course-${newProduct.type}`}
                                 classNames={{
                                   label: "font-bold text-black",
-                                  trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                                  trigger:
+                                    "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
                                   value: "font-medium text-black",
                                 }}
                                 label="Курс"
                                 placeholder="Выберите курс"
-                                selectedKeys={newProduct.courseId ? [newProduct.courseId] : []}
+                                selectedKeys={
+                                  newProduct.courseId
+                                    ? [newProduct.courseId]
+                                    : []
+                                }
                                 variant="bordered"
                                 onSelectionChange={(keys) => {
-                                  const selectedCourseId = Array.from(keys)[0] as string;
-                                  setNewProduct({ ...newProduct, courseId: selectedCourseId || "" });
+                                  const selectedCourseId = Array.from(
+                                    keys,
+                                  )[0] as string;
+
+                                  setNewProduct({
+                                    ...newProduct,
+                                    courseId: selectedCourseId || "",
+                                  });
                                 }}
                               >
                                 {courses.map((course) => (
-                                  <SelectItem key={course.id} textValue={`${course.name} (${course.level})`}>
+                                  <SelectItem
+                                    key={course.id}
+                                    textValue={`${course.name} (${course.level})`}
+                                  >
                                     {course.name} ({course.level})
                                   </SelectItem>
                                 ))}
@@ -775,21 +963,34 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
                                 key="group-select"
                                 classNames={{
                                   label: "font-bold text-black",
-                                  trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                                  trigger:
+                                    "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
                                   value: "font-medium text-black",
                                 }}
                                 label="Группа"
                                 placeholder="Выберите группу"
-                                selectedKeys={newProduct.groupId ? [newProduct.groupId] : []}
+                                selectedKeys={
+                                  newProduct.groupId ? [newProduct.groupId] : []
+                                }
                                 variant="bordered"
                                 onSelectionChange={(keys) => {
-                                  const selectedGroupId = Array.from(keys)[0] as string;
-                                  setNewProduct({ ...newProduct, groupId: selectedGroupId || "" });
+                                  const selectedGroupId = Array.from(
+                                    keys,
+                                  )[0] as string;
+
+                                  setNewProduct({
+                                    ...newProduct,
+                                    groupId: selectedGroupId || "",
+                                  });
                                 }}
                               >
                                 {groups.map((group) => (
-                                  <SelectItem key={group.id} textValue={`${group.name} - ${group.course?.name || "Курс не назначен"}`}>
-                                    {group.name} - {group.course?.name || "Курс не назначен"}
+                                  <SelectItem
+                                    key={group.id}
+                                    textValue={`${group.name} - ${group.course?.name || "Курс не назначен"}`}
+                                  >
+                                    {group.name} -{" "}
+                                    {group.course?.name || "Курс не назначен"}
                                   </SelectItem>
                                 ))}
                               </Select>
@@ -800,20 +1001,34 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
                                 key="teacher-select"
                                 classNames={{
                                   label: "font-bold text-black",
-                                  trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                                  trigger:
+                                    "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
                                   value: "font-medium text-black",
                                 }}
                                 label="Преподаватель"
                                 placeholder="Выберите преподавателя"
-                                selectedKeys={newProduct.teacherId ? [newProduct.teacherId] : []}
+                                selectedKeys={
+                                  newProduct.teacherId
+                                    ? [newProduct.teacherId]
+                                    : []
+                                }
                                 variant="bordered"
                                 onSelectionChange={(keys) => {
-                                  const selectedTeacherId = Array.from(keys)[0] as string;
-                                  setNewProduct({ ...newProduct, teacherId: selectedTeacherId || "" });
+                                  const selectedTeacherId = Array.from(
+                                    keys,
+                                  )[0] as string;
+
+                                  setNewProduct({
+                                    ...newProduct,
+                                    teacherId: selectedTeacherId || "",
+                                  });
                                 }}
                               >
                                 {teachers.map((teacher) => (
-                                  <SelectItem key={teacher.id} textValue={`${teacher.name} (${teacher.email})`}>
+                                  <SelectItem
+                                    key={teacher.id}
+                                    textValue={`${teacher.name} (${teacher.email})`}
+                                  >
                                     {teacher.name} ({teacher.email})
                                   </SelectItem>
                                 ))}
@@ -822,14 +1037,14 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
                           </div>
                         </ModalBody>
                         <ModalFooter>
-                          <Button 
-                            variant="light" 
-                            onPress={onClose}
+                          <Button
                             className="font-medium"
+                            variant="light"
+                            onPress={onClose}
                           >
                             Отмена
                           </Button>
-                          <Button 
+                          <Button
                             className="font-bold text-white bg-[#00B67A] hover:bg-[#00B67A]/90"
                             onPress={() => {
                               handleAddProduct();
@@ -853,13 +1068,27 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
             <div className="relative z-10">
               <div className="flex items-center gap-3 mb-8">
                 <div className="p-3 bg-[#FDD130]/10 rounded-2xl">
-                  <svg className="w-7 h-7 text-[#FDD130]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z" />
+                  <svg
+                    className="w-7 h-7 text-[#FDD130]"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                    />
                   </svg>
                 </div>
                 <div>
-                  <h2 className="font-bold text-3xl text-black">Статистика пользователя</h2>
-                  <p className="text-black/70 font-medium text-base">Активность и прогресс</p>
+                  <h2 className="font-bold text-3xl text-black">
+                    Статистика пользователя
+                  </h2>
+                  <p className="text-black/70 font-medium text-base">
+                    Активность и прогресс
+                  </p>
                 </div>
               </div>
 
@@ -869,8 +1098,18 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
                   <div className="relative z-10">
                     <div className="flex items-center justify-between mb-3">
                       <div className="p-2 bg-[#007EFB]/10 rounded-xl">
-                        <svg className="w-6 h-6 text-[#007EFB]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                        <svg
+                          className="w-6 h-6 text-[#007EFB]"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                          />
                         </svg>
                       </div>
                     </div>
@@ -891,8 +1130,18 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
                   <div className="relative z-10">
                     <div className="flex items-center justify-between mb-3">
                       <div className="p-2 bg-[#00B67A]/10 rounded-xl">
-                        <svg className="w-6 h-6 text-[#00B67A]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z" />
+                        <svg
+                          className="w-6 h-6 text-[#00B67A]"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                          />
                         </svg>
                       </div>
                     </div>
@@ -913,13 +1162,26 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
                   <div className="relative z-10">
                     <div className="flex items-center justify-between mb-3">
                       <div className="p-2 bg-[#FDD130]/10 rounded-xl">
-                        <svg className="w-6 h-6 text-[#FDD130]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                        <svg
+                          className="w-6 h-6 text-[#FDD130]"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                          />
                         </svg>
                       </div>
                     </div>
                     <div className="text-4xl font-bold text-black mb-1">
-                      {new Date(user.createdAt).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })}
+                      {new Date(user.createdAt).toLocaleDateString("ru-RU", {
+                        day: "2-digit",
+                        month: "2-digit",
+                      })}
                     </div>
                     <div className="text-black font-medium text-base">
                       Регистрация
@@ -935,13 +1197,28 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
                   <div className="relative z-10">
                     <div className="flex items-center justify-between mb-3">
                       <div className="p-2 bg-[#EE7A3F]/10 rounded-xl">
-                        <svg className="w-6 h-6 text-[#EE7A3F]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                          <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        <svg
+                          className="w-6 h-6 text-[#EE7A3F]"
+                          fill="none"
+                          stroke="currentColor"
+                          viewBox="0 0 24 24"
+                        >
+                          <path
+                            d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                          />
                         </svg>
                       </div>
                     </div>
                     <div className="text-4xl font-bold text-black mb-1">
-                      {new Date(user.lastActiveDate || user.updatedAt).toLocaleDateString('ru-RU', { day: '2-digit', month: '2-digit' })}
+                      {new Date(
+                        user.lastActiveDate || user.updatedAt,
+                      ).toLocaleDateString("ru-RU", {
+                        day: "2-digit",
+                        month: "2-digit",
+                      })}
                     </div>
                     <div className="text-black font-medium text-base">
                       Активность
