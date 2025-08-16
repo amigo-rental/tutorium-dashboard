@@ -298,10 +298,17 @@ export default function UserEditPage({ params }: { params: Promise<{ id: string 
         throw new Error(productResponse.error);
       }
 
+      if (!productResponse.data) {
+        throw new Error("Failed to create product");
+      }
+
+      // Type assertion since we know the structure from our API
+      const createdProduct = productResponse.data as { id: string };
+
       // Then enroll the student in the product
       const enrollmentResponse = await apiClient.enrollStudentInProduct({
         studentId: user.id,
-        productId: productResponse.data.id,
+        productId: createdProduct.id,
       });
 
       if (enrollmentResponse.error) {
