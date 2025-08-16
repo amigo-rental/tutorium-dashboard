@@ -360,6 +360,42 @@ class ApiClient {
     return this.request("/courses");
   }
 
+  // Products
+  async getProducts() {
+    return this.request("/products");
+  }
+
+  async createProduct(productData: {
+    type: "GROUP" | "COURSE" | "INDIVIDUAL";
+    name: string;
+    description?: string;
+    groupId?: string;
+    courseId?: string;
+    teacherId?: string;
+  }) {
+    return this.request("/products", {
+      method: "POST",
+      body: JSON.stringify(productData),
+    });
+  }
+
+  async enrollStudentInProduct(enrollmentData: {
+    studentId: string;
+    productId: string;
+    expiresAt?: string;
+  }) {
+    return this.request("/products/enroll", {
+      method: "POST",
+      body: JSON.stringify(enrollmentData),
+    });
+  }
+
+  async removeStudentFromProduct(enrollmentId: string) {
+    return this.request(`/products/enroll?enrollmentId=${enrollmentId}`, {
+      method: "DELETE",
+    });
+  }
+
 
 
   async getTopicsByCourse(courseId: string) {

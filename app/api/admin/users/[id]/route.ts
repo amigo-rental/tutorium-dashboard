@@ -42,6 +42,34 @@ export async function GET(
             description: true,
           },
         },
+        // Include student products
+        studentProducts: {
+          include: {
+            product: {
+              include: {
+                course: true,
+                group: {
+                  include: {
+                    course: true,
+                    teacher: {
+                      select: {
+                        id: true,
+                        name: true,
+                      },
+                    },
+                  },
+                },
+                teacher: {
+                  select: {
+                    id: true,
+                    name: true,
+                    email: true,
+                  },
+                },
+              },
+            },
+          },
+        },
       },
     });
 

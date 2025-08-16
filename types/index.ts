@@ -23,7 +23,8 @@ export interface User {
   groupId?: string; // For STUDENT role
   group?: Group; // For STUDENT role
   enrolledCourses?: Course[]; // New: Users can be enrolled in multiple courses
-
+  // Product system
+  products?: StudentProduct[];
 }
 
 export interface Group {
@@ -448,6 +449,58 @@ export interface LegacyRecording {
   attachments: string[];
   message: string;
   createdAt: string;
+}
+
+// Product System Types
+export interface Product {
+  id: string;
+  type: "GROUP" | "COURSE" | "INDIVIDUAL";
+  name: string;
+  description?: string;
+  isActive: boolean;
+  createdAt: string;
+  updatedAt: string;
+  
+  // Product-specific data
+  groupProduct?: GroupProduct;
+  courseProduct?: CourseProduct;
+  individualProduct?: IndividualProduct;
+}
+
+export interface GroupProduct {
+  groupId: string;
+  group: Group;
+  teacherId: string;
+  teacher: User;
+  courseId: string;
+  course: Course;
+}
+
+export interface CourseProduct {
+  courseId: string;
+  course: Course;
+}
+
+export interface IndividualProduct {
+  teacherId: string;
+  teacher: User;
+  courseId: string;
+  course: Course;
+}
+
+export interface StudentProduct {
+  id: string;
+  studentId: string;
+  productId: string;
+  product: Product;
+  enrolledAt: string;
+  isActive: boolean;
+  expiresAt?: string;
+  progress?: {
+    completedLessons: number;
+    totalLessons: number;
+    progressPercent: number;
+  };
 }
 
 
