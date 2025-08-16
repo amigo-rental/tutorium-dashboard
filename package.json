@@ -4,13 +4,15 @@
   "private": true,
   "scripts": {
     "dev": "next dev --turbopack",
-    "build": "npx prisma generate && next build",
+    "prebuild": "node scripts/generate-prisma.js",
+    "build": "next build",
     "start": "next start",
     "lint": "eslint --fix",
     "seed": "tsx prisma/seed.ts",
     "db:push": "npx prisma db push",
     "db:generate": "npx prisma generate",
-    "postinstall": "npx prisma generate"
+    "postinstall": "node scripts/generate-prisma.js",
+    "vercel-build": "node scripts/generate-prisma.js && next build"
   },
   "dependencies": {
     "@heroui/avatar": "^2.2.20",
