@@ -433,10 +433,11 @@ export default function AdminPage() {
               const stats = getUserStats(user);
               
               return (
-                <div
+                <button
                   key={user.id}
-                  className="group cursor-pointer bg-white border border-slate-200/60 rounded-2xl p-6 relative overflow-hidden hover:border-slate-300/60 transition-all duration-300 hover:shadow-lg"
+                  className="group cursor-pointer bg-white border border-slate-200/60 rounded-2xl p-6 relative overflow-hidden hover:border-slate-300/60 transition-all duration-300 hover:shadow-lg text-left w-full"
                   onClick={() => handleUserClick(user)}
+                  type="button"
                 >
                   <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
                   <div className="relative z-10">
@@ -511,7 +512,7 @@ export default function AdminPage() {
                       <span>Активен: {new Date(stats.lastActive).toLocaleDateString('ru-RU')}</span>
                     </div>
                       </div>
-                        </div>
+                        </button>
               );
             })}
                   </div>
