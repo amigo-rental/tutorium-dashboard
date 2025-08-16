@@ -303,6 +303,10 @@ class ApiClient {
     return this.request("/admin/users");
   }
 
+  async getUserById(userId: string) {
+    return this.request(`/admin/users/${userId}`);
+  }
+
   async createUser(userData: {
     name: string;
     email: string;
@@ -356,6 +360,25 @@ class ApiClient {
     return this.request("/courses");
   }
 
+  async getProducts() {
+    return this.request("/products");
+  }
+
+  async createProduct(productData: {
+    name: string;
+    type: string;
+    description?: string;
+    courseId?: string;
+    maxLessons?: number | null;
+    validityDays?: number | null;
+    price?: number | null;
+  }) {
+    return this.request("/products", {
+      method: "POST",
+      body: JSON.stringify(productData),
+    });
+  }
+
   async getTopicsByCourse(courseId: string) {
     return this.request(`/topics?courseId=${courseId}`);
   }
@@ -369,6 +392,69 @@ class ApiClient {
 
   async removeCourseFromUser(userId: string, courseId: string) {
     return this.request(`/admin/users/${userId}/courses/${courseId}`, {
+      method: "DELETE",
+    });
+  }
+
+  // Individual Lessons
+  async getIndividualLessons(params?: {
+    studentId?: string;
+    teacherId?: string;
+    courseId?: string;
+  }) {
+    const searchParams = new URLSearchParams();
+    if (params?.studentId) searchParams.append("studentId", params.studentId);
+    if (params?.teacherId) searchParams.append("teacherId", params.teacherId);
+    if (params?.courseId) searchParams.append("courseId", params.courseId);
+    
+    const endpoint = `/lessons/individual${searchParams.toString() ? `?${searchParams.toString()}` : ""}`;
+    return this.request(endpoint);
+  }
+
+  async createIndividualLesson(lessonData: {
+    title: string;
+    description?: string;
+    date: string;
+    startTime: string;
+    endTime: string;
+    duration?: number;
+    teacherId: string;
+    studentIds: string[];
+    courseId: string;
+    topicId?: string;
+    materials?: string[];
+    notes?: string;
+  }) {
+    return this.request("/lessons/individual", {
+      method: "POST",
+      body: JSON.stringify(lessonData),
+    });
+  }
+
+  async updateIndividualLesson(lessonData: {
+    id: string;
+    title?: string;
+    description?: string;
+    date?: string;
+    startTime?: string;
+    endTime?: string;
+    duration?: number;
+    teacherId?: string;
+    studentIds?: string[];
+    courseId?: string;
+    topicId?: string;
+    materials?: string[];
+    notes?: string;
+    status?: string;
+  }) {
+    return this.request("/lessons/individual", {
+      method: "PUT",
+      body: JSON.stringify(lessonData),
+    });
+  }
+
+  async deleteIndividualLesson(lessonId: string) {
+    return this.request(`/lessons/individual?id=${lessonId}`, {
       method: "DELETE",
     });
   }

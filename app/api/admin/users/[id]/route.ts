@@ -3,6 +3,86 @@ import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/db/prisma";
 import { requireRole } from "@/lib/auth/middleware";
 
+// GET /api/admin/users/[id] - Get user by ID (admin only)
+export async function GET(
+  request: NextRequest,
+  context: { params: Promise<{ id: string }> },
+) {
+  try {
+    const authCheck = await requireRole(["ADMIN"])(request);
+
+    if (authCheck instanceof NextResponse) return authCheck;
+
+    const { id } = await context.params;
+
+    // Get the user with related data
+    const user = await prisma.user.findUnique({
+      where: { id },
+      include: {
+        group: {
+          select: {
+            id: true,
+            name: true,
+            description: true,
+            level: true,
+            course: {
+              select: {
+                id: true,
+                name: true,
+                level: true,
+              },
+            },
+          },
+        },
+        enrolledCourses: {
+          select: {
+            id: true,
+            name: true,
+            level: true,
+            description: true,
+          },
+        },
+      },
+    });
+
+    if (!user) {
+      return NextResponse.json({ error: "User not found" }, { status: 404 });
+    }
+
+    // Calculate average rating from lesson feedback
+    const feedbacks = await prisma.lessonFeedback.findMany({
+      where: { studentId: id },
+      select: { rating: true },
+    });
+
+    const averageRating =
+      feedbacks.length > 0
+        ? feedbacks.reduce(
+            (sum: number, fb: { rating: number }) => sum + fb.rating,
+            0,
+          ) / feedbacks.length
+        : null;
+
+    const totalFeedbacks = feedbacks.length;
+
+    // Remove password from response
+    const { password, ...userWithoutPassword } = user;
+
+    return NextResponse.json({
+      ...userWithoutPassword,
+      averageRating,
+      totalFeedbacks,
+    });
+  } catch (error) {
+    console.error("Get user error:", error);
+
+    return NextResponse.json(
+      { error: "Internal server error" },
+      { status: 500 },
+    );
+  }
+}
+
 // PUT /api/admin/users/[id] - Update user (admin only)
 export async function PUT(
   request: NextRequest,

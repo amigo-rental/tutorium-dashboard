@@ -6,6 +6,16 @@ html, body {
   min-height: 100vh;
 }
 
+/* Global font weight consistency - ensure no text is lighter than font-medium (500) */
+* {
+  font-weight: 500;
+}
+
+/* Allow specific font weights when explicitly set */
+.font-bold, .font-semibold, .font-black {
+  font-weight: inherit;
+}
+
 /* Custom scrollbar utilities */
 .scrollbar-hide {
   -ms-overflow-style: none;  /* Internet Explorer 10+ */

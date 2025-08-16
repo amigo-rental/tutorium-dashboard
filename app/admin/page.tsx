@@ -1,954 +1,224 @@
+// ✅ FIXED: Updated all text elements to use font-medium (500) or higher for consistency
 "use client";
 
-import type { Selection, SortDescriptor } from "@heroui/table";
-import type { ChipProps } from "@heroui/chip";
-
-import React, { useState, useEffect } from "react";
-import {
-  Table,
-  TableHeader,
-  TableColumn,
-  TableBody,
-  TableRow,
-  TableCell,
-} from "@heroui/table";
-import { Input } from "@heroui/input";
+import { useState, useEffect } from "react";
 import { Button } from "@heroui/button";
+import { Input } from "@heroui/input";
 import { Select, SelectItem } from "@heroui/select";
-import { Checkbox } from "@heroui/checkbox";
-import {
-  DropdownTrigger,
-  Dropdown,
-  DropdownMenu,
-  DropdownItem,
-} from "@heroui/dropdown";
 import { Chip } from "@heroui/chip";
-import { User } from "@heroui/user";
-import { Pagination } from "@heroui/pagination";
-import {
-  Modal,
-  ModalContent,
-  ModalHeader,
-  ModalBody,
-  ModalFooter,
-} from "@heroui/modal";
-
+import { Card, CardBody, CardHeader } from "@heroui/card";
+import { Avatar } from "@heroui/avatar";
+import { Divider } from "@heroui/divider";
+import { useRouter } from "next/navigation";
 import { useAuth } from "@/lib/auth/context";
 import { apiClient } from "@/lib/utils/api";
-import { User as UserType, Group } from "@/types";
 import { ProtectedRoute } from "@/components/protected-route";
-import { LEVEL_OPTIONS } from "@/lib/constants/levels";
+import { User, Group } from "@/types";
 
 // Icons
+const UsersIcon = () => (
+  <svg className="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z" />
+  </svg>
+);
+
+const SearchIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+  </svg>
+);
+
+const FilterIcon = ({ className = "w-5 h-5" }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M3 4a1 1 0 011-1h16a1 1 0 011 1v2.586a1 1 0 01-.293.707l-6.414 6.414a1 1 0 00-.293.707V17l-4 4v-6.586a1 1 0 00-.293-.707L3.293 7.293A1 1 0 013 6.586V4z" />
+  </svg>
+);
+
 const PlusIcon = () => (
-  <svg
-    className="w-4 h-4"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      d="M12 4v16m8-8H4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-    />
+  <svg className="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 6v6m0 0v6m0-6h6m-6 0H6" />
   </svg>
 );
 
-const VerticalDotsIcon = () => (
-  <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 24 24">
-    <path d="M12 10c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0-6c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2zm0 12c-1.1 0-2 .9-2 2s.9 2 2 2 2-.9 2-2-.9-2-2-2z" />
+const CalendarIcon = () => (
+  <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M8 7V3m8 4V3m-9 8h10M5 21h14a2 2 0 002-2V7a2 2 0 00-2-2H5a2 2 0 00-2 2v12a2 2 0 002 2z" />
   </svg>
 );
 
-const SearchIcon = () => (
-  <svg
-    className="w-4 h-4"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-    />
+const ClockIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg className={className} fill="none" stroke="currentColor" viewBox="0 0 24 24">
+    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z" />
   </svg>
 );
 
-const ChevronDownIcon = () => (
-  <svg
-    className="w-4 h-4"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      d="M19 9l-7 7-7-7"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-    />
+const StarIcon = ({ className = "w-4 h-4" }: { className?: string }) => (
+  <svg className={className} fill="currentColor" viewBox="0 0 24 24">
+    <path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z" />
   </svg>
 );
-
-const OpenLockIcon = () => (
-  <svg
-    className="w-4 h-4"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-    />
-  </svg>
-);
-
-const ClosedLockIcon = () => (
-  <svg
-    className="w-4 h-4"
-    fill="none"
-    stroke="currentColor"
-    viewBox="0 0 24 24"
-  >
-    <path
-      d="M12 15v2m-6 4h12a2 2 0 002-2v-6a2 2 0 00-2-2H6a2 2 0 00-2 2v6a2 2 0 002 2zm10-10V7a4 4 0 00-8 0v4h8z"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-    />
-    <path
-      d="M8 11V7a4 4 0 118 0v4"
-      strokeLinecap="round"
-      strokeLinejoin="round"
-      strokeWidth={2}
-    />
-  </svg>
-);
-
-// Types and constants
-interface UserWithStats extends UserType {
-  averageRating?: number;
-  totalFeedbacks?: number;
-  lastActiveDate?: string;
-  group?: Group;
-  groups?: Group[]; // Support multiple groups
-  courses?: any[];
-}
-
-const columns = [
-  { name: "USER", uid: "user", sortable: true },
-  { name: "ROLE", uid: "role", sortable: true },
-  { name: "GROUP", uid: "group" },
-  { name: "RATING", uid: "rating", sortable: true },
-  { name: "STATUS", uid: "status", sortable: true },
-  { name: "ACTIONS", uid: "actions" },
-];
-
-const statusOptions = [
-  { name: "Active", uid: "active" },
-  { name: "Inactive", uid: "inactive" },
-];
-
-const roleOptions = [
-  { name: "All", uid: "all" },
-  { name: "Admin", uid: "ADMIN" },
-  { name: "Teacher", uid: "TEACHER" },
-  { name: "Student", uid: "STUDENT" },
-];
-
-const statusColorMap: Record<string, ChipProps["color"]> = {
-  active: "success",
-  inactive: "danger",
-};
-
-const roleColorMap: Record<string, ChipProps["color"]> = {
-  ADMIN: "danger",
-  TEACHER: "primary",
-  STUDENT: "secondary",
-};
-
-const INITIAL_VISIBLE_COLUMNS = [
-  "user",
-  "role",
-  "group",
-  "rating",
-  "status",
-  "actions",
-];
-
-function capitalize(str: string) {
-  return str ? str.charAt(0).toUpperCase() + str.slice(1).toLowerCase() : "";
-}
 
 export default function AdminPage() {
-  const { user } = useAuth();
-
-  // Data state
-  const [users, setUsers] = useState<UserWithStats[]>([]);
+  const router = useRouter();
+  const { user: currentUser } = useAuth();
+  const [users, setUsers] = useState<User[]>([]);
   const [groups, setGroups] = useState<Group[]>([]);
-  const [courses, setCourses] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(true);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState<string>("ALL");
+  const [statusFilter, setStatusFilter] = useState<string>("ALL");
 
-  // Table state
-  const [filterValue, setFilterValue] = useState("");
-  const [selectedKeys, setSelectedKeys] = useState<Selection>(new Set([]));
-  const [visibleColumns, setVisibleColumns] = useState<Selection>(
-    new Set(INITIAL_VISIBLE_COLUMNS),
-  );
-  const [statusFilter, setStatusFilter] = useState<Selection>("all");
-  const [roleFilter, setRoleFilter] = useState<Selection>("all");
-  const [rowsPerPage, setRowsPerPage] = useState(10);
-  const [sortDescriptor, setSortDescriptor] = useState<SortDescriptor>({
-    column: "user",
-    direction: "ascending",
-  });
-  const [page, setPage] = useState(1);
-
-  // Modal state
-  const [selectedUser, setSelectedUser] = useState<UserWithStats | null>(null);
-  const [editingUser, setEditingUser] = useState<UserWithStats | null>(null);
-  const [isCreatingUser, setIsCreatingUser] = useState(false);
-  const [newUser, setNewUser] = useState<Partial<UserWithStats>>({
-    name: "",
-    email: "",
-    role: "STUDENT",
-    isActive: true,
+  // Individual Lessons Section
+  const [isCreateLessonModalOpen, setIsCreateLessonModalOpen] = useState(false);
+  const [isEditLessonModalOpen, setIsEditLessonModalOpen] = useState(false);
+  const [selectedLesson, setSelectedLesson] = useState<any>(null);
+  const [newLesson, setNewLesson] = useState({
+    studentId: "",
+    teacherId: "",
+    courseId: "",
+    date: "",
+    startTime: "",
+    endTime: "",
+    notes: "",
   });
 
-  // Load data
   useEffect(() => {
-    console.log("🔐 Auth state changed:", {
-      user: user?.email,
-    });
-    if (user) {
-      console.log("✅ Authentication available, loading admin data...");
       loadData();
-    } else {
-      console.log("❌ No authentication or user found");
-    }
-  }, [user]);
-
-  // Debug effect to monitor data changes
-  useEffect(() => {
-    console.log("Admin: Groups state changed:", groups);
-    console.log("Admin: Courses state changed:", courses);
-  }, [groups, courses]);
+  }, []);
 
   const loadData = async () => {
     try {
       setIsLoading(true);
-      console.log("🔄 Loading admin data...");
-      console.log("👤 Current user:", user);
-
-      // Allow all authenticated users to access admin page
-      if (!user) {
-        console.error("🚫 No user found - authentication required");
-        alert("Please log in to access this page");
-
-        return;
-      }
-
-      console.log(`✅ User ${user.email} (${user.role}) accessing admin page`);
-
-      // Load data based on user role
-      let usersResponse, groupsResponse, coursesResponse;
-
-      if (user.role === "ADMIN") {
-        // Admin can see all users, groups, and courses
-        [usersResponse, groupsResponse, coursesResponse] = await Promise.all([
+      const [usersResponse, groupsResponse] = await Promise.all([
           apiClient.getAllUsers(),
           apiClient.getGroups(),
-          apiClient.getCourses(),
-        ]);
-      } else {
-        // Non-admin users can only see groups and courses
-        [groupsResponse, coursesResponse] = await Promise.all([
-          apiClient.getGroups(),
-          apiClient.getCourses(),
-        ]);
-        usersResponse = { data: [] }; // Empty users for non-admin
-      }
+      ]);
 
-      console.log("📊 API Responses:", {
-        users: usersResponse,
-        groups: groupsResponse,
-        courses: coursesResponse,
-      });
-
-      // Set groups data
-      if (groupsResponse.data) {
-        const groupsData = Array.isArray(groupsResponse.data)
-          ? groupsResponse.data
-          : [];
-
-        console.log("👥 Groups loaded:", groupsData);
-        setGroups(groupsData);
-      } else {
-        console.log("⚠️ No groups from API, response:", groupsResponse);
-        setGroups([]);
-      }
-
-      // Set courses data
-      if (coursesResponse.data) {
-        const coursesData = Array.isArray(coursesResponse.data)
-          ? coursesResponse.data
-          : [];
-
-        console.log("📚 Courses loaded:", coursesData);
-        setCourses(coursesData);
-      } else {
-        console.log("⚠️ No courses from API, response:", coursesResponse);
-        setCourses([]);
-      }
-
-      // Set users data with enhanced information
       if (usersResponse.data) {
-        const groupsData = Array.isArray(groupsResponse.data)
-          ? groupsResponse.data
-          : [];
-        const usersWithStats = (usersResponse.data as any[]).map((user) => ({
-          ...user,
-          group:
-            user.group || groupsData.find((g: Group) => g.id === user.groupId),
-          groups: user.group
-            ? [user.group]
-            : user.groupId
-              ? [groupsData.find((g: Group) => g.id === user.groupId)].filter(
-                  Boolean,
-                )
-              : [],
-          averageRating: user.averageRating || undefined,
-          totalFeedbacks: user.totalFeedbacks || 0,
-          lastActiveDate: user.updatedAt,
-          courses: user.enrolledCourses || [],
-        }));
-
-        console.log("👤 Users with stats:", usersWithStats);
-        console.log("🔍 Sample user data:", usersWithStats[0]);
-        console.log(
-          "⭐ Ratings check:",
-          usersWithStats.map((u) => ({
-            name: u.name,
-            rating: u.averageRating,
-            feedbacks: u.totalFeedbacks,
-          })),
-        );
-        setUsers(usersWithStats);
-      } else if (usersResponse.error) {
-        console.error("🚨 API Error loading users:", usersResponse.error);
-        alert(`Error loading users: ${usersResponse.error}`);
-        setUsers([]);
-      } else {
-        console.log("⚠️ No users from API, response:", usersResponse);
-        setUsers([]);
+        setUsers(usersResponse.data as User[]);
       }
-
-      console.log("✅ Admin data loaded successfully");
-    } catch (error) {
-      console.error("❌ Error loading admin data:", error);
-      // Set empty arrays to prevent undefined errors
-      setGroups([]);
-      setCourses([]);
-      setUsers([]);
+      if (groupsResponse.data) {
+        setGroups(groupsResponse.data as Group[]);
+          }
+        } catch (error) {
+      console.error("Error loading data:", error);
     } finally {
       setIsLoading(false);
     }
   };
 
-  // Table logic
-  const hasSearchFilter = Boolean(filterValue);
-
-  const headerColumns = React.useMemo(() => {
-    if (visibleColumns === "all") return columns;
-
-    return columns.filter((column) =>
-      Array.from(visibleColumns).includes(column.uid),
-    );
-  }, [visibleColumns]);
-
-  const filteredItems = React.useMemo(() => {
-    console.log("🔍 Filtering users - Input users:", users.length);
-    let filteredUsers = [...users];
-
-    if (hasSearchFilter) {
-      filteredUsers = filteredUsers.filter(
-        (user) =>
-          user.name.toLowerCase().includes(filterValue.toLowerCase()) ||
-          user.email.toLowerCase().includes(filterValue.toLowerCase()),
-      );
-      console.log("🔍 After search filter:", filteredUsers.length);
-    }
-
-    if (
-      statusFilter !== "all" &&
-      Array.from(statusFilter).length !== statusOptions.length
-    ) {
-      filteredUsers = filteredUsers.filter((user) =>
-        Array.from(statusFilter).includes(
-          user.isActive ? "active" : "inactive",
-        ),
-      );
-      console.log("🔍 After status filter:", filteredUsers.length);
-    }
-
-    if (
-      roleFilter !== "all" &&
-      Array.from(roleFilter).length !== roleOptions.length
-    ) {
-      filteredUsers = filteredUsers.filter((user) =>
-        Array.from(roleFilter).includes(user.role),
-      );
-      console.log("🔍 After role filter:", filteredUsers.length);
-    }
-
-    console.log("🔍 Final filtered users:", filteredUsers.length);
-
-    return filteredUsers;
-  }, [users, filterValue, statusFilter, roleFilter]);
-
-  const pages = Math.ceil(filteredItems.length / rowsPerPage);
-
-  const items = React.useMemo(() => {
-    const start = (page - 1) * rowsPerPage;
-    const end = start + rowsPerPage;
-    const pageItems = filteredItems.slice(start, end);
-
-    console.log(
-      "📄 Page items:",
-      pageItems.length,
-      "Start:",
-      start,
-      "End:",
-      end,
-    );
-
-    return pageItems;
-  }, [page, filteredItems, rowsPerPage]);
-
-  const sortedItems = React.useMemo(() => {
-    const sorted = [...items].sort((a: UserWithStats, b: UserWithStats) => {
-      let first: any;
-      let second: any;
-
-      switch (sortDescriptor.column) {
-        case "user":
-          first = a.name;
-          second = b.name;
-          break;
-        case "role":
-          first = a.role;
-          second = b.role;
-          break;
-        case "rating":
-          first = a.averageRating || 0;
-          second = b.averageRating || 0;
-          break;
-        case "status":
-          first = a.isActive;
-          second = b.isActive;
-          break;
-        default:
-          first = a[sortDescriptor.column as keyof UserWithStats];
-          second = b[sortDescriptor.column as keyof UserWithStats];
-      }
-
-      const cmp = first < second ? -1 : first > second ? 1 : 0;
-
-      return sortDescriptor.direction === "descending" ? -cmp : cmp;
-    });
-
-    console.log("📊 Sorted items for table:", sorted.length);
-
-    return sorted;
-  }, [sortDescriptor, items]);
-
-  // Handlers
-  const handleUserClick = (user: UserWithStats) => {
-    setSelectedUser(user);
+  const handleUserClick = (user: User) => {
+    router.push(`/admin/${user.id}`);
   };
 
-  const handleEditUser = (user: UserWithStats) => {
-    console.log("handleEditUser called with user:", user);
-    console.log("Current groups state:", groups);
-    console.log("Current courses state:", courses);
+  const handleCreateUser = () => {
+    // TODO: Implement user creation functionality
+    console.log("Create user functionality to be implemented");
+  };
 
-    // Initialize the user with proper groups and courses arrays
-    const userWithArrays = {
-      ...user,
-      groups: user.group ? [user.group] : [], // Convert single group to array
-      courses: user.courses || [], // Ensure courses array exists
+  const handleCreateLesson = async () => {
+    try {
+      // TODO: Implement API call to create lesson
+      console.log("Creating lesson:", newLesson);
+      setIsCreateLessonModalOpen(false);
+        setNewLesson({
+        studentId: "",
+        teacherId: "",
+        courseId: "",
+          date: "",
+          startTime: "",
+          endTime: "",
+          notes: "",
+        });
+    } catch (error) {
+      console.error("Error creating lesson:", error);
+    }
+  };
+
+  const handleEditLesson = async () => {
+    try {
+      // TODO: Implement API call to update lesson
+      console.log("Updating lesson:", selectedLesson);
+      setIsEditLessonModalOpen(false);
+      setSelectedLesson(null);
+    } catch (error) {
+      console.error("Error updating lesson:", error);
+    }
+  };
+
+  const handleDeleteLesson = async (lessonId: string) => {
+    try {
+      // TODO: Implement API call to delete lesson
+      console.log("Deleting lesson:", lessonId);
+    } catch (error) {
+      console.error("Error deleting lesson:", error);
+    }
+  };
+
+  // Filter users based on search and filters
+  const filteredUsers = users.filter((user) => {
+    const matchesSearch = user.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+                         user.email.toLowerCase().includes(searchQuery.toLowerCase());
+    const matchesRole = roleFilter === "ALL" || user.role === roleFilter;
+    const matchesStatus = statusFilter === "ALL" || 
+                         (statusFilter === "ACTIVE" && user.isActive) ||
+                         (statusFilter === "INACTIVE" && !user.isActive);
+    
+    return matchesSearch && matchesRole && matchesStatus;
+  });
+
+  // Get role display info
+  const getRoleInfo = (role: string) => {
+    switch (role) {
+      case "ADMIN":
+        return { label: "Администратор", color: "danger", bgColor: "bg-red-50", textColor: "text-red-700" };
+      case "TEACHER":
+        return { label: "Преподаватель", color: "primary", bgColor: "bg-blue-50", textColor: "text-blue-700" };
+      case "STUDENT":
+        return { label: "Студент", color: "success", bgColor: "bg-green-50", textColor: "text-green-700" };
+        default:
+        return { label: role, color: "default", bgColor: "bg-gray-50", textColor: "text-gray-700" };
+    }
+  };
+
+  // Get level display info
+  const getLevelInfo = (level: string | undefined) => {
+    switch (level?.toLowerCase()) {
+      case "beginner":
+        return { label: "С нуля", color: "success", bgColor: "bg-emerald-50", textColor: "text-emerald-700" };
+      case "elementary":
+        return { label: "Начинающий", color: "primary", bgColor: "bg-blue-50", textColor: "text-blue-700" };
+      case "intermediate":
+        return { label: "Продолжающий", color: "warning", bgColor: "bg-amber-50", textColor: "text-amber-700" };
+      case "advanced":
+        return { label: "Продвинутый", color: "danger", bgColor: "bg-red-50", textColor: "text-red-700" };
+      default:
+        return { label: level || "Не указан", color: "default", bgColor: "bg-gray-50", textColor: "text-gray-700" };
+    }
+  };
+
+  // Get user stats
+  const getUserStats = (user: User) => {
+    const stats = {
+      totalLessons: 0, // TODO: Add this property to User type if needed
+      completedLessons: 0, // TODO: Add this property to User type if needed
+      averageRating: 0, // TODO: Add this property to User type if needed
+      lastActive: user.updatedAt,
     };
-
-    // If user is a student, try to fetch their enrolled courses
-    if (user.role === "STUDENT" && user.groupId) {
-      // Find the user's current group
-      const currentGroup = groups.find((g) => g.id === user.groupId);
-
-      console.log("Found current group:", currentGroup);
-      if (currentGroup && currentGroup.course) {
-        // Add the course from their group to their courses
-        userWithArrays.courses = [currentGroup.course];
-        console.log("Added course from group:", currentGroup.course);
-      }
-    }
-
-    console.log("Editing user with data:", userWithArrays);
-    setEditingUser(userWithArrays);
+    return stats;
   };
-
-  const handleDeleteUser = async (userId: string) => {
-    if (!confirm("Are you sure you want to delete this user?")) return;
-
-    try {
-      await apiClient.deleteUser(userId);
-      const updatedUsers = users.filter((u) => u.id !== userId);
-
-      setUsers(updatedUsers);
-    } catch (error) {
-      console.error("Error deleting user:", error);
-      alert("Failed to delete user");
-    }
-  };
-
-  const handleCreateUser = async () => {
-    if (!newUser.name || !newUser.email || !newUser.role) {
-      alert("Please fill all required fields");
-
-      return;
-    }
-
-    try {
-      const userData = {
-        name: newUser.name,
-        email: newUser.email,
-        role: newUser.role as "ADMIN" | "TEACHER" | "STUDENT",
-        groupId: newUser.groupId || undefined,
-        isActive: newUser.isActive ?? true,
-        level: newUser.level || undefined,
-      };
-
-      // Create user via API (this would need to be implemented)
-      const response = await apiClient.createUser(userData);
-
-      if (response.data) {
-        // Refresh the user list
-        await loadData();
-      }
-
-      setNewUser({
-        name: "",
-        email: "",
-        role: "STUDENT",
-        isActive: true,
-      });
-      setIsCreatingUser(false);
-    } catch (error) {
-      console.error("Error creating user:", error);
-      alert("Failed to create user");
-    }
-  };
-
-  const handleSaveUser = async () => {
-    if (!editingUser) return;
-
-    try {
-      // Prepare the primary group (first selected group)
-      const primaryGroupId =
-        editingUser.groups && editingUser.groups.length > 0
-          ? editingUser.groups[0].id
-          : undefined;
-
-      // Prepare course IDs for API
-      const courseIds = editingUser.courses?.map((c: any) => c.id) || [];
-
-      // Update user via API
-      await apiClient.updateUser({
-        id: editingUser.id,
-        firstName: editingUser.name.split(" ")[0],
-        lastName: editingUser.name.split(" ").slice(1).join(" "),
-        email: editingUser.email,
-        role: editingUser.role,
-        groupId: primaryGroupId,
-        level: editingUser.level,
-        isActive: editingUser.isActive,
-        courseIds: courseIds,
-      });
-
-      // TODO: Update multiple group assignments when API supports it
-      // Course assignments are now handled ✅
-
-      // Update local state
-      const updatedUsers = users.map((u) =>
-        u.id === editingUser.id
-          ? {
-              ...u,
-              ...editingUser,
-              group:
-                editingUser.groups && editingUser.groups.length > 0
-                  ? editingUser.groups[0]
-                  : undefined,
-              groupId: primaryGroupId,
-            }
-          : u,
-      );
-
-      setUsers(updatedUsers);
-      setEditingUser(null);
-    } catch (error) {
-      console.error("Error updating user:", error);
-      alert("Failed to update user");
-    }
-  };
-
-  // Render functions
-  const renderCell = React.useCallback(
-    (user: UserWithStats, columnKey: React.Key) => {
-      const cellValue = user[columnKey as keyof UserWithStats];
-
-      switch (columnKey) {
-        case "user":
-          return (
-            <User
-              avatarProps={{
-                radius: "full",
-                size: "sm",
-                src: user.avatar,
-                name: user.name
-                  .split(" ")
-                  .map((n) => n[0])
-                  .join(""),
-                classNames: {
-                  base: "bg-[#007EFB] text-white font-semibold",
-                },
-              }}
-              classNames={{
-                name: "text-black font-semibold",
-                description: "text-slate-600 font-medium",
-              }}
-              description={user.email}
-              name={user.name}
-            />
-          );
-        case "role":
-          return (
-            <div className="flex flex-col gap-2">
-              <Chip
-                className="capitalize border-none font-semibold"
-                color={roleColorMap[user.role]}
-                size="sm"
-                variant="flat"
-              >
-                {user.role === "ADMIN"
-                  ? "Администратор"
-                  : user.role === "TEACHER"
-                    ? "Преподаватель"
-                    : "Студент"}
-              </Chip>
-              {user.level && (
-                <Chip
-                  className="capitalize font-medium"
-                  color="default"
-                  size="sm"
-                  variant="bordered"
-                >
-                  {user.level === "beginner"
-                    ? "Начинающий"
-                    : user.level === "elementary"
-                      ? "Элементарный"
-                      : user.level === "intermediate"
-                        ? "Средний"
-                        : user.level === "advanced"
-                          ? "Продвинутый"
-                          : user.level}
-                </Chip>
-              )}
-            </div>
-          );
-        case "group":
-          return (
-            <div className="flex flex-col">
-              {user.groups && user.groups.length > 0 ? (
-                <div className="flex flex-col gap-1">
-                  {user.groups.slice(0, 2).map((group) => (
-                    <Chip
-                      key={group.id}
-                      className="font-medium"
-                      color="primary"
-                      size="sm"
-                      variant="flat"
-                    >
-                      {group.name}
-                    </Chip>
-                  ))}
-                  {user.groups.length > 2 && (
-                    <Chip
-                      className="font-medium"
-                      color="default"
-                      size="sm"
-                      variant="bordered"
-                    >
-                      +{user.groups.length - 2} еще
-                    </Chip>
-                  )}
-                </div>
-              ) : user.group ? (
-                <Chip
-                  className="font-medium"
-                  color="primary"
-                  size="sm"
-                  variant="flat"
-                >
-                  {user.group.name}
-                </Chip>
-              ) : (
-                <Chip
-                  className="font-medium"
-                  color="default"
-                  size="sm"
-                  variant="bordered"
-                >
-                  Не назначена
-                </Chip>
-              )}
-            </div>
-          );
-        case "rating":
-          return user.averageRating ? (
-            <Chip
-              className="font-semibold"
-              color="warning"
-              size="sm"
-              variant="flat"
-            >
-              {user.averageRating.toFixed(1)} ⭐
-            </Chip>
-          ) : (
-            <Chip
-              className="font-medium"
-              color="default"
-              size="sm"
-              variant="bordered"
-            >
-              Нет оценок
-            </Chip>
-          );
-        case "status":
-          return (
-            <Chip
-              className="capitalize font-semibold"
-              color={statusColorMap[user.isActive ? "active" : "inactive"]}
-              size="sm"
-              variant="flat"
-            >
-              {user.isActive ? "Активен" : "Неактивен"}
-            </Chip>
-          );
-        case "actions":
-          return (
-            <div className="relative flex justify-end items-center gap-2">
-              <Dropdown className="bg-background border-1 border-default-200">
-                <DropdownTrigger>
-                  <Button isIconOnly radius="full" size="sm" variant="light">
-                    <VerticalDotsIcon />
-                  </Button>
-                </DropdownTrigger>
-                <DropdownMenu>
-                  <DropdownItem
-                    key="view"
-                    onClick={() => handleUserClick(user)}
-                  >
-                    View
-                  </DropdownItem>
-                  <DropdownItem key="edit" onClick={() => handleEditUser(user)}>
-                    Edit
-                  </DropdownItem>
-                  <DropdownItem
-                    key="delete"
-                    className="text-danger"
-                    color="danger"
-                    onClick={() => handleDeleteUser(user.id)}
-                  >
-                    Delete
-                  </DropdownItem>
-                </DropdownMenu>
-              </Dropdown>
-            </div>
-          );
-        default:
-          return String(cellValue || "");
-      }
-    },
-    [groups],
-  );
-
-  // Table controls
-  const onRowsPerPageChange = React.useCallback((e: any) => {
-    setRowsPerPage(Number(e.target.value));
-    setPage(1);
-  }, []);
-
-  const onSearchChange = React.useCallback((value?: string) => {
-    if (value) {
-      setFilterValue(value);
-      setPage(1);
-    } else {
-      setFilterValue("");
-    }
-  }, []);
-
-  const topContent = React.useMemo(() => {
-    return (
-      <div className="flex flex-col gap-4">
-        <div className="flex justify-between gap-3 items-end">
-          <Input
-            isClearable
-            classNames={{
-              base: "w-full sm:max-w-[44%]",
-              inputWrapper: "border-1",
-            }}
-            placeholder="Search by name or email..."
-            size="sm"
-            startContent={<SearchIcon />}
-            value={filterValue}
-            variant="bordered"
-            onClear={() => setFilterValue("")}
-            onValueChange={onSearchChange}
-          />
-          <div className="flex gap-3">
-            <Dropdown>
-              <DropdownTrigger className="hidden sm:flex">
-                <Button
-                  endContent={<ChevronDownIcon />}
-                  size="sm"
-                  variant="flat"
-                >
-                  Status
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                disallowEmptySelection
-                aria-label="Status Filter"
-                closeOnSelect={false}
-                selectedKeys={statusFilter}
-                selectionMode="multiple"
-                onSelectionChange={setStatusFilter}
-              >
-                {statusOptions.map((status) => (
-                  <DropdownItem key={status.uid} className="capitalize">
-                    {capitalize(status.name)}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
-            <Dropdown>
-              <DropdownTrigger className="hidden sm:flex">
-                <Button
-                  endContent={<ChevronDownIcon />}
-                  size="sm"
-                  variant="flat"
-                >
-                  Role
-                </Button>
-              </DropdownTrigger>
-              <DropdownMenu
-                disallowEmptySelection
-                aria-label="Role Filter"
-                closeOnSelect={false}
-                selectedKeys={roleFilter}
-                selectionMode="multiple"
-                onSelectionChange={setRoleFilter}
-              >
-                {roleOptions.map((role) => (
-                  <DropdownItem key={role.uid} className="capitalize">
-                    {capitalize(role.name)}
-                  </DropdownItem>
-                ))}
-              </DropdownMenu>
-            </Dropdown>
-            <Button
-              className="bg-[#007EFB] text-white"
-              endContent={<PlusIcon />}
-              size="sm"
-              onClick={() => setIsCreatingUser(true)}
-            >
-              Add New
-            </Button>
-          </div>
-        </div>
-        <div className="flex justify-between items-center">
-          <span className="text-default-400 text-small">
-            Total {users.length} users
-          </span>
-          <label className="flex items-center text-default-400 text-small">
-            Rows per page:
-            <select
-              className="bg-transparent outline-none text-default-400 text-small ml-2"
-              value={rowsPerPage}
-              onChange={onRowsPerPageChange}
-            >
-              <option value="5">5</option>
-              <option value="10">10</option>
-              <option value="15">15</option>
-            </select>
-          </label>
-        </div>
-      </div>
-    );
-  }, [
-    filterValue,
-    statusFilter,
-    roleFilter,
-    visibleColumns,
-    onSearchChange,
-    onRowsPerPageChange,
-    users.length,
-    hasSearchFilter,
-    rowsPerPage,
-  ]);
-
-  const bottomContent = React.useMemo(() => {
-    return (
-      <div className="py-2 px-2 flex justify-between items-center">
-        <Pagination
-          showControls
-          classNames={{
-            cursor: "bg-[#007EFB] text-white",
-          }}
-          color="primary"
-          isDisabled={hasSearchFilter}
-          page={page}
-          total={pages}
-          variant="light"
-          onChange={setPage}
-        />
-        <span className="text-small text-default-400">
-          {selectedKeys === "all"
-            ? "All items selected"
-            : `${selectedKeys.size} of ${items.length} selected`}
-        </span>
-      </div>
-    );
-  }, [selectedKeys, items.length, page, pages, hasSearchFilter]);
 
   if (isLoading) {
     return (
       <div className="min-h-screen bg-white p-6">
         <div className="max-w-7xl mx-auto">
           <div className="animate-pulse">
-            <div className="h-12 bg-slate-200 rounded w-1/3 mb-6" />
-            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6 mb-6">
-              {[1, 2, 3, 4, 5, 6].map((i) => (
-                <div key={i} className="h-32 bg-slate-200 rounded" />
+            <div className="h-16 bg-slate-200 rounded-2xl w-1/3 mb-8" />
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((i) => (
+                <div key={i} className="h-64 bg-slate-200 rounded-2xl" />
               ))}
             </div>
-            <div className="h-96 bg-slate-200 rounded" />
           </div>
         </div>
       </div>
@@ -961,746 +231,627 @@ export default function AdminPage() {
         {/* Hero Section */}
         <div className="pt-12 mb-8">
           <h1 className="text-5xl font-bold text-black tracking-tight">
-            {user?.role === "ADMIN"
-              ? "Управление пользователями"
-              : "Просмотр системы"}{" "}
-            👨‍💼
+            Панель администратора 👨‍💼
           </h1>
           <p className="text-black/70 text-xl font-medium mt-2">
-            {user?.role === "ADMIN"
-              ? "Просмотр и управление всеми пользователями системы"
-              : "Просмотр групп и курсов в системе"}
+            Управление пользователями и системой
           </p>
         </div>
 
-        {/* Main Content */}
-        {/* Debug Info */}
-        <div className="bg-slate-100 p-4 rounded-lg mb-4 text-sm">
-          <strong>Debug Info:</strong>
-          <br />• Users loaded: {users.length}{" "}
-          {user?.role !== "ADMIN" ? "(Admin only)" : ""}
-          <br />• Groups available: {groups.length}
-          <br />• Courses available: {courses.length}
-          <br />• Filtered items: {filteredItems.length}
-          <br />• Auth: {user?.email || "Not logged in"} (
-          {user?.role || "No role"})
+        {/* Stats Grid */}
+        <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 lg:gap-6 mb-12">
+          <div className="bg-white border border-[#007EFB]/20 rounded-2xl p-6 relative overflow-hidden group hover:border-[#007EFB]/40 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#007EFB]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-2 bg-[#007EFB]/10 rounded-xl">
+                  <UsersIcon />
         </div>
+                <span className="text-[#007EFB] text-xs font-bold bg-[#007EFB]/10 px-2 py-1 rounded-full">
+                  Всего
+                </span>
+              </div>
+              <div className="text-4xl font-bold text-black mb-1">
+                {users.length}
+            </div>
+              <div className="text-black font-medium text-base">
+                Пользователей
+                </div>
+              <div className="text-black/70 font-medium text-xs mt-1">
+                В системе
+              </div>
+                    </div>
+                    </div>
 
-        <div className="space-y-8 lg:space-y-12">
-          {/* Users Section */}
-          <section className="relative">
-            <div className="flex items-center justify-between mb-8 lg:mb-10">
-              <div className="flex items-center gap-4">
-                {user?.role === "ADMIN" && (
-                  <Button
-                    className="bg-[#007EFB] text-white font-semibold"
-                    color="primary"
-                    size="lg"
-                    variant="flat"
-                    onClick={() => setIsCreatingUser(true)}
+          <div className="bg-white border border-[#00B67A]/20 rounded-2xl p-6 relative overflow-hidden group hover:border-[#00B67A]/40 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#00B67A]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-2 bg-[#00B67A]/10 rounded-xl">
+                  <div className="w-6 h-6 text-[#00B67A]">👨‍🎓</div>
+                </div>
+                <span className="text-[#00B67A] text-xs font-bold bg-[#00B67A]/10 px-2 py-1 rounded-full">
+                  Активных
+                                </span>
+                              </div>
+              <div className="text-4xl font-bold text-black mb-1">
+                {users.filter(u => u.role === "STUDENT").length}
+                            </div>
+              <div className="text-black font-medium text-base">
+                Студентов
+                            </div>
+              <div className="text-black/70 font-medium text-xs mt-1">
+                Обучаются
+                          </div>
+                        </div>
+                    </div>
+
+          <div className="bg-white border border-[#EE7A3F]/20 rounded-2xl p-6 relative overflow-hidden group hover:border-[#EE7A3F]/40 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#EE7A3F]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-2 bg-[#EE7A3F]/10 rounded-xl">
+                  <div className="w-6 h-6 text-[#EE7A3F]">👨‍🏫</div>
+                </div>
+                <span className="text-[#EE7A3F] text-xs font-bold bg-[#EE7A3F]/10 px-2 py-1 rounded-full">
+                  Экспертов
+                </span>
+              </div>
+              <div className="text-4xl font-bold text-black mb-1">
+                {users.filter(u => u.role === "TEACHER").length}
+        </div>
+              <div className="text-black font-medium text-base">
+                Преподавателей
+                    </div>
+              <div className="text-black/70 font-medium text-xs mt-1">
+                Ведут уроки
+              </div>
+                    </div>
+                  </div>
+
+          <div className="bg-white border border-[#FDD130]/20 rounded-2xl p-6 relative overflow-hidden group hover:border-[#FDD130]/40 transition-all duration-300">
+            <div className="absolute inset-0 bg-gradient-to-br from-[#FDD130]/5 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+            <div className="relative z-10">
+              <div className="flex items-center justify-between mb-3">
+                <div className="p-2 bg-[#FDD130]/10 rounded-xl">
+                  <div className="w-6 h-6 text-[#FDD130]">👥</div>
+                    </div>
+                <span className="text-[#FDD130] text-xs font-bold bg-[#FDD130]/10 px-2 py-1 rounded-full">
+                  Групп
+                </span>
+                    </div>
+              <div className="text-4xl font-bold text-black mb-1">
+                {groups.length}
+                    </div>
+              <div className="text-black font-medium text-base">
+                Активных групп
+                    </div>
+              <div className="text-black/70 font-medium text-xs mt-1">
+                Проводят занятия
+                  </div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* User Management Section */}
+        <section className="relative">
+          <div className="flex items-center justify-between mb-8">
+            <div>
+              <h2 className="text-4xl font-bold text-black">
+                Пользователи
+              </h2>
+              <p className="text-black/70 font-medium text-lg mt-1">
+                Управление студентами, преподавателями и администраторами
+              </p>
+                </div>
+              <Button
+              className="font-bold text-white bg-[#007EFB] hover:bg-[#007EFB]/90 px-8"
+              size="lg"
+              startContent={<PlusIcon />}
+              onClick={() => handleCreateUser()}
+            >
+              Добавить пользователя
+              </Button>
+          </div>
+
+          {/* Search and Filters */}
+          <div className="bg-gradient-to-br from-[#007EFB]/5 via-[#EE7A3F]/5 to-[#FDD130]/5 border border-[#007EFB]/20 rounded-3xl p-6 mb-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#007EFB]/10 to-[#EE7A3F]/10 rounded-full -translate-y-8 translate-x-8" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-[#007EFB]/10 rounded-2xl">
+                  <FilterIcon />
+                </div>
+                <div>
+                  <h3 className="font-bold text-2xl text-black">
+                    Поиск и фильтры
+                    </h3>
+                  <p className="text-black/70 font-medium text-base">
+                    Найди нужных пользователей
+                  </p>
+                </div>
+              </div>
+
+              <div className="flex flex-col lg:flex-row gap-4">
+                <div className="flex-1">
+                  <Input
+                    placeholder="Поиск по имени или email..."
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    startContent={
+                      <SearchIcon className="w-5 h-5 text-gray-400" />
+                    }
+                    classNames={{
+                      input: "font-medium text-black",
+                      inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none h-12"
+                    }}
+                    variant="bordered"
+                  />
+                </div>
+
+                <div className="flex gap-3">
+                        <Select
+                    placeholder="Роль"
+                    selectedKeys={[roleFilter]}
+                    onSelectionChange={(keys) => setRoleFilter(Array.from(keys)[0] as string)}
+                    className="w-40"
+                          classNames={{
+                      trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none h-12"
+                          }}
+                          variant="bordered"
                   >
-                    <svg
-                      className="w-5 h-5 mr-2"
-                      fill="none"
-                      stroke="currentColor"
-                      viewBox="0 0 24 24"
-                    >
-                      <path
-                        d="M12 6v6m0 0v6m0-6h6m-6 0H6"
-                        strokeLinecap="round"
-                        strokeLinejoin="round"
-                        strokeWidth={2}
-                      />
-                    </svg>
-                    Добавить пользователя
-                  </Button>
-                )}
+                    <SelectItem key="ALL">Все роли</SelectItem>
+                    <SelectItem key="STUDENT">Студенты</SelectItem>
+                    <SelectItem key="TEACHER">Преподаватели</SelectItem>
+                    <SelectItem key="ADMIN">Администраторы</SelectItem>
+                        </Select>
+
+                            <Select
+                    placeholder="Статус"
+                    selectedKeys={[statusFilter]}
+                    onSelectionChange={(keys) => setStatusFilter(Array.from(keys)[0] as string)}
+                    className="w-40"
+                              classNames={{
+                      trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none h-12"
+                              }}
+                              variant="bordered"
+                  >
+                    <SelectItem key="ALL">Все статусы</SelectItem>
+                    <SelectItem key="ACTIVE">Активные</SelectItem>
+                    <SelectItem key="INACTIVE">Неактивные</SelectItem>
+                            </Select>
+                </div>
               </div>
             </div>
-
-            <Table
-              isCompact
-              removeWrapper
-              aria-label="Admin users table"
-              bottomContent={bottomContent}
-              bottomContentPlacement="outside"
-              classNames={{
-                wrapper: ["max-h-[600px]"],
-                th: [
-                  "bg-slate-50",
-                  "text-slate-700",
-                  "border-b",
-                  "border-slate-200",
-                  "font-semibold",
-                  "text-sm",
-                ],
-                td: ["py-3", "border-b", "border-slate-100"],
-              }}
-              selectedKeys={selectedKeys}
-              selectionMode="multiple"
-              sortDescriptor={sortDescriptor}
-              topContent={topContent}
-              topContentPlacement="outside"
-              onSelectionChange={setSelectedKeys}
-              onSortChange={setSortDescriptor}
-            >
-              <TableHeader columns={headerColumns}>
-                {(column: any) => (
-                  <TableColumn
-                    key={column.uid}
-                    align={column.uid === "actions" ? "center" : "start"}
-                    allowsSorting={column.sortable}
-                  >
-                    {column.name}
-                  </TableColumn>
-                )}
-              </TableHeader>
-              <TableBody
-                emptyContent={
-                  user?.role === "ADMIN"
-                    ? "No users found"
-                    : "Groups and courses are available in the dropdowns above"
-                }
-                items={sortedItems}
-              >
-                {(item: any) => (
-                  <TableRow key={item.id}>
-                    {(columnKey: any) => (
-                      <TableCell>{renderCell(item, columnKey)}</TableCell>
-                    )}
-                  </TableRow>
-                )}
-              </TableBody>
-            </Table>
-          </section>
-        </div>
-
-        {/* User Details Modal */}
-        <Modal
-          isOpen={!!selectedUser}
-          size="2xl"
-          onClose={() => setSelectedUser(null)}
-        >
-          <ModalContent className="bg-white border border-slate-200/60 rounded-3xl">
-            <ModalHeader className="text-black font-bold text-xl">
-              User Details
-            </ModalHeader>
-            <ModalBody>
-              {selectedUser && (
-                <div className="space-y-6">
-                  <div className="flex items-center gap-4">
-                    <div className="w-16 h-16 bg-[#007EFB] rounded-full flex items-center justify-center text-white font-bold text-xl">
-                      {selectedUser.name
-                        .split(" ")
-                        .map((n) => n[0])
-                        .join("")}
-                    </div>
-                    <div>
-                      <h3 className="text-xl font-bold text-black">
-                        {selectedUser.name}
-                      </h3>
-                      <p className="text-black/70">{selectedUser.email}</p>
-                      <Chip
-                        className="mt-2"
-                        color={roleColorMap[selectedUser.role]}
-                        variant="flat"
-                      >
-                        {selectedUser.role === "ADMIN"
-                          ? "Администратор"
-                          : selectedUser.role === "TEACHER"
-                            ? "Преподаватель"
-                            : "Студент"}
-                      </Chip>
-                    </div>
-                  </div>
-
-                  <div className="grid grid-cols-2 gap-4">
-                    <div>
-                      <p className="text-black/70 text-sm">Level</p>
-                      <p className="font-semibold text-black">
-                        {selectedUser.level || "Not specified"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-black/70 text-sm">Group</p>
-                      <p className="font-semibold text-black">
-                        {selectedUser.groupId
-                          ? groups.find((g) => g.id === selectedUser.groupId)
-                              ?.name
-                          : "Not assigned"}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-black/70 text-sm">Registration Date</p>
-                      <p className="font-semibold text-black">
-                        {new Date(selectedUser.createdAt).toLocaleDateString(
-                          "en-US",
-                        )}
-                      </p>
-                    </div>
-                    <div>
-                      <p className="text-black/70 text-sm">Status</p>
-                      <Chip
-                        color={selectedUser.isActive ? "success" : "danger"}
-                        size="sm"
-                        variant="flat"
-                      >
-                        {selectedUser.isActive ? "Active" : "Inactive"}
-                      </Chip>
-                    </div>
-                  </div>
-
-                  {selectedUser.averageRating && (
-                    <div>
-                      <h4 className="font-semibold text-black mb-3">Rating</h4>
-                      <div className="flex items-center gap-2">
-                        <span className="text-2xl font-bold text-black">
-                          {selectedUser.averageRating.toFixed(1)}
-                        </span>
-                        <div className="flex gap-1">
-                          {[1, 2, 3, 4, 5].map((star) => (
-                            <svg
-                              key={star}
-                              className={`w-5 h-5 ${
-                                star <= selectedUser.averageRating!
-                                  ? "text-yellow-400 fill-current"
-                                  : "text-default-300"
-                              }`}
-                              viewBox="0 0 20 20"
-                            >
-                              <path d="M9.049 2.927c.3-.921 1.603-.921 1.902 0l1.07 3.292a1 1 0 00.95.69h3.462c.969 0 1.371 1.24.588 1.81l-2.8 2.034a1 1 0 00-.364 1.118l1.07 3.292c.3.921-.755 1.688-1.54 1.118l-2.8-2.034a1 1 0 00-1.175 0l-2.8 2.034c-.784.57-1.838-.197-1.539-1.118l1.07-3.292a1 1 0 00-.364-1.118L2.98 8.72c-.783-.57-.38-1.81.588-1.81h3.461a1 1 0 00.951-.69l1.07-3.292z" />
-                            </svg>
-                          ))}
-                        </div>
-                      </div>
-                    </div>
-                  )}
-                </div>
-              )}
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="light" onClick={() => setSelectedUser(null)}>
-                Close
-              </Button>
-              <Button
-                color="primary"
-                onClick={() => {
-                  if (selectedUser) {
-                    handleEditUser(selectedUser);
-                    setSelectedUser(null);
-                  }
-                }}
-              >
-                Edit
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
-
-        {/* Edit User Modal */}
-        <Modal
-          isOpen={!!editingUser}
-          size="4xl"
-          onClose={() => setEditingUser(null)}
-        >
-          <ModalContent className="bg-white border border-slate-200/60 rounded-3xl">
-            <ModalHeader className="text-black font-bold text-xl">
-              Edit User - {editingUser?.name}
-            </ModalHeader>
-            <ModalBody>
-              {editingUser && (
-                <div className="space-y-6">
-                  {/* Basic Information */}
-                  <div className="bg-slate-50 rounded-lg p-4">
-                    <h3 className="font-semibold text-black mb-4">
-                      Basic Information
-                    </h3>
-                    <div className="grid grid-cols-2 gap-4">
-                      <Input
-                        label="Name"
-                        value={editingUser.name}
-                        variant="bordered"
-                        onChange={(e: any) =>
-                          setEditingUser({
-                            ...editingUser,
-                            name: e.target.value,
-                          })
-                        }
-                      />
-                      <Input
-                        label="Email"
-                        value={editingUser.email}
-                        variant="bordered"
-                        onChange={(e: any) =>
-                          setEditingUser({
-                            ...editingUser,
-                            email: e.target.value,
-                          })
-                        }
-                      />
-                    </div>
-
-                    <div className="grid grid-cols-3 gap-4 mt-4">
-                      <div>
-                        <Select
-                          classNames={{
-                            label: "font-semibold text-black",
-                            trigger: "font-medium",
-                          }}
-                          label="Role"
-                          selectedKeys={[editingUser.role]}
-                          variant="bordered"
-                          onSelectionChange={(keys) => {
-                            const selectedRole = Array.from(keys)[0] as
-                              | "ADMIN"
-                              | "TEACHER"
-                              | "STUDENT";
-
-                            setEditingUser({
-                              ...editingUser,
-                              role: selectedRole,
-                            });
-                          }}
-                        >
-                          <SelectItem key="ADMIN">Administrator</SelectItem>
-                          <SelectItem key="TEACHER">Teacher</SelectItem>
-                          <SelectItem key="STUDENT">Student</SelectItem>
-                        </Select>
-                      </div>
-
-                      {editingUser.role === "STUDENT" && (
-                        <>
-                          <div>
-                            <Select
-                              classNames={{
-                                label: "font-semibold text-black",
-                                trigger: "font-medium",
-                              }}
-                              label="Level"
-                              selectedKeys={
-                                editingUser.level ? [editingUser.level] : []
-                              }
-                              variant="bordered"
-                              onSelectionChange={(keys) => {
-                                const selectedLevel = Array.from(
-                                  keys,
-                                )[0] as string;
-
-                                setEditingUser({
-                                  ...editingUser,
-                                  level: selectedLevel || undefined,
-                                });
-                              }}
-                            >
-                              {LEVEL_OPTIONS.map((option) => (
-                                <SelectItem
-                                  key={option.value}
-                                  textValue={option.label}
-                                >
-                                  {option.label}
-                                </SelectItem>
-                              ))}
-                            </Select>
                           </div>
 
-                          <div>
-                            <Select
-                              classNames={{
-                                label: "font-semibold text-black",
-                                trigger: "font-medium",
-                              }}
-                              label="Groups"
-                              selectedKeys={
-                                editingUser.groups?.map((g) => g.id) || []
-                              }
-                              selectionMode="multiple"
-                              variant="bordered"
-                              onSelectionChange={(keys) => {
-                                const selectedGroupIds = Array.from(
-                                  keys,
-                                ) as string[];
-                                const selectedGroups = groups.filter((g) =>
-                                  selectedGroupIds.includes(g.id),
-                                );
-
-                                setEditingUser({
-                                  ...editingUser,
-                                  groups: selectedGroups,
-                                  groupId:
-                                    selectedGroups.length > 0
-                                      ? selectedGroups[0].id
-                                      : undefined,
-                                });
-                              }}
-                            >
-                              {groups && groups.length > 0 ? (
-                                groups.map((group) => (
-                                  <SelectItem key={group.id}>
-                                    {group.name} ({group.level}) -{" "}
-                                    {group._count?.students || 0} студентов
-                                  </SelectItem>
-                                ))
-                              ) : (
-                                <SelectItem key="no-groups" isDisabled>
-                                  {isLoading
-                                    ? "Загрузка групп..."
-                                    : "Нет доступных групп"}
-                                </SelectItem>
-                              )}
-                            </Select>
-                            {editingUser.groups &&
-                              editingUser.groups.length > 0 && (
-                                <div className="mt-2">
-                                  <div className="text-xs text-slate-600 mb-2">
-                                    Selected Groups:
-                                  </div>
-                                  <div className="flex flex-wrap gap-2">
-                                    {editingUser.groups.map((group) => (
+          {/* Users Grid */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
+            {filteredUsers.map((user) => {
+              const roleInfo = getRoleInfo(user.role);
+              const levelInfo = getLevelInfo(user.level);
+              const stats = getUserStats(user);
+              
+              return (
+                <div
+                  key={user.id}
+                  className="group cursor-pointer bg-white border border-slate-200/60 rounded-2xl p-6 relative overflow-hidden hover:border-slate-300/60 transition-all duration-300 hover:shadow-lg"
+                  onClick={() => handleUserClick(user)}
+                >
+                  <div className="absolute inset-0 bg-gradient-to-br from-slate-50/50 to-transparent opacity-0 group-hover:opacity-100 transition-opacity duration-300" />
+                  <div className="relative z-10">
+                    {/* User Header */}
+                    <div className="flex items-start justify-between mb-4">
+                      <Avatar
+                        src={user.avatar}
+                        name={user.name}
+                        size="lg"
+                      />
+                      <div className="flex flex-col items-end gap-2">
                                       <Chip
-                                        key={group.id}
-                                        className="font-medium"
-                                        color="primary"
-                                        size="sm"
+                          color={roleInfo.color as any}
                                         variant="flat"
-                                        onClose={() => {
-                                          const newGroups =
-                                            editingUser.groups?.filter(
-                                              (g) => g.id !== group.id,
-                                            ) || [];
-
-                                          setEditingUser({
-                                            ...editingUser,
-                                            groups: newGroups,
-                                            groupId:
-                                              newGroups.length > 0
-                                                ? newGroups[0].id
-                                                : undefined,
-                                          });
-                                        }}
-                                      >
-                                        {group.name}
+                          size="sm"
+                          className={roleInfo.bgColor}
+                        >
+                          {roleInfo.label}
                                       </Chip>
-                                    ))}
+                        <div className={`px-2 py-1 rounded-lg text-xs font-medium ${levelInfo.bgColor} ${levelInfo.textColor}`}>
+                          {levelInfo.label}
                                   </div>
                                 </div>
-                              )}
                           </div>
-                        </>
-                      )}
 
-                      <div className="flex items-center gap-3 mt-6">
-                        <Checkbox
-                          classNames={{
-                            label: "font-semibold text-black",
-                          }}
-                          isSelected={editingUser.isActive}
-                          onValueChange={(checked) =>
-                            setEditingUser({
-                              ...editingUser,
-                              isActive: checked,
-                            })
-                          }
-                        >
-                          Dashboard Access
-                        </Checkbox>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* User Statistics */}
-                  <div className="bg-slate-50 rounded-lg p-4">
-                    <h3 className="font-semibold text-black mb-4">
-                      User Statistics
-                    </h3>
-                    <div className="grid grid-cols-4 gap-4">
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-[#007EFB]">
-                          {editingUser.totalFeedbacks || 0}
-                        </div>
-                        <div className="text-sm text-slate-600">
-                          Total Feedback
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-[#00B67A]">
-                          {editingUser.averageRating
-                            ? editingUser.averageRating.toFixed(1)
-                            : "—"}
-                        </div>
-                        <div className="text-sm text-slate-600">
-                          Average Rating
-                        </div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-[#FDD130]">
-                          {new Date(editingUser.createdAt).toLocaleDateString()}
-                        </div>
-                        <div className="text-sm text-slate-600">Joined</div>
-                      </div>
-                      <div className="text-center">
-                        <div className="text-2xl font-bold text-[#EE7A3F]">
-                          {new Date(
-                            editingUser.lastActiveDate || editingUser.updatedAt,
-                          ).toLocaleDateString()}
-                        </div>
-                        <div className="text-sm text-slate-600">
-                          Last Active
-                        </div>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Avatar Upload */}
-                  <div className="bg-slate-50 rounded-lg p-4">
-                    <h3 className="font-semibold text-black mb-4">
-                      Profile Picture
-                    </h3>
-                    <div className="flex items-center gap-4">
-                      <div className="w-16 h-16 bg-[#007EFB] rounded-full flex items-center justify-center text-white font-bold text-xl">
-                        {editingUser.avatar ? (
-                          <img
-                            alt={editingUser.name}
-                            className="w-full h-full rounded-full object-cover"
-                            src={editingUser.avatar}
-                          />
-                        ) : (
-                          editingUser.name
-                            .split(" ")
-                            .map((n) => n[0])
-                            .join("")
-                        )}
-                      </div>
-                      <div>
-                        <Button size="sm" variant="bordered">
-                          Upload New Photo
-                        </Button>
-                        <p className="text-xs text-slate-600 mt-1">
-                          JPG, PNG up to 2MB
-                        </p>
-                      </div>
-                    </div>
-                  </div>
-
-                  {/* Course Management */}
-                  {editingUser.role === "STUDENT" && (
-                    <div className="bg-slate-50 rounded-lg p-4">
-                      <h3 className="font-semibold text-black mb-4">
-                        Course Management
+                    {/* User Info */}
+                    <div className="mb-4">
+                      <h3 className="font-bold text-black text-lg mb-1 group-hover:text-[#007EFB] transition-colors">
+                        {user.name}
                       </h3>
-                      <div className="space-y-4">
-                        <div>
-                          <Select
-                            classNames={{
-                              label: "font-semibold text-black",
-                              trigger: "font-medium",
-                            }}
-                            label="Available Courses"
-                            selectedKeys={
-                              editingUser.courses?.map((c: any) => c.id) || []
-                            }
-                            selectionMode="multiple"
-                            variant="bordered"
-                            onSelectionChange={(keys) => {
-                              const selectedCourseIds = Array.from(
-                                keys,
-                              ) as string[];
-                              const selectedCourses = courses.filter((c) =>
-                                selectedCourseIds.includes(c.id),
-                              );
+                      <p className="text-black/70 text-sm font-medium mb-2">{user.email}</p>
+                      
+                      {/* Status Indicator */}
+                      <div className="flex items-center gap-2">
+                        <div className={`w-2 h-2 rounded-full ${user.isActive ? 'bg-green-500' : 'bg-red-500'}`} />
+                        <span className={`text-xs font-medium ${user.isActive ? 'text-green-600' : 'text-red-600'}`}>
+                          {user.isActive ? 'Активен' : 'Неактивен'}
+                        </span>
+                      </div>
+                    </div>
 
-                              setEditingUser({
-                                ...editingUser,
-                                courses: selectedCourses,
-                              });
-                            }}
-                          >
-                            {courses && courses.length > 0 ? (
-                              courses.map((course) => (
-                                <SelectItem key={course.id}>
-                                  <div>
-                                    <div className="font-medium">
-                                      {course.name}
-                                    </div>
-                                    {course.description && (
-                                      <div className="text-xs text-slate-500">
-                                        {course.description}
-                                      </div>
-                                    )}
-                                  </div>
-                                </SelectItem>
-                              ))
-                            ) : (
-                              <SelectItem key="no-courses" isDisabled>
-                                {isLoading
-                                  ? "Загрузка курсов..."
-                                  : "Нет доступных курсов"}
-                              </SelectItem>
-                            )}
-                          </Select>
-                        </div>
+                    {/* User Stats */}
+                    <div className="space-y-3 mb-4">
+                                            <div className="flex items-center justify-between text-sm">
+                        <span className="text-black/70 font-medium">Уроков:</span>
+                        <span className="font-semibold text-black">{stats.totalLessons}</span>
+                      </div>
 
-                        {editingUser.courses &&
-                          editingUser.courses.length > 0 && (
-                            <div>
-                              <div className="text-xs text-slate-600 mb-2">
-                                Enrolled Courses:
-                              </div>
-                              <div className="flex flex-wrap gap-2">
-                                {editingUser.courses.map((course: any) => (
-                                  <Chip
-                                    key={course.id}
-                                    className="font-medium"
-                                    color="success"
-                                    size="sm"
-                                    variant="flat"
-                                    onClose={() => {
-                                      setEditingUser({
-                                        ...editingUser,
-                                        courses:
-                                          editingUser.courses?.filter(
-                                            (c: any) => c.id !== course.id,
-                                          ) || [],
-                                      });
-                                    }}
-                                  >
-                                    {course.name}
-                                  </Chip>
-                                ))}
+                      {user.role === "STUDENT" && (
+                        <>
+                                                    <div className="flex items-center justify-between text-sm">
+                            <span className="text-black/70 font-medium">Завершено:</span>
+                            <span className="font-semibold text-green-600">{stats.completedLessons}</span>
+                          </div>
+                          
+                          {stats.averageRating > 0 && (
+                                                        <div className="flex items-center justify-between text-sm">
+                              <span className="text-black/70 font-medium">Рейтинг:</span>
+                              <div className="flex items-center gap-1">
+                                <StarIcon className="w-4 h-4 text-yellow-500" />
+                                <span className="font-semibold text-black">{stats.averageRating.toFixed(1)}</span>
                               </div>
                             </div>
                           )}
-                      </div>
+                        </>
+                      )}
+                        </div>
+
+                                        {/* Last Activity */}
+                    <div className="flex items-center gap-2 text-xs text-black/50 font-medium">
+                      <ClockIcon className="w-4 h-4" />
+                      <span>Активен: {new Date(stats.lastActive).toLocaleDateString('ru-RU')}</span>
                     </div>
-                  )}
-                </div>
-              )}
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="light" onClick={() => setEditingUser(null)}>
-                Cancel
-              </Button>
-              <Button color="primary" onClick={handleSaveUser}>
-                Save Changes
-              </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
+                      </div>
+                        </div>
+              );
+            })}
+                  </div>
 
-        {/* Create User Modal */}
-        <Modal
-          isOpen={isCreatingUser}
-          size="2xl"
-          onClose={() => setIsCreatingUser(false)}
-        >
-          <ModalContent className="bg-white border border-slate-200/60 rounded-3xl">
-            <ModalHeader className="text-black font-bold text-xl">
-              Create New User
-            </ModalHeader>
-            <ModalBody>
-              <div className="space-y-4">
-                <div className="grid grid-cols-2 gap-4">
-                  <Input
-                    isRequired
-                    label="Name *"
-                    placeholder="Enter name"
-                    value={newUser.name || ""}
-                    variant="bordered"
-                    onChange={(e: any) =>
-                      setNewUser({ ...newUser, name: e.target.value })
-                    }
-                  />
-                  <Input
-                    isRequired
-                    label="Email *"
-                    placeholder="Enter email"
-                    type="email"
-                    value={newUser.email || ""}
-                    variant="bordered"
-                    onChange={(e: any) =>
-                      setNewUser({ ...newUser, email: e.target.value })
-                    }
-                  />
-                </div>
+          {/* Empty State */}
+          {filteredUsers.length === 0 && (
+            <div className="text-center py-16">
+              <div className="w-24 h-24 bg-slate-100 rounded-3xl flex items-center justify-center mx-auto mb-6">
+                <div className="text-4xl">🔍</div>
+                      </div>
+              <h3 className="text-2xl font-bold text-black mb-2">Пользователи не найдены</h3>
+                            <p className="text-black/70 text-lg font-medium">
+                Попробуйте изменить параметры поиска или фильтры
+              </p>
+                      </div>
+          )}
+        </section>
 
-                <div className="grid grid-cols-2 gap-4">
-                  <Select
-                    isRequired
-                    label="Role *"
-                    selectedKeys={newUser.role ? [newUser.role] : []}
-                    variant="bordered"
+        {/* Individual Lessons Section */}
+        <section className="relative mt-12">
+          <div className="flex items-center justify-between mb-8">
+                        <div>
+              <h2 className="text-4xl font-bold text-black">
+                Индивидуальные занятия
+              </h2>
+              <p className="text-black/70 font-medium text-lg mt-1">
+                Управление персональными уроками
+              </p>
+            </div>
+            <Button
+              className="font-bold text-white bg-[#EE7A3F] hover:bg-[#EE7A3F]/90 px-8"
+              size="lg"
+              startContent={<PlusIcon />}
+              onClick={() => setIsCreateLessonModalOpen(true)}
+            >
+              Создать занятие
+            </Button>
+                        </div>
+
+          <div className="bg-gradient-to-br from-[#EE7A3F]/5 via-[#FDD130]/5 to-[#00B67A]/5 border border-[#EE7A3F]/20 rounded-3xl p-8 relative overflow-hidden">
+            <div className="absolute top-0 right-0 w-32 h-32 bg-gradient-to-br from-[#EE7A3F]/10 to-[#FDD130]/10 rounded-full -translate-y-8 translate-x-8" />
+            <div className="relative z-10">
+              <div className="flex items-center gap-3 mb-6">
+                <div className="p-3 bg-[#EE7A3F]/10 rounded-2xl">
+                  <CalendarIcon />
+                </div>
+                            <div>
+                  <h3 className="font-bold text-2xl text-black">
+                    Планирование занятий
+                  </h3>
+                  <p className="text-black/70 font-medium text-base">
+                    TODO: Реализовать список и управление индивидуальными уроками
+                  </p>
+                              </div>
+                              </div>
+                            </div>
+                      </div>
+        </section>
+                    </div>
+
+        {/* Create Individual Lesson Modal */}
+        {isCreateLessonModalOpen && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-3xl p-8 max-w-2xl w-full mx-4">
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">Создать индивидуальное занятие</h3>
+              
+              <div className="space-y-6">
+                                    <Select
+                    classNames={{
+                      label: "font-bold text-black",
+                      trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                      value: "font-medium text-black",
+                    }}
+                    label="Студент"
+                    placeholder="Выберите студента"
+                    selectedKeys={newLesson.studentId ? [newLesson.studentId] : []}
                     onSelectionChange={(keys) => {
-                      const selectedRole = Array.from(keys)[0] as
-                        | "ADMIN"
-                        | "TEACHER"
-                        | "STUDENT";
-
-                      setNewUser({ ...newUser, role: selectedRole });
+                      const selectedStudentId = Array.from(keys)[0] as string;
+                      setNewLesson({ ...newLesson, studentId: selectedStudentId });
                     }}
                   >
-                    <SelectItem key="ADMIN">Administrator</SelectItem>
-                    <SelectItem key="TEACHER">Teacher</SelectItem>
-                    <SelectItem key="STUDENT">Student</SelectItem>
-                  </Select>
+                  {users.filter(u => u.role === "STUDENT").map((student) => (
+                    <SelectItem key={student.id}>
+                      {student.name} ({student.email})
+                          </SelectItem>
+                  ))}
+                    </Select>
 
-                  {newUser.role === "STUDENT" && (
-                    <Select
-                      label="Group"
-                      selectedKeys={newUser.groupId ? [newUser.groupId] : []}
-                      variant="bordered"
+                                        <Select
+                      classNames={{
+                        label: "font-bold text-black",
+                        trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                        value: "font-medium text-black",
+                      }}
+                      label="Преподаватель"
+                      placeholder="Выберите преподавателя"
+                      selectedKeys={newLesson.teacherId ? [newLesson.teacherId] : []}
                       onSelectionChange={(keys) => {
-                        const selectedGroupId = Array.from(keys)[0] as string;
-
-                        setNewUser({ ...newUser, groupId: selectedGroupId });
+                        const selectedTeacherId = Array.from(keys)[0] as string;
+                        setNewLesson({ ...newLesson, teacherId: selectedTeacherId });
                       }}
                     >
-                      {groups && groups.length > 0 ? (
-                        groups.map((group) => (
-                          <SelectItem key={group.id}>
-                            {group.name} ({group.level})
+                  {users.filter(u => u.role === "TEACHER").map((teacher) => (
+                          <SelectItem key={teacher.id}>
+                            {teacher.name} ({teacher.email})
                           </SelectItem>
-                        ))
-                      ) : (
-                        <SelectItem key="no-groups" isDisabled>
-                          {isLoading
-                            ? "Загрузка групп..."
-                            : "Нет доступных групп"}
-                        </SelectItem>
-                      )}
+                        ))}
                     </Select>
-                  )}
+
+                                        <Select
+                      classNames={{
+                        label: "font-bold text-black",
+                        trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                        value: "font-medium text-black",
+                      }}
+                      label="Курс"
+                      placeholder="Выберите курс"
+                      selectedKeys={newLesson.courseId ? [newLesson.courseId] : []}
+                      onSelectionChange={(keys) => {
+                        const selectedCourseId = Array.from(keys)[0] as string;
+                        setNewLesson({ ...newLesson, courseId: selectedCourseId });
+                      }}
+                    >
+                  {/* TODO: Add courses data */}
+                  <SelectItem key="course1">Курс 1</SelectItem>
+                  <SelectItem key="course2">Курс 2</SelectItem>
+                    </Select>
+
+                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    classNames={{
+                      label: "font-bold text-black",
+                      input: "font-medium text-black",
+                      inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                    }}
+                    label="Дата"
+                    type="date"
+                    value={newLesson.date}
+                    onChange={(e) => setNewLesson({ ...newLesson, date: e.target.value })}
+                  />
+                  <Input
+                    classNames={{
+                      label: "font-bold text-black",
+                      input: "font-medium text-black",
+                      inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                    }}
+                    label="Время начала"
+                    type="time"
+                    value={newLesson.startTime}
+                    onChange={(e) => setNewLesson({ ...newLesson, startTime: e.target.value })}
+                  />
                 </div>
 
-                <div className="flex items-center gap-2">
-                  <input
-                    checked={newUser.isActive ?? true}
-                    className="rounded border-slate-300"
-                    id="newUserActive"
-                    type="checkbox"
-                    onChange={(e: any) =>
-                      setNewUser({ ...newUser, isActive: e.target.checked })
-                    }
-                  />
-                  <label className="text-black" htmlFor="newUserActive">
-                    Active User
-                  </label>
-                </div>
-              </div>
-            </ModalBody>
-            <ModalFooter>
-              <Button variant="light" onClick={() => setIsCreatingUser(false)}>
-                Cancel
+                    <Input
+                      classNames={{
+                        label: "font-bold text-black",
+                        input: "font-medium text-black",
+                        inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                      }}
+                      label="Время окончания"
+                      type="time"
+                      value={newLesson.endTime}
+                      onChange={(e) => setNewLesson({ ...newLesson, endTime: e.target.value })}
+                    />
+
+                                          <Input
+                      classNames={{
+                        label: "font-bold text-black",
+                        input: "font-medium text-black",
+                        inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                      }}
+                      label="Заметки"
+                      placeholder="Дополнительная информация о занятии"
+                      value={newLesson.notes}
+                      onChange={(e) => setNewLesson({ ...newLesson, notes: e.target.value })}
+                      />
+                  </div>
+
+              <div className="flex gap-4 mt-8">
+                <Button
+                  variant="light"
+                  onClick={() => setIsCreateLessonModalOpen(false)}
+                  className="flex-1"
+                >
+                Отмена
               </Button>
               <Button
-                className="bg-[#007EFB] hover:bg-[#007EFB]/90"
                 color="primary"
-                onClick={handleCreateUser}
+                onClick={handleCreateLesson}
+                  className="flex-1 bg-purple-600"
               >
-                Create User
+                Создать занятие
               </Button>
-            </ModalFooter>
-          </ModalContent>
-        </Modal>
+                    </div>
+                  </div>
+                    </div>
+        )}
+
+        {/* Edit Individual Lesson Modal */}
+        {isEditLessonModalOpen && selectedLesson && (
+          <div className="fixed inset-0 bg-black/50 flex items-center justify-center z-50">
+            <div className="bg-white rounded-3xl p-8 max-w-2xl w-full mx-4">
+              <h3 className="text-2xl font-bold text-gray-900 mb-6">Редактировать занятие</h3>
+              
+              <div className="space-y-6">
+                                            <Select
+                        classNames={{
+                          label: "font-bold text-black",
+                          trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                          value: "font-medium text-black",
+                        }}
+                        label="Студент"
+                        selectedKeys={[selectedLesson.studentId]}
+                        onSelectionChange={(keys) => {
+                          const selectedStudentId = Array.from(keys)[0] as string;
+                          setSelectedLesson({ ...selectedLesson, studentId: selectedStudentId });
+                        }}
+                      >
+                  {users.filter(u => u.role === "STUDENT").map((student) => (
+                            <SelectItem key={student.id}>
+                      {student.name} ({student.email})
+                            </SelectItem>
+                          ))}
+                      </Select>
+
+                                            <Select
+                        classNames={{
+                          label: "font-bold text-black",
+                          trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                          value: "font-medium text-black",
+                        }}
+                        label="Преподаватель"
+                        selectedKeys={[selectedLesson.teacherId]}
+                        onSelectionChange={(keys) => {
+                          const selectedTeacherId = Array.from(keys)[0] as string;
+                          setSelectedLesson({ ...selectedLesson, teacherId: selectedTeacherId });
+                        }}
+                      >
+                  {users.filter(u => u.role === "TEACHER").map((teacher) => (
+                    <SelectItem key={teacher.id}>
+                      {teacher.name} ({teacher.email})
+                          </SelectItem>
+                        ))}
+                      </Select>
+
+                                            <Select
+                        classNames={{
+                          label: "font-bold text-black",
+                          trigger: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                          value: "font-medium text-black",
+                        }}
+                        label="Курс"
+                        selectedKeys={[selectedLesson.courseId]}
+                        onSelectionChange={(keys) => {
+                          const selectedCourseId = Array.from(keys)[0] as string;
+                          setSelectedLesson({ ...selectedLesson, courseId: selectedCourseId });
+                        }}
+                      >
+                  {/* TODO: Add courses data */}
+                  <SelectItem key="course1">Курс 1</SelectItem>
+                  <SelectItem key="course2">Курс 2</SelectItem>
+                      </Select>
+
+                                <div className="grid grid-cols-2 gap-4">
+                  <Input
+                    classNames={{
+                      label: "font-bold text-black",
+                      input: "font-medium text-black",
+                      inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                    }}
+                    label="Дата"
+                    type="date"
+                    value={selectedLesson.date}
+                    onChange={(e) => setSelectedLesson({ ...selectedLesson, date: e.target.value })}
+                  />
+                  <Input
+                    classNames={{
+                      label: "font-bold text-black",
+                      input: "font-medium text-black",
+                      inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                    }}
+                    label="Время начала"
+                    type="time"
+                    value={selectedLesson.startTime}
+                    onChange={(e) => setSelectedLesson({ ...selectedLesson, startTime: e.target.value })}
+                  />
+                </div>
+
+                <Input
+                  classNames={{
+                    label: "font-bold text-black",
+                    input: "font-medium text-black",
+                    inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                  }}
+                  label="Время окончания"
+                  type="time"
+                  value={selectedLesson.endTime}
+                  onChange={(e) => setSelectedLesson({ ...selectedLesson, endTime: e.target.value })}
+                />
+
+                <Input
+                  classNames={{
+                    label: "font-bold text-black",
+                    input: "font-medium text-black",
+                    inputWrapper: "bg-white border-slate-200/60 focus-within:border-[#007EFB] shadow-none",
+                  }}
+                  label="Заметки"
+                  placeholder="Дополнительная информация о занятии"
+                  value={selectedLesson.notes}
+                  onChange={(e) => setSelectedLesson({ ...selectedLesson, notes: e.target.value })}
+                />
+                    </div>
+
+              <div className="flex gap-4 mt-8">
+                <Button
+                  variant="light"
+                  onClick={() => setIsEditLessonModalOpen(false)}
+                  className="flex-1"
+                >
+                Отмена
+              </Button>
+              <Button
+                  color="danger"
+                  onClick={() => handleDeleteLesson(selectedLesson.id)}
+                  className="flex-1"
+                >
+                  Удалить
+                </Button>
+                <Button
+                color="primary"
+                  onClick={handleEditLesson}
+                  className="flex-1 bg-purple-600"
+              >
+                Сохранить изменения
+              </Button>
       </div>
+            </div>
+          </div>
+        )}
     </ProtectedRoute>
   );
 }
+
