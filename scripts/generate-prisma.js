@@ -13,7 +13,7 @@ try {
   // Generate Prisma client
   execSync('npx prisma generate', { 
     stdio: 'inherit',
-    env: { ...process.env, PRISMA_GENERATE_DATAPROXY: 'true' }
+    env: { ...process.env }
   });
   
   console.log('✅ Prisma client generated successfully!');
